@@ -1,0 +1,48 @@
+## Terraform creates server
+  - all sites are deployed on init
+  - version of each site is stored in yaml
+  - get chill-artifact for each site from S3
+  - create new directory for the version
+  - chill init, load yaml
+  - add and enable, start the systemd service for new version
+  - reload NGINX configuration
+  - register/renew certs
+  - run integration tests on production version (staging not applicable)
+
+
+## Ansible creates deployments
+
+Init Ansible playbook
+  - for each site check if current deployed version matches the version in sites.yaml
+    - clone, build, and upload slugname-VERSION.tar.gz to S3
+
+Deployment Ansible playbook
+  - Upload sites.yaml to chill server
+  - on the chill server; get slugname-VERSION.tar.gz from S3 for the version being deployed
+  - create new directory for the version
+  - chill init, load yaml
+  - add and enable, start the systemd service for new version
+  - stage the new version by updating NGINX
+  - run integration tests on staged version
+  - promote the staged version to production by updating NGINX
+  - remove old version
+
+Chill Artifact
+  - build locally with Make which will use docker
+  - mark all other chill-artifacts for deletion
+  - upload chill-artifact-VERSION.tar.gz to S3
+
+Media is immutable and is proxied to S3
+  - build locally with Make which will use docker
+  - files should be considered immutable
+  - mark all existing files in S3 as old so they will be removed later
+  - use s3 sync to upload files to S3 which should reset any of them that were
+    marked for deletion.
+
+Theme (client-side-public)
+  - build locally with Make which will use docker
+  - upload to versioned path in S3
+
+Design Tokens
+  - build locally with Make which will use docker
+  - upload to versioned path in S3
