@@ -1,0 +1,13 @@
+{
+  "name": "Jen Galaxy Art",
+  "version": "0.3.0-alpha.1",
+  "git_repo": "git@github.com:jkenlooper/jengalaxyart.git",
+  "contact": {
+    "owner": "jengalaxy@gmail.com",
+    "technical": "jake@weboftomorrow.com"
+  },
+  "domain_list": [
+    "www.jengalaxyart.com",
+    "jengalaxyart.com"
+  ]
+}
