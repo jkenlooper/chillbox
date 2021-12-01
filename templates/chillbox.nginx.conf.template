@@ -1,0 +1,28 @@
+server {
+  listen 80;
+
+  server_name ${NGINX_HOST};
+
+  root /srv/chillbox;
+  access_log /var/log/nginx/chillbox/access.log;
+  error_log /var/log/nginx/chillbox/error.log;
+
+
+  # Limit all server wide to this small amount. Override on a location level.
+  client_max_body_size 1k;
+
+  # Ignore query params on all requests so they are not part of the cache.
+  rewrite ^/(.*)$ /$1? last;
+
+  location / {
+    deny all;
+  }
+
+  location ~* ^/.*/version.txt$ {
+    limit_except GET {
+      deny all;
+    }
+    # Show no content if version path doesn't exist.
+    try_files $uri =204;
+  }
+}

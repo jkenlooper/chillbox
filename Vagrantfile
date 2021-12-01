@@ -38,11 +38,24 @@ Vagrant.configure("2") do |config|
     chown -R nginx:nginx /etc/nginx/conf.d/
     cp -r /vagrant/templates/* /etc/nginx/templates/
 
+    # Render the nginx conf templates using envsubst
+    export NGINX_HOST=localhost
+    export uri='$uri'
+    export S3_ENDPOINT_URL='http://10.0.2.2:9000'
+    for template_path in /etc/nginx/templates/*.nginx.conf.template; do
+      template_file=$(basename $template_path)
+      envsubst < $template_path > /etc/nginx/conf.d/${template_file%.template}
+    done
+    chown -R nginx:nginx /etc/nginx/conf.d/
+
+    mkdir -p /srv/chillbox
+    chown -R nginx:nginx /srv/chillbox/
+
     mkdir -p /var/cache/nginx
     chown -R nginx:nginx /var/cache/nginx
     mkdir -p /var/log/nginx/
-    mkdir -p /var/log/nginx/chill_box/
-    chown -R nginx:nginx /var/log/nginx/chill_box/
+    mkdir -p /var/log/nginx/chillbox/
+    chown -R nginx:nginx /var/log/nginx/chillbox/
 
     # TODO: set environment variables in the nginx service which will be used
     # for conf in the templates directory.
@@ -50,9 +63,14 @@ Vagrant.configure("2") do |config|
     mkdir -p /etc/systemd/system/nginx.service.d
     cat <<-'NGINX_CHILL_BOX_OVERRIDE' > /etc/systemd/system/nginx.service.d/chill_box.conf
     [Service]
+
     Environment="SOMETHING=astring"
     Environment="ANOTHER_THING=1234"
-    Environment="S3_ENDPOINT_URL=http://192.168.120.226:38714"
+
+    # 10.0.2.2 is the Vagrant host IP from the prespective of the guest.
+    # Port 9000 is the default port for the S3 minio server.
+    Environment="S3_ENDPOINT_URL=http://10.0.2.2:9000"
+
 NGINX_CHILL_BOX_OVERRIDE
 
     nginx -t
@@ -60,80 +78,6 @@ NGINX_CHILL_BOX_OVERRIDE
     systemctl start nginx
     systemctl reload nginx
     SHELL
-
-  end
-
-
-  config.vm.define "s3fake" do |s3fake|
-    s3fake.vm.hostname = "s3fake"
-    s3fake.vm.network :private_network, ip: "192.168.120.226", auto_config: true, hostname: true
-    s3fake.vm.network "forwarded_port", guest: 4568, host: 38714, auto_correct: false
-
-    s3fake.vm.provider "virtualbox" do |vb|
-      vb.memory = "1024"
-      vb.cpus = 1
-    end
-
-    s3fake.vm.provision "shell-install-s3rver", type: "shell", inline: <<-SHELL
-    apt-get update
-    apt-get install -y nodejs npm
-
-    adduser s3rver --disabled-login --disabled-password --gecos "" || echo 'user exists already?'
-
-    su --command '
-      cd /home/s3rver
-      cat <<-PACKAGEJSON > package.json
-{
-  "name": "_",
-  "version": "1.0.0",
-  "description": "Fake S3 server",
-  "scripts": {
-    "start": "s3rver --directory /home/s3rver/files --address s3fake --no-vhost-buckets --configure-bucket chum"
-  },
-  "dependencies": {
-    "s3rver": "3.7.1"
-  }
-}
-PACKAGEJSON
-
-      mkdir -p /home/s3rver/files
-      npm install --no-save --ignore-scripts 2> /dev/null
-    ' s3rver
-
-    cat <<-'SERVICE_INSTALL' > /etc/systemd/system/s3rver.service
-[Unit]
-Description=Fake S3 Server
-After=multi-user.target
-
-[Service]
-Type=exec
-User=s3rver
-Group=s3rver
-WorkingDirectory=/home/s3rver
-ExecStart=npm start
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-SERVICE_INSTALL
-    systemctl daemon-reload
-    systemctl start s3rver
-    systemctl enable s3rver
-
-    SHELL
-
-    s3fake.vm.post_up_message = <<-POST_UP_MESSAGE
-      Fake S3 Server is running in the private network with a 'chum' bucket.
-      Use these AWS credentials to connect to it:
-        Access Key Id: "S3RVER"
-        Secret Access Key: "S3RVER"
-
-      # Example of uploading test-file and fetching it both with `aws s3 cp` and `curl`.
-      echo 'testing' > test-file
-      aws s3 cp --endpoint-url=http://192.168.120.226:38714 test-file s3://chum/
-      aws s3 cp --endpoint-url=http://192.168.120.226:38714 s3://chum/test-file get-test-file
-      curl http://192.168.120.226:38714/chum/test-file
-    POST_UP_MESSAGE
 
   end
 
