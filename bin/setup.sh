@@ -42,9 +42,5 @@ apt-get --yes install libssl-dev
 
 apt-get --yes install libsqlite3-dev
 
-apt-get --yes install redis-server
-redis-cli config set maxmemory "500mb"
-redis-cli config rewrite
-
 # Remove the default nginx config
 rm -f /etc/nginx/sites-enabled/default

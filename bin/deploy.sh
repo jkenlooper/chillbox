@@ -52,7 +52,7 @@ Executing Ansible playbook: ansible-playbooks/$(basename ${0%.sh}.yml
 # - run integration tests on staged version
 # - promote the staged version to production by updating NGINX environment variables
 # - remove old version
-# - write version to /srv/$slugname/version.txt
+# - write version to /srv/chillbox/$slugname/version.txt
 
 # On local
 # - Delete old immutable versioned path on S3

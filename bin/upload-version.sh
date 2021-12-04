@@ -1,16 +1,14 @@
-#!/bin/env sh
-
-set -v
+#!/usr/bin/env sh
 
 set -o errexit
 
 chillbox_host="http://localhost:38713"
-endpoint_url="http://localhost:9000"
-immutable_bucket_name="chum"
+endpoint_url="http://localhost:38714"
+immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
-AWS_ACCESS_KEY_ID=S3RVER
+AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY="S3RVER123"
+AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 export AWS_SECRET_ACCESS_KEY
 
 aws configure set default.s3.max_concurrent_requests 1
