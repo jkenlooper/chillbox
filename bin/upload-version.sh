@@ -2,8 +2,8 @@
 
 set -o errexit
 
-chillbox_host="http://localhost:38713"
-endpoint_url="http://localhost:38714"
+chillbox_host="http://localhost:9000"
+endpoint_url="http://localhost:9001"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 AWS_ACCESS_KEY_ID=localvagrantaccesskey
@@ -46,7 +46,7 @@ for site_json in $sites; do
   version="$(jq -r '.version' $site_json)"
   version_url="$chillbox_host/$slugname/version.txt"
 
-  if [ "1" = "1" ]; then
+  if [ "1" = "0" ]; then
     curl "$version_url" --head --silent --show-error || (echo "Error when getting $version_url" && exit 1)
     deployed_version=$(curl "$version_url" --silent)
 
@@ -99,6 +99,7 @@ for site_json in $sites; do
 
   upload_immutable $immutable_archive_file
   upload_artifact $artifact_file
+  # s3://${artifact_bucket_name}/${slugname}/$slugname-$version.artifact.tar.gz
 
 done
 
