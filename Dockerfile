@@ -70,12 +70,15 @@ RUN apk update && \
   #apk --purge del \
     #aws-cli
 
-ARG S3_ENDPOINT_URL=http://localhost:9000
+#RUN ping 10.0.0.145 -c 4
+
+ARG S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 # podman use secret in build?
 # docker build --secret=id=id,src=path
 #RUN --mount=type=secret,id=mysecret cat /run/secrets/mysecret
+  #&& echo "aws --endpoint-url '$S3_ENDPOINT_URL' s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz ./"
 
 ARG slugname="jengalaxyart"
 WORKDIR /usr/local/src/$slugname

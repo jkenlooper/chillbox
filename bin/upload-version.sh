@@ -2,8 +2,8 @@
 
 set -o errexit
 
-chillbox_host="http://localhost:9000"
-endpoint_url="http://localhost:9001"
+chillbox_host="http://localhost:8080"
+endpoint_url="http://localhost:9000"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 AWS_ACCESS_KEY_ID=localvagrantaccesskey

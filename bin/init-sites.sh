@@ -1,59 +1,65 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -o errexit
 
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
+endpoint_url="http://localhost:9000"
 AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 export AWS_SECRET_ACCESS_KEY
 
+cleanup () {
+  echo 'cleanup'
+  docker stop minio
+  docker rm minio
+  docker network rm chillboxnet
+}
+trap cleanup err exit
 
-#docker network create chillboxnet --driver bridge
+docker network create chillboxnet --driver bridge || echo 'ignore existing network'
 
 mkdir -p minio-data
 docker run --name minio \
-  -it --rm \
+  -d \
   --env MINIO_ACCESS_KEY="$AWS_ACCESS_KEY_ID" \
   --env MINIO_SECRET_KEY="$AWS_SECRET_ACCESS_KEY" \
   --publish 0.0.0.0:9000:9000 \
   --publish 0.0.0.0:9001:9001 \
+  --network chillboxnet \
+  --mount 'type=volume,src=chillboxdata,dst=/data,readonly=false' \
   bitnami/minio:latest
 
-#  --network chillboxnet \
-#  --volume $(pwd)/minio-data:/data \
 
-exit 0
 
-for bucketname in chillboximmutable chillboxartifact; do
-  docker run --rm \
-    --env MINIO_SERVER_HOST="minio" \
-    --env MINIO_SERVER_ACCESS_KEY="$AWS_ACCESS_KEY_ID" \
-    --env MINIO_SERVER_SECRET_KEY="$AWS_SECRET_ACCESS_KEY" \
-    --network chillboxnet \
-    bitnami/minio-client \
-    mb --ignore-existing minio/$bucketname
+for bucketname in $immutable_bucket_name $artifact_bucket_name; do
+  aws \
+    --endpoint-url "$endpoint_url" \
+    s3 mb s3://$bucketname || echo "Ignoring error if bucket already exists."
 done
 
 ./bin/upload-version.sh
 
 tmp_awscredentials=$(mktemp)
+remove_tmp_awscredentials () {
+  rm "$tmp_awscredentials"
+}
+trap remove_tmp_awscredentials err exit
 cat << MEOW > "$tmp_awscredentials"
-export AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
+export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 MEOW
 
+# Use the '--network host' in order to connect to the local s3 (minio) when building.
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
+  --build-arg S3_ENDPOINT_URL=http://$(hostname -I | cut -f1 -d ' '):9000 \
+  --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
+  --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
+  --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   .
-rm "$tmp_awscredentials"
-
-
-docker stop minio
-docker rm minio
-docker network rm chillboxnet
 
 # On remote chillbox host (only read access to S3)
 # - Download artifact tar.gz from S3
