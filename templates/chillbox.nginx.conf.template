@@ -1,7 +1,7 @@
 server {
   listen 80;
 
-  server_name ${NGINX_HOST};
+  server_name ${CHILLBOX_SERVER_NAME};
 
   root /srv/chillbox;
   access_log /var/log/nginx/chillbox/access.log;

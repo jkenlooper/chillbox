@@ -1,4 +1,7 @@
 *
 !/services/*
+!/templates/*
+!/nginx.conf
+!/default.nginx.conf
 !/requirements.txt
 !/sites/*.site.json

@@ -25,8 +25,8 @@ docker run --name minio \
   -d \
   --env MINIO_ACCESS_KEY="$AWS_ACCESS_KEY_ID" \
   --env MINIO_SECRET_KEY="$AWS_SECRET_ACCESS_KEY" \
-  --publish 0.0.0.0:9000:9000 \
-  --publish 0.0.0.0:9001:9001 \
+  --publish 9000:9000 \
+  --publish 9001:9001 \
   --network chillboxnet \
   --mount 'type=volume,src=chillboxdata,dst=/data,readonly=false' \
   bitnami/minio:latest
