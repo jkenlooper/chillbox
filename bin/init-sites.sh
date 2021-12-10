@@ -38,8 +38,43 @@ for bucketname in $immutable_bucket_name $artifact_bucket_name; do
     --endpoint-url "$endpoint_url" \
     s3 mb s3://$bucketname || echo "Ignoring error if bucket already exists."
 done
+# TODO: make the $immutable_bucket_name public
 
 ./bin/upload-version.sh
+
+sites=$(find sites -type f -name '*.site.json')
+for site_json in $sites; do
+  slugname=${site_json%.site.json}
+  slugname=${slugname#sites/}
+  echo $slugname
+  version="$(jq -r '.version' $site_json)"
+
+	aws \
+    --endpoint-url "$endpoint_url" \
+    --output json \
+    s3api list-objects-v2 \
+      --bucket $immutable_bucket_name \
+      --prefix $slugname/$version/ \
+      --delimiter '/'
+#{
+#    "CommonPrefixes": [
+#        {
+#            "Prefix": "jengalaxyart/0.3.0-alpha.1/client-side-public/"
+#        },
+#        {
+#            "Prefix": "jengalaxyart/0.3.0-alpha.1/design-tokens/"
+#        },
+#        {
+#            "Prefix": "jengalaxyart/0.3.0-alpha.1/source-media/"
+#        }
+#    ]
+#}
+
+#TODO: convert the prefix paths to site env file (site_env_vars)
+# JENGALAXYART_IMMUTABLE__DESIGN_TOKENS="jengalaxyart/0.3.0-alpha.1/design-tokens/"
+
+
+done
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {

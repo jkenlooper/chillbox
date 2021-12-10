@@ -9,5 +9,15 @@
   "domain_list": [
     "www.jengalaxyart.com",
     "jengalaxyart.com"
+  ],
+  "env": [
+    {
+     "name": "JENGALAXYART_IMMUTABLE__DESIGN_TOKENS",
+     "value": "$S3_ENDPOINT_URL/$immutable_bucket_name/$slugname/$version/design-tokens/"
+    },
+    {
+     "name": "JENGALAXYART_IMMUTABLE__CLIENT_SIDE_PUBLIC",
+     "value": "$S3_ENDPOINT_URL/$immutable_bucket_name/$slugname/$version/client-side-public/"
+    }
   ]
 }
