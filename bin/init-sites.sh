@@ -18,6 +18,8 @@ cleanup () {
 }
 trap cleanup err exit
 
+docker stop minio || echo 'ignore minio not running'
+docker rm minio || echo 'ignore minio missing container'
 docker network create chillboxnet --driver bridge || echo 'ignore existing network'
 
 mkdir -p minio-data

@@ -1,6 +1,6 @@
 {
   "name": "Jen Galaxy Art",
-  "version": "0.3.0-alpha.1",
+  "version": "0.3.0-alpha.2",
   "git_repo": "git@github.com:jkenlooper/jengalaxyart.git",
   "contact": {
     "owner": "jengalaxy@gmail.com",
@@ -12,12 +12,24 @@
   ],
   "env": [
     {
+      "name": "JENGALAXYART_SERVER_NAME",
+      "value": "$server_name"
+    },
+    {
+      "name": "JENGALAXYART_CHILL",
+      "value": "http://localhost:5000"
+    },
+    {
      "name": "JENGALAXYART_IMMUTABLE__DESIGN_TOKENS",
-     "value": "$S3_ENDPOINT_URL/$immutable_bucket_name/$slugname/$version/design-tokens/"
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/design-tokens"
     },
     {
      "name": "JENGALAXYART_IMMUTABLE__CLIENT_SIDE_PUBLIC",
-     "value": "$S3_ENDPOINT_URL/$immutable_bucket_name/$slugname/$version/client-side-public/"
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/client-side-public"
+    },
+    {
+     "name": "JENGALAXYART_IMMUTABLE__SOURCE_MEDIA",
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/source-media"
     }
   ]
 }

@@ -75,6 +75,11 @@ aws-cli
 aws --version
 AWS_CLI
 
+# gettext includes envsubst
+RUN <<SUPPORT_ENVSUBST
+apk update
+apk add gettext
+SUPPORT_ENVSUBST
 
 ENV CHILLBOX_SERVER_NAME=localhost
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -87,47 +92,54 @@ ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 
 ARG slugname="jengalaxyart"
-ENV JENGALAXYART_SERVER_NAME="localhost"
-ENV JENGALAXYART_CHILL_URL=""
+ARG server_name="localhost"
 #http://localhost:9000/chillboximmutable/jengalaxyart/0.3.0-alpha.1/client-side-public/main.css
-ENV JENGALAXYART_DESIGN_TOKENS_URL="$S3_ENDPOINT_URL"
-ENV JENGALAXYART_THEME_URL="$S3_ENDPOINT_URL/$slugname/0.3.0-alpha.1/client-side-public/"
-ENV JENGALAXYART_MEDIA_URL="$S3_ENDPOINT_URL"
 WORKDIR /usr/local/src/
 COPY sites/$slugname.site.json /tmp/
-#TODO also mount and source the site_env_vars file
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
 source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
 export version="$(jq -r '.version' /tmp/$slugname.site.json)"
 
-
 jq -r \
-  '.env[] | .name + "=" + .value' sites/jengalaxyart.site.json \
-    | envsubst '$S3_ENDPOINT_URL $immutable_bucket_name $slugname $version' > /tmp/site_env_vars
-source /tmp/site_env_vars
-
-$env_vars_in_nginx=$(jq -r '.env[] | "$" + .name' sites/jengalaxyart.site.json | xargs)
+  '.env[] | "export " + .name + "=" + .value' /tmp/$slugname.site.json \
+    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version' >> /tmp/site_env_vars
+jq -r '.env[] | "$" + .name' /tmp/$slugname.site.json | xargs >> /tmp/site_env_names
+echo /tmp/site_env_vars
+cat /tmp/site_env_vars
+echo /tmp/site_env_names
+cat /tmp/site_env_names
 
 
 aws --endpoint-url "$S3_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
   /tmp/
 tar -xf /tmp/$slugname-$version.artifact.tar.gz
-rm /tmp/$slugname-$version.artifact.tar.gz
-rm /tmp/$slugname.site.json
+#rm /tmp/$slugname-$version.artifact.tar.gz
+#rm /tmp/$slugname.site.json
 slugdir=$PWD/$slugname
 # init chill
 cd $slugdir/chill
 chill initdb
 chill load --yaml chill-data.yaml
+mkdir -p /etc/services.d/chill-$slugname
+
+cat <<MEOW > /etc/services.d/chill-$slugname/run
+#!/usr/bin/execlineb -P
+cd $slugdir/chill
+CHILL_HOST=localhost CHILL_PORT=5001 /usr/local/bin/chill serve
+MEOW
+
 cd $slugdir
 # install site root dir
 mkdir -p $slugdir/nginx/root
 mkdir -p /srv/$slugname
 mv $slugdir/nginx/root /srv/$slugname/
 chown -R nginx:ngnix /srv/$slugname/
+mkdir -p /var/log/nginx/
+mkdir -p /var/log/nginx/$slugname/
+chown -R nginx:nginx /var/log/nginx/$slugname/
 # Install nginx templates that start with slugname
 mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/nginx/templates/
 rm -rf $slugdir/nginx
@@ -138,10 +150,7 @@ echo "$version" > /srv/chillbox/$slugname/version.txt
 SITE_INIT
 
 
-# gettext includes envsubst
 RUN <<NGINX_CONF
-apk update
-apk add gettext
 chown -R nginx:nginx /etc/nginx/templates/
 mkdir -p /srv/chillbox
 chown -R nginx:nginx /srv/chillbox/
@@ -153,9 +162,10 @@ chown -R nginx:nginx /var/log/nginx/chillbox/
 rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
 chown -R nginx:nginx /etc/nginx/conf.d/
+source /tmp/site_env_vars
 for template_path in /etc/nginx/templates/*.nginx.conf.template; do
   template_file=$(basename $template_path)
-  envsubst '$CHILLBOX_SERVER_NAME $S3_ENDPOINT_URL' < $template_path > /etc/nginx/conf.d/${template_file%.template}
+  envsubst "$(cat /tmp/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
 nginx -t
