@@ -12,14 +12,13 @@ export AWS_SECRET_ACCESS_KEY
 
 cleanup () {
   echo 'cleanup'
-  docker stop minio
-  docker rm minio
-  docker network rm chillboxnet
+  docker stop minio || printf 'ignored'
+  docker rm minio || printf 'ignored'
+  docker network rm chillboxnet || printf 'ignored'
 }
-trap cleanup err exit
+trap cleanup err
+cleanup
 
-docker stop minio || echo 'ignore minio not running'
-docker rm minio || echo 'ignore minio missing container'
 docker network create chillboxnet --driver bridge || echo 'ignore existing network'
 
 mkdir -p minio-data
@@ -32,8 +31,6 @@ docker run --name minio \
   --network chillboxnet \
   --mount 'type=volume,src=chillboxdata,dst=/data,readonly=false' \
   bitnami/minio:latest
-
-
 
 for bucketname in $immutable_bucket_name $artifact_bucket_name; do
   aws \
@@ -91,7 +88,8 @@ MEOW
 # Use the '--network host' in order to connect to the local s3 (minio) when building.
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
-  --build-arg S3_ENDPOINT_URL=http://$(hostname -I | cut -f1 -d ' '):9000 \
+  --build-arg S3_ARTIFACT_ENDPOINT_URL=http://$(hostname -I | cut -f1 -d ' '):9000 \
+  --build-arg S3_ENDPOINT_URL=http://minio:9000 \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --network host \

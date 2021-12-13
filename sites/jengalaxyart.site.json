@@ -17,19 +17,19 @@
     },
     {
       "name": "JENGALAXYART_CHILL",
-      "value": "http://localhost:5000"
+      "value": "http://localhost:5000/"
     },
     {
      "name": "JENGALAXYART_IMMUTABLE__DESIGN_TOKENS",
-     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/design-tokens"
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/design-tokens/"
     },
     {
      "name": "JENGALAXYART_IMMUTABLE__CLIENT_SIDE_PUBLIC",
-     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/client-side-public"
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/client-side-public/"
     },
     {
      "name": "JENGALAXYART_IMMUTABLE__SOURCE_MEDIA",
-     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/source-media"
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/source-media/"
     }
   ]
 }

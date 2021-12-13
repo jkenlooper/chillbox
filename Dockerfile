@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1.3-labs
+# syntax=docker/dockerfile:1.3.0-labs
 
-FROM alpine:3.15.0
+FROM alpine:3.15.0@sha256:21a3deaa0d32a8057914f36584b5288d2e5ecc984380bc0118285c70fa8c9300
 
 ## s6-overlay
 # https://github.com/just-containers/s6-overlay
@@ -86,6 +86,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.nginx.conf /etc/nginx/conf.d/default.conf
 COPY templates /etc/nginx/templates
 
+ARG S3_ARTIFACT_ENDPOINT_URL
 ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
@@ -112,7 +113,7 @@ echo /tmp/site_env_names
 cat /tmp/site_env_names
 
 
-aws --endpoint-url "$S3_ENDPOINT_URL" \
+aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
   /tmp/
 tar -xf /tmp/$slugname-$version.artifact.tar.gz
@@ -128,7 +129,11 @@ mkdir -p /etc/services.d/chill-$slugname
 cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 cd $slugdir/chill
-CHILL_HOST=localhost CHILL_PORT=5001 /usr/local/bin/chill serve
+export CHILL_HOST=localhost
+export CHILL_PORT=5001
+export CHILL_THEME_STATIC_PATH=/theme/$version/
+export CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
+/usr/local/bin/chill serve
 MEOW
 
 cd $slugdir
@@ -168,7 +173,8 @@ for template_path in /etc/nginx/templates/*.nginx.conf.template; do
   envsubst "$(cat /tmp/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
-nginx -t
+# No test when building
+#nginx -t
 NGINX_CONF
 
 
