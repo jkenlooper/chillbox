@@ -1,2 +1,2 @@
 #chill==0.9.0
-git+https://github.com/jkenlooper/chill.git@stateless#egg=chill
+git+https://github.com/jkenlooper/chill.git@develop#egg=chill
