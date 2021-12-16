@@ -92,6 +92,12 @@ ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 
+
+RUN <<CHILLBOX
+echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /tmp/site_env_vars
+echo '$CHILLBOX_SERVER_NAME' >> /tmp/site_env_names
+CHILLBOX
+
 ARG slugname="jengalaxyart"
 ARG server_name="localhost"
 #http://localhost:9000/chillboximmutable/jengalaxyart/0.3.0-alpha.1/client-side-public/main.css
@@ -129,10 +135,11 @@ mkdir -p /etc/services.d/chill-$slugname
 cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 cd $slugdir/chill
-export CHILL_HOST=localhost
-export CHILL_PORT=5001
-export CHILL_THEME_STATIC_PATH=/theme/$version/
-export CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
+s6-env CHILL_HOST=localhost
+s6-env CHILL_PORT=5001
+s6-env CHILL_MEDIA_PATH=/media/
+s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
+s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
 /usr/local/bin/chill serve
 MEOW
 
