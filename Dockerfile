@@ -99,7 +99,7 @@ echo '$CHILLBOX_SERVER_NAME' >> /tmp/site_env_names
 CHILLBOX
 
 ARG slugname="jengalaxyart"
-ARG server_name="localhost"
+ARG server_name="jengalaxyart.test"
 #http://localhost:9000/chillboximmutable/jengalaxyart/0.3.0-alpha.1/client-side-public/main.css
 WORKDIR /usr/local/src/
 COPY sites/$slugname.site.json /tmp/
@@ -136,7 +136,7 @@ cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 cd $slugdir/chill
 s6-env CHILL_HOST=localhost
-s6-env CHILL_PORT=5001
+s6-env CHILL_PORT=5000
 s6-env CHILL_MEDIA_PATH=/media/
 s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
 s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/

@@ -46,6 +46,7 @@ for site_json in $sites; do
   version="$(jq -r '.version' $site_json)"
   version_url="$chillbox_host/$slugname/version.txt"
 
+  # TODO: only enable if not running local.
   if [ "1" = "0" ]; then
     curl "$version_url" --head --silent --show-error || (echo "Error when getting $version_url" && exit 1)
     deployed_version=$(curl "$version_url" --silent)
