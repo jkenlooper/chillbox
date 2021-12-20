@@ -49,11 +49,12 @@ apk add --no-cache \
   musl-dev \
   make \
   git \
-sqlite
+  sqlite
 ln -s /usr/bin/python3 /usr/bin/python
 python -m venv .
 /usr/local/src/chill-venv/bin/pip install --upgrade pip wheel
 /usr/local/src/chill-venv/bin/pip install --disable-pip-version-check -r requirements.txt
+/usr/local/src/chill-venv/bin/pip install --disable-pip-version-check .
 ln -s /usr/local/src/chill-venv/bin/chill /usr/local/bin/chill
 apk --purge del \
   gcc \
@@ -84,7 +85,8 @@ SUPPORT_ENVSUBST
 ENV CHILLBOX_SERVER_NAME=localhost
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.nginx.conf /etc/nginx/conf.d/default.conf
-COPY templates /etc/nginx/templates
+COPY templates /etc/chillbox/templates
+COPY sites /etc/chillbox/sites
 
 ARG S3_ARTIFACT_ENDPOINT_URL
 ARG S3_ENDPOINT_URL
@@ -94,38 +96,38 @@ ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 
 
 RUN <<CHILLBOX
-echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /tmp/site_env_vars
-echo '$CHILLBOX_SERVER_NAME' >> /tmp/site_env_names
+echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
+echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
 CHILLBOX
 
 ARG slugname="jengalaxyart"
 ARG server_name="jengalaxyart.test"
 #http://localhost:9000/chillboximmutable/jengalaxyart/0.3.0-alpha.1/client-side-public/main.css
 WORKDIR /usr/local/src/
-COPY sites/$slugname.site.json /tmp/
+#COPY sites/$slugname.site.json /tmp/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
 source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
-export version="$(jq -r '.version' /tmp/$slugname.site.json)"
+export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
 
 jq -r \
-  '.env[] | "export " + .name + "=" + .value' /tmp/$slugname.site.json \
-    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version' >> /tmp/site_env_vars
-jq -r '.env[] | "$" + .name' /tmp/$slugname.site.json | xargs >> /tmp/site_env_names
-echo /tmp/site_env_vars
-cat /tmp/site_env_vars
-echo /tmp/site_env_names
-cat /tmp/site_env_names
+  '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
+    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version' >> /etc/chillbox/site_env_vars
+jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
+echo /etc/chillbox/site_env_vars
+cat /etc/chillbox/site_env_vars
+echo /etc/chillbox/site_env_names
+cat /etc/chillbox/site_env_names
 
-
+tmp_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
-  /tmp/
-tar -xf /tmp/$slugname-$version.artifact.tar.gz
-#rm /tmp/$slugname-$version.artifact.tar.gz
-#rm /tmp/$slugname.site.json
+  $tmp_artifact
+tar -x -f $tmp_artifact
+rm $tmp_artifact
 slugdir=$PWD/$slugname
+
 # init chill
 cd $slugdir/chill
 chill initdb
@@ -153,7 +155,7 @@ mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/$slugname/
 chown -R nginx:nginx /var/log/nginx/$slugname/
 # Install nginx templates that start with slugname
-mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/nginx/templates/
+mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/chillbox/templates/
 rm -rf $slugdir/nginx
 # Set version
 mkdir -p /srv/chillbox/$slugname
@@ -163,7 +165,7 @@ SITE_INIT
 
 
 RUN <<NGINX_CONF
-chown -R nginx:nginx /etc/nginx/templates/
+#chown -R nginx:nginx /etc/chillbox/templates/
 mkdir -p /srv/chillbox
 chown -R nginx:nginx /srv/chillbox/
 mkdir -p /var/cache/nginx
@@ -174,10 +176,10 @@ chown -R nginx:nginx /var/log/nginx/chillbox/
 rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
 chown -R nginx:nginx /etc/nginx/conf.d/
-source /tmp/site_env_vars
-for template_path in /etc/nginx/templates/*.nginx.conf.template; do
+source /etc/chillbox/site_env_vars
+for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   template_file=$(basename $template_path)
-  envsubst "$(cat /tmp/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
+  envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
 # No test when building

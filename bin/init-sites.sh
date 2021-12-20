@@ -39,6 +39,23 @@ for bucketname in $immutable_bucket_name $artifact_bucket_name; do
 done
 # TODO: make the $immutable_bucket_name public
 
+# TODO: create tmpdir and add chill-box artifacts like nginx.conf, templates,
+# sites, etc.. This is used in cloud-init for the chill-box server.
+chillbox_artifact=chillbox.$(cat VERSION).tar.gz
+if [ ! -e $chillbox_artifact ]; then
+  tar -c -f $chillbox_artifact \
+    default.nginx.conf \
+    nginx.conf \
+    requirements.txt \
+    sites \
+    templates \
+    VERSION
+fi
+aws \
+  --endpoint-url "$endpoint_url" \
+  s3 cp $chillbox_artifact \
+  s3://${artifact_bucket_name}/chillbox/
+
 ./bin/upload-version.sh
 
 # No longer need to do this
