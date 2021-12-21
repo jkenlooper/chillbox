@@ -113,7 +113,7 @@ export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
 
 jq -r \
   '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
-    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version' >> /etc/chillbox/site_env_vars
+    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
 jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
 echo /etc/chillbox/site_env_vars
 cat /etc/chillbox/site_env_vars
