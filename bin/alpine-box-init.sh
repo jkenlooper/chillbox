@@ -149,6 +149,7 @@ mkdir -p /etc/services.d/chill-$slugname
 
 cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/bin/execlineb -P
+s6-setuidgid $slugname
 cd $slugdir/chill
 s6-env CHILL_HOST=localhost
 s6-env CHILL_PORT=5000

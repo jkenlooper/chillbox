@@ -27,7 +27,7 @@ upload_immutable() {
     --endpoint-url "$endpoint_url" \
     s3 cp $immutable_tmp_dir/$slugname/ \
     s3://${immutable_bucket_name}/${slugname}/${version} \
-    --cache-control 'immutable, max-age=1234' \
+    --cache-control 'public, max-age:31536000, immutable' \
     --recursive
 }
 

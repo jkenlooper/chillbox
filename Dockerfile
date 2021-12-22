@@ -101,6 +101,9 @@ ARG slugname="jengalaxyart"
 ARG server_name="jengalaxyart.test"
 WORKDIR /usr/local/src/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
+# no home, password, or shell for user
+adduser -D -h /dev/null -H -s /dev/null $slugname
+
 source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
@@ -118,16 +121,19 @@ aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
 tar -x -f $tmp_artifact
 rm $tmp_artifact
 slugdir=$PWD/$slugname
+chown -R $slugname:$slugname $slugdir
 
 # init chill
 cd $slugdir/chill
-chill initdb
-chill load --yaml chill-data.yaml
+echo $slugname
+su -p -s /bin/sh $slugname -c 'chill initdb'
+su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
 
 mkdir -p /etc/services.d/chill-$slugname
 
 cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
+s6-setuidgid $slugname
 cd $slugdir/chill
 s6-env CHILL_HOST=localhost
 s6-env CHILL_PORT=5000
@@ -142,37 +148,37 @@ cd $slugdir
 mkdir -p $slugdir/nginx/root
 mkdir -p /srv/$slugname
 mv $slugdir/nginx/root /srv/$slugname/
-chown -R nginx:ngnix /srv/$slugname/
+chown -R nginx /srv/$slugname/
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/$slugname/
-chown -R nginx:nginx /var/log/nginx/$slugname/
+chown -R nginx /var/log/nginx/$slugname/
 # Install nginx templates that start with slugname
 mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/chillbox/templates/
 rm -rf $slugdir/nginx
 # Set version
 mkdir -p /srv/chillbox/$slugname
-chown -R nginx:nginx /srv/chillbox/$slugname/
+chown -R nginx /srv/chillbox/$slugname/
 echo "$version" > /srv/chillbox/$slugname/version.txt
 SITE_INIT
 
 
 RUN <<NGINX_CONF
 mkdir -p /srv/chillbox
-chown -R nginx:nginx /srv/chillbox/
+chown -R nginx /srv/chillbox/
 mkdir -p /var/cache/nginx
-chown -R nginx:nginx /var/cache/nginx
+chown -R nginx /var/cache/nginx
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/chillbox/
-chown -R nginx:nginx /var/log/nginx/chillbox/
+chown -R nginx /var/log/nginx/chillbox/
 rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
-chown -R nginx:nginx /etc/nginx/conf.d/
+chown -R nginx /etc/nginx/conf.d/
 source /etc/chillbox/site_env_vars
 for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   template_file=$(basename $template_path)
   envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
-chown -R nginx:nginx /etc/nginx/conf.d/
+chown -R nginx /etc/nginx/conf.d/
 NGINX_CONF
 
 
@@ -197,5 +203,11 @@ NGINX_CONF
 
 # On local
 # - Delete old immutable versioned path on S3
+
+RUN <<DEV_USER
+addgroup dev
+adduser -G dev -D dev
+DEV_USER
+#USER dev
 
 CMD ["nginx", "-g", "daemon off;"]

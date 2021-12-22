@@ -2,16 +2,16 @@
 # For each site check if archive version has been made.
 # if no archive version then create with wget
 
-wget
+  #--save-headers \
+wget \
   --no-host-directories \
-  --save-headers \
   --recursive \
   --level=inf \
   --timestamping \
   --convert-links \
   --page-requisites \
   -e robots=off \
-  http://jengalaxyart.test:8083
+  http://jengalaxyart.test:9081
 
 # Upload archive version files to S3
 
