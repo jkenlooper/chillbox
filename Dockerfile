@@ -36,11 +36,12 @@ nginx -v
 NGINX
 
 ## chill
-WORKDIR /usr/local/src/chill-venv
-COPY requirements.txt ./
+#ARG PIP_CHILL="chill==0.9.0"
+ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 RUN <<CHILL
 apk update
 apk add --no-cache \
+  py3-pip \
   gcc \
   python3 \
   python3-dev \
@@ -51,11 +52,8 @@ apk add --no-cache \
   git \
   sqlite
 ln -s /usr/bin/python3 /usr/bin/python
-python -m venv .
-/usr/local/src/chill-venv/bin/pip install --upgrade pip wheel
-/usr/local/src/chill-venv/bin/pip install --disable-pip-version-check -r requirements.txt
-/usr/local/src/chill-venv/bin/pip install --disable-pip-version-check .
-ln -s /usr/local/src/chill-venv/bin/chill /usr/local/bin/chill
+python --version
+python -m pip install --disable-pip-version-check "$PIP_CHILL"
 apk --purge del \
   gcc \
   python3-dev \
@@ -72,7 +70,7 @@ RUN <<AWS_CLI
 apk update
 apk add --no-cache \
   jq \
-aws-cli
+  aws-cli
 aws --version
 AWS_CLI
 
@@ -94,7 +92,6 @@ ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 
-
 RUN <<CHILLBOX
 echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
 echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
@@ -102,9 +99,7 @@ CHILLBOX
 
 ARG slugname="jengalaxyart"
 ARG server_name="jengalaxyart.test"
-#http://localhost:9000/chillboximmutable/jengalaxyart/0.3.0-alpha.1/client-side-public/main.css
 WORKDIR /usr/local/src/
-#COPY sites/$slugname.site.json /tmp/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
 source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
@@ -115,10 +110,6 @@ jq -r \
   '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
     | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
 jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
-echo /etc/chillbox/site_env_vars
-cat /etc/chillbox/site_env_vars
-echo /etc/chillbox/site_env_names
-cat /etc/chillbox/site_env_names
 
 tmp_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
@@ -132,6 +123,7 @@ slugdir=$PWD/$slugname
 cd $slugdir/chill
 chill initdb
 chill load --yaml chill-data.yaml
+
 mkdir -p /etc/services.d/chill-$slugname
 
 cat <<MEOW > /etc/services.d/chill-$slugname/run
@@ -142,7 +134,7 @@ s6-env CHILL_PORT=5000
 s6-env CHILL_MEDIA_PATH=/media/
 s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
 s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
-/usr/local/bin/chill serve
+chill serve
 MEOW
 
 cd $slugdir
@@ -165,7 +157,6 @@ SITE_INIT
 
 
 RUN <<NGINX_CONF
-#chown -R nginx:nginx /etc/chillbox/templates/
 mkdir -p /srv/chillbox
 chown -R nginx:nginx /srv/chillbox/
 mkdir -p /var/cache/nginx
@@ -182,8 +173,6 @@ for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
-# No test when building
-#nginx -t
 NGINX_CONF
 
 

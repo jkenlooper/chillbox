@@ -1,7 +1,11 @@
 #!/usr/bin/env sh
 
+apk update
+apk add sed attr grep
+
 addgroup dev
 adduser -G dev -D dev
+# TODO: Set password as expired to force user to reset when logging in
 
 apk add openssh-server-pam
 
@@ -11,7 +15,6 @@ AuthorizedKeysFile .ssh/authorized_keys
 KbdInteractiveAuthentication no
 PasswordAuthentication no
 PermitRootLogin no
-# Default is yes
 PubkeyAuthentication yes
 UsePAM yes
 SSHD_CONFIG
@@ -23,10 +26,12 @@ chmod -R 700 /home/dev/.ssh
 chmod -R 644 /home/dev/.ssh/authorized_keys
 
 apk add doas
-# TODO: update /etc/doas.d/doas.conf
-# permit nopass dev as root cmd ls
+cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
+permit persist dev as root
+DOAS_CONFIG
 
-# Cloud-Init script
+sshd -t
+rc-service sshd restart
 
 export immutable_bucket_name="chillboximmutable"
 export IMMUTABLE_BUCKET_NAME="chillboximmutable"
@@ -40,36 +45,34 @@ export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 export chillbox_artifact=chillbox.0.0.1-alpha.1.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 
-apk update
-#vim /etc/ssh/sshd_config
-sshd -t
-rc-service sshd restart
+#apk add --no-cache gnupg gnupg-dirmngr
 
-apk update
-apk add sed attr grep
-
-apk add --no-cache gnupg gnupg-dirmngr
+## nginx
 apk add nginx
-apk add gcc python3 python3-dev libffi-dev build-base musl-dev make git sqlite
+nginx -v
+
+## chill
+apk add \
+  py3-pip \
+  gcc \
+  python3 \
+  python3-dev \
+  libffi-dev \
+  build-base \
+  musl-dev \
+  make \
+  git \
+  sqlite
 ln -s /usr/bin/python3 /usr/bin/python
 python --version
-mkdir -p /usr/local/src/chill-venv
-cd /usr/local/src/chill-venv/
-git clone https://github.com/jkenlooper/chill.git ./
-python -m venv .
-source bin/activate
-pip install --upgrade pip wheel
-pip install --disable-pip-version-check -r requirements.txt
-pip install .
-
-ln -s /usr/local/src/chill-venv/bin/chill /usr/local/bin/chill
+#python -m pip install --disable-pip-version-check "chill==0.9.0"
+python -m pip install --disable-pip-version-check "git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 chill --version
 
 apk add jq aws-cli
+aws --version
 apk add gettext
 
-# TODO: Fetch chill-box artifact files from s3
-# nginx.conf, default.nginx.conf, templates, site/
 tmp_chillbox_artifact=$(mktemp)
 aws \
   --endpoint-url "$endpoint_url" \
@@ -88,9 +91,11 @@ tar -x -f $tmp_chillbox_artifact templates sites
 echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
 echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
 
-
 export slugname="jengalaxyart"
 export server_name="jengalaxyart.test"
+
+# no home, password, or shell for user
+adduser -D -H -s /dev/null $slugname
 
 mkdir -p /usr/local/src/
 cd /usr/local/src/
@@ -103,10 +108,6 @@ jq -r \
   '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
     | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
 jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
-echo /etc/chillbox/site_env_vars
-cat /etc/chillbox/site_env_vars
-echo /etc/chillbox/site_env_names
-cat /etc/chillbox/site_env_names
 
 tmp_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
@@ -115,39 +116,33 @@ aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
 tar -x -f $tmp_artifact
 rm $tmp_artifact
 slugdir=$PWD/$slugname
+chown -R $slugname:$slugname $slugdir
 
 # init chill
 cd $slugdir/chill
+su -s $SHELL -c '
 chill initdb
 chill load --yaml chill-data.yaml
+' $slugname
 
 # Support s6 init scripts.
 # Only if not using container s6-overlay and using openrc instead.
 apk add s6 s6-portable-utils
 rc-update add s6-svscan boot
-
-# TODO: How to enable and start this openrc service?
 cat <<PURR > /etc/init.d/chill-$slugname
 #!/sbin/openrc-run
 name="chill-$slugname"
 description="chill-$slugname"
+user="$slugname"
+group="$slugname"
 supervisor=s6
 s6_service_path=/etc/services.d/chill-$slugname
 depend() {
   need s6-svscan net localmount
   after firewall
 }
-start_pre() {
-  if [ ! -L "${RC_SVC_DIR}/s6-scan/${name}" ]; then
-    ln -s "/etc/services.d/${name}" "${RC_SVCDIR}/s6-scan/${name}"
-  fi
-}
 PURR
 chmod +x /etc/init.d/chill-$slugname
-
-# service configuration file?
-# /etc/conf.d/chill-$slugname
-
 rc-update add chill-$slugname default
 
 mkdir -p /etc/services.d/chill-$slugname
@@ -160,9 +155,10 @@ s6-env CHILL_PORT=5000
 s6-env CHILL_MEDIA_PATH=/media/
 s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
 s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
-/usr/local/bin/chill serve
+chill serve
 MEOW
-chmod +x /etc/services.d/chill-jengalaxyart/run
+
+#chmod +x /etc/services.d/chill-jengalaxyart/run
 
 cd $slugdir
 # install site root dir
@@ -182,7 +178,6 @@ chown -R nginx:nginx /srv/chillbox/$slugname/
 echo "$version" > /srv/chillbox/$slugname/version.txt
 
 
-#chown -R nginx:nginx /etc/chillbox/templates/
 mkdir -p /srv/chillbox
 chown -R nginx:nginx /srv/chillbox/
 mkdir -p /var/cache/nginx
@@ -199,8 +194,6 @@ for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
-# No test when building
-#nginx -t
 
 rc-update add nginx default
 rc-service nginx start

@@ -14,6 +14,8 @@ cleanup () {
   echo 'cleanup'
   docker stop minio || printf 'ignored'
   docker rm minio || printf 'ignored'
+  docker stop chillbox || printf 'ignored'
+  docker rm chillbox || printf 'ignored'
   docker network rm chillboxnet || printf 'ignored'
 }
 trap cleanup err
@@ -95,6 +97,12 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   .
+
+docker run -d --name chillbox --network chillboxnet -p 9081:80 chillbox
+
+echo "Sites running on http://localhost:9081"
+echo "http://localhost:9081/jengalaxyart/version.txt"
+echo "http://jengalaxyart.test:9081"
 
 # On remote chillbox host (only read access to S3)
 # - Download artifact tar.gz from S3
