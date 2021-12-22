@@ -1,37 +1,52 @@
 #!/usr/bin/env sh
 
+addgroup dev
+adduser -G dev -D dev
+
+apk add openssh-server-pam
+
+cat <<SSHD_CONFIG > /etc/ssh/sshd_config
+AuthenticationMethods publickey
+AuthorizedKeysFile .ssh/authorized_keys
+KbdInteractiveAuthentication no
+PasswordAuthentication no
+PermitRootLogin no
+# Default is yes
+PubkeyAuthentication yes
+UsePAM yes
+SSHD_CONFIG
+
+mkdir -p /home/dev/.ssh
+wget https://github.com/jkenlooper.keys -O - | tee -a /home/dev/.ssh/authorized_keys
+chown -R dev:dev /home/dev/.ssh
+chmod -R 700 /home/dev/.ssh
+chmod -R 644 /home/dev/.ssh/authorized_keys
+
+apk add doas
+# TODO: update /etc/doas.d/doas.conf
+# permit nopass dev as root cmd ls
+
 # Cloud-Init script
 
-immutable_bucket_name="chillboximmutable"
-IMMUTABLE_BUCKET_NAME="chillboximmutable"
-artifact_bucket_name="chillboxartifact"
-ARTIFACT_BUCKET_NAME="chillboxartifact"
-endpoint_url="http://10.0.0.145:9000"
-S3_ENDPOINT_URL=http://10.0.0.145:9000
-S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
-AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export AWS_SECRET_ACCESS_KEY
-chillbox_artifact=chillbox.0.0.1-alpha.1.tar.gz
-CHILLBOX_SERVER_NAME=10.0.0.192
+export immutable_bucket_name="chillboximmutable"
+export IMMUTABLE_BUCKET_NAME="chillboximmutable"
+export artifact_bucket_name="chillboxartifact"
+export ARTIFACT_BUCKET_NAME="chillboxartifact"
+export endpoint_url="http://10.0.0.145:9000"
+export S3_ENDPOINT_URL=http://10.0.0.145:9000
+export S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
+export AWS_ACCESS_KEY_ID=localvagrantaccesskey
+export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
+export chillbox_artifact=chillbox.0.0.1-alpha.1.tar.gz
+export CHILLBOX_SERVER_NAME=10.0.0.192
 
 apk update
-apk add vim
 #vim /etc/ssh/sshd_config
 sshd -t
 rc-service sshd restart
 
-cat > /etc/apk/repositories << EOF; $(echo)
-http://dl-cdn.alpinelinux.org/alpine/v$(cat /etc/alpine-release | cut -d'.' -f1,2)/main
-http://dl-cdn.alpinelinux.org/alpine/v$(cat /etc/alpine-release | cut -d'.' -f1,2)/community
-EOF
-
 apk update
-apk add sed attr dialog dialog-doc bash bash-doc bash-completion grep grep-doc
-apk add util-linux util-linux-doc pciutils usbutils binutils findutils readline
-apk add mandoc man-pages lsof lsof-doc less less-doc nano nano-doc curl curl-doc
-export PAGER=less
+apk add sed attr grep
 
 apk add --no-cache gnupg gnupg-dirmngr
 apk add nginx
@@ -47,8 +62,6 @@ pip install --upgrade pip wheel
 pip install --disable-pip-version-check -r requirements.txt
 pip install .
 
-export AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 ln -s /usr/local/src/chill-venv/bin/chill /usr/local/bin/chill
 chill --version
 
@@ -108,11 +121,39 @@ cd $slugdir/chill
 chill initdb
 chill load --yaml chill-data.yaml
 
-# TODO: this is s6 specific. Should use openrc here instead?
+# Support s6 init scripts.
+# Only if not using container s6-overlay and using openrc instead.
+apk add s6 s6-portable-utils
+rc-update add s6-svscan boot
+
+# TODO: How to enable and start this openrc service?
+cat <<PURR > /etc/init.d/chill-$slugname
+#!/sbin/openrc-run
+name="chill-$slugname"
+description="chill-$slugname"
+supervisor=s6
+s6_service_path=/etc/services.d/chill-$slugname
+depend() {
+  need s6-svscan net localmount
+  after firewall
+}
+start_pre() {
+  if [ ! -L "${RC_SVC_DIR}/s6-scan/${name}" ]; then
+    ln -s "/etc/services.d/${name}" "${RC_SVCDIR}/s6-scan/${name}"
+  fi
+}
+PURR
+chmod +x /etc/init.d/chill-$slugname
+
+# service configuration file?
+# /etc/conf.d/chill-$slugname
+
+rc-update add chill-$slugname default
+
 mkdir -p /etc/services.d/chill-$slugname
 
 cat <<MEOW > /etc/services.d/chill-$slugname/run
-#!/usr/bin/execlineb -P
+#!/bin/execlineb -P
 cd $slugdir/chill
 s6-env CHILL_HOST=localhost
 s6-env CHILL_PORT=5000
@@ -121,13 +162,14 @@ s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
 s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
 /usr/local/bin/chill serve
 MEOW
+chmod +x /etc/services.d/chill-jengalaxyart/run
 
 cd $slugdir
 # install site root dir
 mkdir -p $slugdir/nginx/root
 mkdir -p /srv/$slugname
 mv $slugdir/nginx/root /srv/$slugname/
-chown -R nginx:ngnix /srv/$slugname/
+chown -R nginx:nginx /srv/$slugname/
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/$slugname/
 chown -R nginx:nginx /var/log/nginx/$slugname/
@@ -138,4 +180,27 @@ rm -rf $slugdir/nginx
 mkdir -p /srv/chillbox/$slugname
 chown -R nginx:nginx /srv/chillbox/$slugname/
 echo "$version" > /srv/chillbox/$slugname/version.txt
-SITE_INIT
+
+
+#chown -R nginx:nginx /etc/chillbox/templates/
+mkdir -p /srv/chillbox
+chown -R nginx:nginx /srv/chillbox/
+mkdir -p /var/cache/nginx
+chown -R nginx:nginx /var/cache/nginx
+mkdir -p /var/log/nginx/
+mkdir -p /var/log/nginx/chillbox/
+chown -R nginx:nginx /var/log/nginx/chillbox/
+rm -rf /etc/nginx/conf.d/
+mkdir -p /etc/nginx/conf.d/
+chown -R nginx:nginx /etc/nginx/conf.d/
+source /etc/chillbox/site_env_vars
+for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
+  template_file=$(basename $template_path)
+  envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
+done
+chown -R nginx:nginx /etc/nginx/conf.d/
+# No test when building
+#nginx -t
+
+rc-update add nginx default
+rc-service nginx start
