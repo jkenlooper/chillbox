@@ -41,8 +41,6 @@ for bucketname in $immutable_bucket_name $artifact_bucket_name; do
 done
 # TODO: make the $immutable_bucket_name public
 
-# TODO: create tmpdir and add chill-box artifacts like nginx.conf, templates,
-# sites, etc.. This is used in cloud-init for the chill-box server.
 chillbox_artifact=chillbox.$(cat VERSION).tar.gz
 if [ ! -e $chillbox_artifact ]; then
   tar -c -f $chillbox_artifact \
@@ -59,23 +57,6 @@ aws \
   s3://${artifact_bucket_name}/chillbox/
 
 ./bin/upload-version.sh
-
-# No longer need to do this
-#sites=$(find sites -type f -name '*.site.json')
-#for site_json in $sites; do
-#  slugname=${site_json%.site.json}
-#  slugname=${slugname#sites/}
-#  echo $slugname
-#  version="$(jq -r '.version' $site_json)"
-#
-#	aws \
-#    --endpoint-url "$endpoint_url" \
-#    --output json \
-#    s3api list-objects-v2 \
-#      --bucket $immutable_bucket_name \
-#      --prefix $slugname/$version/ \
-#      --delimiter '/'
-#done
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {
@@ -100,17 +81,25 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
 
 docker run -d --name chillbox --network chillboxnet -p 9081:80 chillbox
 
-echo "Sites running on http://localhost:9081"
-echo "http://localhost:9081/jengalaxyart/version.txt"
-echo "http://jengalaxyart.test:9081"
-
-# On remote chillbox host (only read access to S3)
-# - Download artifact tar.gz from S3
-# - Expand to new directory for the version
-# - chill init, load yaml
-# - add and enable, start the systemd service for new version
-# - stage the new version by updating NGINX environment variables
-# - run integration tests on staged version
-# - promote the staged version to production by updating NGINX environment variables
-# - remove old version
-# - write version to /srv/chillbox/$slugname/version.txt
+echo "
+Sites running on http://localhost:9081
+"
+for a in {0..3}; do
+  test $a -eq 0 || sleep 1
+  echo "Checking if chillbox is up."
+  curl --retry 3 --retry-connrefused --silent --show-error "http://localhost:9081/healthcheck/" || continue
+  break
+done
+sites=$(find sites -type f -name '*.site.json')
+for site_json in $sites; do
+  echo ""
+  slugname=${site_json%.site.json}
+  slugname=${slugname#sites/}
+  echo $slugname
+  echo "http://localhost:9081/$slugname/version.txt"
+  printf " Version: "
+  test -z $(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://localhost:9081/$slugname/version.txt") && echo "NO VERSION FOUND" && continue
+  curl --fail --show-error --no-progress-meter "http://localhost:9081/$slugname/version.txt"
+  echo "http://$slugname.test:9081"
+  curl --fail --show-error --silent --head "http://$slugname.test:9081" || continue
+done

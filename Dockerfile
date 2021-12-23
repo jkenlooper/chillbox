@@ -36,6 +36,7 @@ nginx -v
 NGINX
 
 ## chill
+# TODO: switch to released chill version
 #ARG PIP_CHILL="chill==0.9.0"
 ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 RUN <<CHILL
@@ -97,10 +98,17 @@ echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_e
 echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
 CHILLBOX
 
-ARG slugname="jengalaxyart"
-ARG server_name="jengalaxyart.test"
 WORKDIR /usr/local/src/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
+sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
+for site_json in $sites; do
+slugname=${site_json%.site.json}
+slugname=${slugname#/etc/chillbox/sites/}
+export slugname
+export server_name="$slugname.test"
+echo $slugname
+echo $server_name
+
 # no home, password, or shell for user
 adduser -D -h /dev/null -H -s /dev/null $slugname
 
@@ -135,11 +143,13 @@ cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/chill
-s6-env CHILL_HOST=localhost
-s6-env CHILL_PORT=5000
-s6-env CHILL_MEDIA_PATH=/media/
-s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
-s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
+MEOW
+jq -r \
+  '.chill_env[] | "s6-env " + .name + "=" + .value' \
+    /etc/chillbox/sites/$slugname.site.json \
+    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+      >> /etc/services.d/chill-$slugname/run
+cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
 
@@ -159,6 +169,7 @@ rm -rf $slugdir/nginx
 mkdir -p /srv/chillbox/$slugname
 chown -R nginx /srv/chillbox/$slugname/
 echo "$version" > /srv/chillbox/$slugname/version.txt
+done
 SITE_INIT
 
 
@@ -181,29 +192,7 @@ done
 chown -R nginx /etc/nginx/conf.d/
 NGINX_CONF
 
-
-## for each site
-# s3 cp the artifact
-#
-## Other apps that will run as services
-#COPY services/example /etc/services.d/example
-
-# fetch artifact file for each chill app
-
-# On remote chillbox host (only read access to S3)
-# - Download artifact tar.gz from S3
-# - Expand to new directory for the version
-# - chill init, load yaml
-# - add and enable, start the systemd service for new version
-# - stage the new version by updating NGINX environment variables
-# - run integration tests on staged version
-# - promote the staged version to production by updating NGINX environment variables
-# - remove old version
-# - write version to /srv/chillbox/$slugname/version.txt
-
-# On local
-# - Delete old immutable versioned path on S3
-
+# TODO: best practice is to not run a container as root user.
 RUN <<DEV_USER
 addgroup dev
 adduser -G dev -D dev

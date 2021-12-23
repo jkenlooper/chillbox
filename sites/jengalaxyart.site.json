@@ -10,6 +10,28 @@
     "www.jengalaxyart.com",
     "jengalaxyart.com"
   ],
+  "chill_env": [
+    {
+      "name": "CHILL_HOST",
+      "value": "localhost"
+    },
+    {
+      "name": "CHILL_PORT",
+      "value": "5000"
+    },
+    {
+      "name": "CHILL_MEDIA_PATH",
+      "value": "/media/"
+    },
+    {
+      "name": "CHILL_THEME_STATIC_PATH",
+      "value": "/theme/$version/"
+    },
+    {
+      "name": "CHILL_DESIGN_TOKENS_HOST",
+      "value": "/design-tokens/$version/"
+    }
+  ],
   "env": [
     {
       "name": "JENGALAXYART_SERVER_NAME",

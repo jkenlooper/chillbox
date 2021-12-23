@@ -25,4 +25,8 @@ server {
     # Show no content if version path doesn't exist.
     try_files $uri =204;
   }
+
+  location = /healthcheck/ {
+    return 200 "ok";
+  }
 }
