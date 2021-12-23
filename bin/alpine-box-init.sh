@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -o errexit
+
 apk update
 apk add sed attr grep
 
