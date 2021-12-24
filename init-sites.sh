@@ -55,7 +55,7 @@ aws \
   s3 cp $chillbox_artifact \
   s3://${artifact_bucket_name}/chillbox/
 
-./bin/upload-version.sh
+./upload-version.sh
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {
