@@ -1,6 +1,0 @@
-#!/usr/bin/execlineb -P
-
-# http://skarnet.org/software/execline/index.html
-
-nginx -g "daemon off;"
-

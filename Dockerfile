@@ -94,8 +94,8 @@ ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
 RUN <<CHILLBOX
-echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
-echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
+echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" > /etc/chillbox/site_env_vars
+echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
 CHILLBOX
 
 WORKDIR /usr/local/src/
@@ -117,72 +117,74 @@ tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 site
 
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
-slugname=${site_json%.site.json}
-slugname=${slugname#/etc/chillbox/sites/}
-export slugname
-export server_name="$slugname.test"
-echo "$slugname"
-echo "$server_name"
+  slugname=${site_json%.site.json}
+  slugname=${slugname#/etc/chillbox/sites/}
+  export slugname
+  export server_name="$slugname.test"
+  echo "$slugname"
+  echo "$server_name"
 
-# no home, password, or shell for user
-adduser -D -h /dev/null -H -s /dev/null "$slugname"
+  # no home, or password for user
+  adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
 
-echo "access key id $AWS_ACCESS_KEY_ID"
-aws --version
-export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
+  echo "access key id $AWS_ACCESS_KEY_ID"
+  aws --version
+  export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
 
-jq -r \
-  '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
-    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
-jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
+  jq -r \
+    '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
+      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
+  jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
 
-tmp_artifact=$(mktemp)
-aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
-  $tmp_artifact
-tar x -z -f $tmp_artifact
-rm $tmp_artifact
-slugdir=$PWD/$slugname
-chown -R $slugname:$slugname $slugdir
+  tmp_artifact=$(mktemp)
+  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+    s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
+    $tmp_artifact
+  tar x -z -f $tmp_artifact $slugname
+  rm $tmp_artifact
+  slugdir=$PWD/$slugname
+  chown -R $slugname:$slugname $slugdir
 
-# init chill
-cd $slugdir/chill
-echo $slugname
-su -p -s /bin/sh $slugname -c 'chill initdb'
-su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
+  # init chill
+  cd $slugdir/chill
+  echo $slugname
+  su -p -s /bin/sh $slugname -c 'chill initdb'
+  su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
 
-mkdir -p /etc/services.d/chill-$slugname
+  mkdir -p /etc/services.d/chill-$slugname
 
-cat <<MEOW > /etc/services.d/chill-$slugname/run
+  cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/chill
 MEOW
-jq -r \
-  '.chill_env[] | "s6-env " + .name + "=" + .value' \
-    /etc/chillbox/sites/$slugname.site.json \
-    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
-      >> /etc/services.d/chill-$slugname/run
-cat <<MEOW >> /etc/services.d/chill-$slugname/run
+  jq -r \
+    '.chill_env[] | "s6-env " + .name + "=" + .value' \
+      /etc/chillbox/sites/$slugname.site.json \
+      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+        >> /etc/services.d/chill-$slugname/run
+  cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
 
-cd $slugdir
-# install site root dir
-mkdir -p $slugdir/nginx/root
-mkdir -p /srv/$slugname
-mv $slugdir/nginx/root /srv/$slugname/
-chown -R nginx /srv/$slugname/
-mkdir -p /var/log/nginx/
-mkdir -p /var/log/nginx/$slugname/
-chown -R nginx /var/log/nginx/$slugname/
-# Install nginx templates that start with slugname
-mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/chillbox/templates/
-rm -rf $slugdir/nginx
-# Set version
-mkdir -p /srv/chillbox/$slugname
-chown -R nginx /srv/chillbox/$slugname/
-echo "$version" > /srv/chillbox/$slugname/version.txt
+  cd $slugdir
+  # install site root dir
+  mkdir -p $slugdir/nginx/root
+  rm -rf /srv/$slugname
+  mkdir -p /srv/$slugname
+  mv $slugdir/nginx/root /srv/$slugname/
+  chown -R nginx /srv/$slugname/
+  mkdir -p /var/log/nginx/
+  rm -rf /var/log/nginx/$slugname/
+  mkdir -p /var/log/nginx/$slugname/
+  chown -R nginx /var/log/nginx/$slugname/
+  # Install nginx templates that start with slugname
+  mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/chillbox/templates/
+  rm -rf $slugdir/nginx
+  # Set version
+  mkdir -p /srv/chillbox/$slugname
+  chown -R nginx /srv/chillbox/$slugname/
+  echo "$version" > /srv/chillbox/$slugname/version.txt
 done
 SITE_INIT
 

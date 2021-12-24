@@ -10,10 +10,8 @@ chillbox_host="http://localhost:8080"
 endpoint_url="http://localhost:9000"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
-AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export AWS_SECRET_ACCESS_KEY
+export AWS_ACCESS_KEY_ID=localvagrantaccesskey
+export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 
 aws configure set default.s3.max_concurrent_requests 1
 #aws configure set default.s3.max_bandwidth 1MB/s

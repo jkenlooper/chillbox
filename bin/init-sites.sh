@@ -47,6 +47,7 @@ if [ ! -e $chillbox_artifact ]; then
     default.nginx.conf \
     nginx.conf \
     templates \
+    bin \
     VERSION
 fi
 aws \
