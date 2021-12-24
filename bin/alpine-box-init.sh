@@ -46,6 +46,8 @@ export AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 export chillbox_artifact=chillbox.0.0.1-alpha.1.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
+#export PIP_CHILL="chill==0.9.0"
+export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 
 #apk add --no-cache gnupg gnupg-dirmngr
 
@@ -67,8 +69,7 @@ apk add \
   sqlite
 ln -s /usr/bin/python3 /usr/bin/python
 python --version
-#python -m pip install --disable-pip-version-check "chill==0.9.0"
-python -m pip install --disable-pip-version-check "git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
+python -m pip install --disable-pip-version-check "$PIP_CHILL"
 chill --version
 
 apk add jq aws-cli
@@ -93,17 +94,24 @@ tar -x -f $tmp_chillbox_artifact templates sites
 echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
 echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
 
-export slugname="jengalaxyart"
-export server_name="jengalaxyart.test"
-
-# no home, password, or shell for user
-adduser -D -H -s /dev/null $slugname
 
 mkdir -p /usr/local/src/
 cd /usr/local/src/
 
 echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
+
+sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
+for site_json in $sites; do
+slugname=${site_json%.site.json}
+slugname=${slugname#/etc/chillbox/sites/}
+export slugname
+export server_name="$slugname.test"
+echo "$slugname"
+echo "$server_name"
+
+# no home, password, or shell for user
+adduser -D -h /dev/null -H -s /dev/null "$slugname"
 export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
 
 jq -r \
@@ -122,10 +130,8 @@ chown -R $slugname:$slugname $slugdir
 
 # init chill
 cd $slugdir/chill
-su -s $SHELL -c '
-chill initdb
-chill load --yaml chill-data.yaml
-' $slugname
+su -p -s /bin/sh $slugname -c 'chill initdb'
+su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
 
 # Support s6 init scripts.
 # Only if not using container s6-overlay and using openrc instead.
@@ -153,15 +159,15 @@ cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/chill
-s6-env CHILL_HOST=localhost
-s6-env CHILL_PORT=5000
-s6-env CHILL_MEDIA_PATH=/media/
-s6-env CHILL_THEME_STATIC_PATH=/theme/$version/
-s6-env CHILL_DESIGN_TOKENS_HOST=/design-tokens/$version/
+MEOW
+jq -r \
+  '.chill_env[] | "s6-env " + .name + "=" + .value' \
+    /etc/chillbox/sites/$slugname.site.json \
+    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+      >> /etc/services.d/chill-$slugname/run
+cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
-
-#chmod +x /etc/services.d/chill-jengalaxyart/run
 
 cd $slugdir
 # install site root dir
@@ -179,6 +185,7 @@ rm -rf $slugdir/nginx
 mkdir -p /srv/chillbox/$slugname
 chown -R nginx:nginx /srv/chillbox/$slugname/
 echo "$version" > /srv/chillbox/$slugname/version.txt
+done
 
 
 mkdir -p /srv/chillbox

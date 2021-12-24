@@ -106,11 +106,11 @@ slugname=${site_json%.site.json}
 slugname=${slugname#/etc/chillbox/sites/}
 export slugname
 export server_name="$slugname.test"
-echo $slugname
-echo $server_name
+echo "$slugname"
+echo "$server_name"
 
 # no home, password, or shell for user
-adduser -D -h /dev/null -H -s /dev/null $slugname
+adduser -D -h /dev/null -H -s /dev/null "$slugname"
 
 source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
