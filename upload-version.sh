@@ -110,6 +110,7 @@ for site_json in $sites; do
 
 done
 
+cd $tmp_sites_dir
 sites_artifact=$(mktemp)
 tar -c -z -f $sites_artifact sites
 aws \

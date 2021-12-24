@@ -139,4 +139,12 @@ MEOW
   mkdir -p /srv/chillbox/$slugname
   chown -R nginx:nginx /srv/chillbox/$slugname/
   echo "$version" > /srv/chillbox/$slugname/version.txt
+
+  source /etc/chillbox/site_env_vars
+  for template_path in /etc/chillbox/templates/$slugname*.nginx.conf.template; do
+    template_file=$(basename $template_path)
+    envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
+  done
+  chown -R nginx:nginx /etc/nginx/conf.d/
+  nginx -s reload
 done
