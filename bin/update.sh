@@ -39,7 +39,7 @@ cd /usr/local/src/
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname=${site_json%.site.json}
-  slugname=${slugname#sites/}
+  slugname=${slugname#/etc/chillbox/sites/}
   export slugname
   export server_name="$slugname.test"
   echo $slugname
@@ -68,7 +68,7 @@ for site_json in $sites; do
     $tmp_artifact
 
   rc-service chill-$slugname status
-  $status=$?
+  status=$?
   if [ "$status" -eq "0" ]; then
     rc-service chill-$slugname stop || printf "Ignoring"
     rc-update del chill-$slugname default || printf "Ignoring"
@@ -117,6 +117,7 @@ MEOW
   cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
+  chmod +x /etc/services.d/chill-$slugname/run
   rc-update add chill-$slugname default
   rc-service chill-$slugname start
 

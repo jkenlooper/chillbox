@@ -182,6 +182,7 @@ MEOW
   cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
+  chmod +x /etc/services.d/chill-$slugname/run
   rc-update add chill-$slugname default
   rc-service chill-$slugname start
 

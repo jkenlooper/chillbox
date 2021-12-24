@@ -43,7 +43,7 @@ done
 
 chillbox_artifact=chillbox.$(cat VERSION).tar.gz
 if [ ! -e $chillbox_artifact ]; then
-  tar -c -f $chillbox_artifact \
+  tar -c -z -f $chillbox_artifact \
     default.nginx.conf \
     nginx.conf \
     templates \
