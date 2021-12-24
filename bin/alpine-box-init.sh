@@ -48,6 +48,7 @@ export chillbox_artifact=chillbox.0.0.1-alpha.1.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
+export SITES_ARTIFACT=chill-box-main.tar.gz
 
 #apk add --no-cache gnupg gnupg-dirmngr
 
@@ -83,13 +84,23 @@ aws \
   $tmp_chillbox_artifact
 
 cd /etc/nginx
-tar -o -x -f $tmp_chillbox_artifact nginx.conf
+tar x -z -f $tmp_chillbox_artifact nginx.conf
 
 mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar -x -f $tmp_chillbox_artifact default.nginx.conf
+tar x -z -f $tmp_chillbox_artifact default.nginx.conf
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
-tar -x -f $tmp_chillbox_artifact templates sites
+tar x -z -f $tmp_chillbox_artifact templates
+
+# TODO: make a backup directory of previous sites and then compare new sites to
+# find any sites that should be deleted. This would only be applicable to server
+# version; not docker version.
+tmp_sites_artifact=$(mktemp)
+aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+  s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
+  $tmp_sites_artifact
+mkdir -p /etc/chillbox/sites/
+tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
 echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
 echo '$CHILLBOX_SERVER_NAME' >> /etc/chillbox/site_env_names
@@ -123,7 +134,7 @@ tmp_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
   $tmp_artifact
-tar -x -f $tmp_artifact
+tar x -z -f $tmp_artifact
 rm $tmp_artifact
 slugdir=$PWD/$slugname
 chown -R $slugname:$slugname $slugdir
@@ -152,6 +163,7 @@ depend() {
 PURR
 chmod +x /etc/init.d/chill-$slugname
 rc-update add chill-$slugname default
+rc-service chill-$slugname start
 
 mkdir -p /etc/services.d/chill-$slugname
 

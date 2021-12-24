@@ -46,8 +46,6 @@ if [ ! -e $chillbox_artifact ]; then
   tar -c -f $chillbox_artifact \
     default.nginx.conf \
     nginx.conf \
-    requirements.txt \
-    sites \
     templates \
     VERSION
 fi
@@ -75,6 +73,7 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --build-arg S3_ENDPOINT_URL=http://minio:9000 \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
+  --build-arg SITES_ARTIFACT=chill-box-main.tar.gz \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   .
@@ -90,6 +89,9 @@ for a in {0..3}; do
   curl --retry 3 --retry-connrefused --silent --show-error "http://localhost:9081/healthcheck/" || continue
   break
 done
+tmp_sites_dir=$(mktemp -d)
+docker cp chillbox:/etc/chillbox/sites $tmp_sites_dir/sites
+cd $tmp_sites_dir
 sites=$(find sites -type f -name '*.site.json')
 for site_json in $sites; do
   echo ""
@@ -103,3 +105,4 @@ for site_json in $sites; do
   echo "http://$slugname.test:9081"
   curl --fail --show-error --silent --head "http://$slugname.test:9081" || continue
 done
+cd -

@@ -85,13 +85,13 @@ ENV CHILLBOX_SERVER_NAME=localhost
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY default.nginx.conf /etc/nginx/conf.d/default.conf
 COPY templates /etc/chillbox/templates
-COPY sites /etc/chillbox/sites
 
 ARG S3_ARTIFACT_ENDPOINT_URL
 ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
+ARG SITES_ARTIFACT
 
 RUN <<CHILLBOX
 echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" >> /etc/chillbox/site_env_vars
@@ -100,6 +100,21 @@ CHILLBOX
 
 WORKDIR /usr/local/src/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
+
+source /run/secrets/awscredentials
+
+set -o errexit
+
+# TODO: make a backup directory of previous sites and then compare new sites to
+# find any sites that should be deleted. This would only be applicable to server
+# version; not docker version.
+tmp_sites_artifact=$(mktemp)
+aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+  s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
+  $tmp_sites_artifact
+mkdir -p /etc/chillbox/sites/
+tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
+
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
 slugname=${site_json%.site.json}
@@ -112,7 +127,6 @@ echo "$server_name"
 # no home, password, or shell for user
 adduser -D -h /dev/null -H -s /dev/null "$slugname"
 
-source /run/secrets/awscredentials
 echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
 export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
@@ -126,7 +140,7 @@ tmp_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
   $tmp_artifact
-tar -x -f $tmp_artifact
+tar x -z -f $tmp_artifact
 rm $tmp_artifact
 slugdir=$PWD/$slugname
 chown -R $slugname:$slugname $slugdir

@@ -2,6 +2,10 @@
 
 set -o errexit
 
+# TODO: Temporarily using chill-box repo as the sites repo.
+sites_repo="git@github.com:jkenlooper/chill-box.git"
+sites_branch="main"
+
 chillbox_host="http://localhost:8080"
 endpoint_url="http://localhost:9000"
 immutable_bucket_name="chillboximmutable"
@@ -13,6 +17,10 @@ export AWS_SECRET_ACCESS_KEY
 
 aws configure set default.s3.max_concurrent_requests 1
 #aws configure set default.s3.max_bandwidth 1MB/s
+
+tmp_sites_dir=$(mktemp -d)
+git clone --depth 1 --single-branch --branch "$sites_branch" $sites_repo $tmp_sites_dir
+cd $tmp_sites_dir
 
 sites=$(find sites -type f -name '*.site.json')
 
@@ -104,3 +112,9 @@ for site_json in $sites; do
 
 done
 
+sites_artifact=$(mktemp)
+tar -c -z -f $sites_artifact sites
+aws \
+  --endpoint-url "$endpoint_url" \
+  s3 cp $sites_artifact  \
+  s3://${artifact_bucket_name}/_sites/$(basename ${sites_repo%.git})-$sites_branch.tar.gz
