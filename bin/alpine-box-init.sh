@@ -44,7 +44,7 @@ export S3_ENDPOINT_URL=http://10.0.0.145:9000
 export S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
 export AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export chillbox_artifact=chillbox.0.0.1-alpha.3.tar.gz
+export chillbox_artifact=chillbox.0.0.1-alpha.5.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
