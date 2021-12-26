@@ -91,6 +91,7 @@ ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
 ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
+# TODO: This needs to be updated in order for any new sites to be added.
 ARG SITES_ARTIFACT
 
 RUN <<CHILLBOX
