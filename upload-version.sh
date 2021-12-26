@@ -46,6 +46,7 @@ upload_artifact() {
 }
 
 for site_json in $sites; do
+  cd $tmp_sites_dir
   slugname=${site_json%.site.json}
   slugname=${slugname#sites/}
   echo $slugname
