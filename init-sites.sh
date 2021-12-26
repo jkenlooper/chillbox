@@ -10,11 +10,13 @@ export AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 
 # TODO: Temporarily using chill-box repo as the sites repo.
-sites_repo="git@github.com:jkenlooper/chill-box.git"
+sites_repo="git@github.com:jkenlooper/chillbox-sites-snowflake.git"
 sites_branch="main"
 
 aws configure set default.s3.max_concurrent_requests 1
 #aws configure set default.s3.max_bandwidth 1MB/s
+
+working_dir=$PWD
 
 cleanup () {
   echo 'cleanup'
@@ -181,6 +183,7 @@ export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 MEOW
 
+cd $working_dir
 # Use the '--network host' in order to connect to the local s3 (minio) when building.
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
