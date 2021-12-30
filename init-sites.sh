@@ -146,7 +146,7 @@ for site_json in $sites; do
 
   tmp_dir=$(mktemp -d)
   git_repo="$(jq -r '.git_repo' $site_json)"
-  git clone --depth 1 --single-branch --branch "$version" $git_repo $tmp_dir
+  git clone --depth 1 --single-branch --branch "$version" --recurse-submodules $git_repo $tmp_dir
   cd $tmp_dir
   make
 
