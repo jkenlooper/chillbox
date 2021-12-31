@@ -116,6 +116,7 @@ aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
+current_working_dir=/usr/local/src
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname=${site_json%.site.json}
@@ -124,6 +125,7 @@ for site_json in $sites; do
   export server_name="$slugname.test"
   echo "$slugname"
   echo "$server_name"
+  cd $current_working_dir
 
   # no home, or password for user
   adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
@@ -143,7 +145,7 @@ for site_json in $sites; do
     $tmp_artifact
   tar x -z -f $tmp_artifact $slugname
   rm $tmp_artifact
-  slugdir=$PWD/$slugname
+  slugdir=$current_working_dir/$slugname
   chown -R $slugname:$slugname $slugdir
 
   # init chill
@@ -152,21 +154,34 @@ for site_json in $sites; do
   su -p -s /bin/sh $slugname -c 'chill initdb'
   su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
 
-  mkdir -p /etc/services.d/chill-$slugname
 
-  cat <<MEOW > /etc/services.d/chill-$slugname/run
+  if [ "$(jq -r '.freeze // false' /etc/chillbox/sites/$slugname.site.json)" = "true" ]; then
+    echo 'freeze';
+    jq -r \
+      '.chill_env[] | "export " + .name + "=" + .value' \
+        /etc/chillbox/sites/$slugname.site.json \
+        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+          > .env
+    chown $slugname:$slugname .env
+    source .env
+    su -p -s /bin/sh $slugname -c 'chill freeze'
+  else
+    echo 'dynamic';
+    mkdir -p /etc/services.d/chill-$slugname
+    cat <<MEOW > /etc/services.d/chill-$slugname/run
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/chill
 MEOW
-  jq -r \
-    '.chill_env[] | "s6-env " + .name + "=" + .value' \
-      /etc/chillbox/sites/$slugname.site.json \
-      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
-        >> /etc/services.d/chill-$slugname/run
-  cat <<MEOW >> /etc/services.d/chill-$slugname/run
+    jq -r \
+      '.chill_env[] | "s6-env " + .name + "=" + .value' \
+        /etc/chillbox/sites/$slugname.site.json \
+        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+          >> /etc/services.d/chill-$slugname/run
+    cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
 MEOW
+  fi
 
   cd $slugdir
   # install site root dir
