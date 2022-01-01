@@ -19,7 +19,7 @@ export ARTIFACT_BUCKET_NAME="chillboxartifact"
 export S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
 export AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export SITES_ARTIFACT=chill-box-main.tar.gz
+export SITES_ARTIFACT=chillbox-sites-snowflake-main-32b7d88.tar.gz
 
 aws configure set default.s3.max_concurrent_requests 1
 

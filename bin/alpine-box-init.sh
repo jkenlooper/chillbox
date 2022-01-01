@@ -48,7 +48,7 @@ export chillbox_artifact=chillbox.0.0.1-beta.6.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
-SITES_ARTIFACT=chillbox-sites-snowflake-main-f6d0743.tar.gz
+export SITES_ARTIFACT=chillbox-sites-snowflake-main-32b7d88.tar.gz
 
 #apk add --no-cache gnupg gnupg-dirmngr
 
