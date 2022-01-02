@@ -13,7 +13,7 @@ tmp_md5sum=$(mktemp)
 echo "21f4b4b88df5d7fb89bf15df9a8a8c94  -" > $tmp_md5sum
 cat $tmp_acme_tar | md5sum --check $tmp_md5sum
 
-tar -x --strip-components=1 -f $tmp_acme_tar acme.sh-$ACME_SH_VERSION/acme.sh
+tar x -z -f $tmp_acme_tar --strip-components 1 acme.sh-$ACME_SH_VERSION/acme.sh
 
 mkdir -p /etc/acmesh
 mkdir -p /etc/acmesh/certs
@@ -23,19 +23,25 @@ mkdir -p /etc/acmesh/certs
   --no-profile \
   --home /etc/acmesh \
   --accountconf /etc/acmesh/account.conf \
-  --cert-home /etc/acmesh/certs \
+  --cert-home /etc/acmesh/certs
 
+domain_list=$(jq -r '.domain_list[]' /etc/chillbox/sites/$slugname.site.json)
+# Reset and add the --domain option for each to the $@ variable
+set -- ""
+for domain in $domain_list; do
+  set -- "$@" --domain $domain
+done
 
 
 ./acme.sh --issue \
   --server $LETS_ENCRYPT_SERVER \
-  --domain jengalaxyart.test \
+  "$@" \
   --webroot /srv/jengalaxyart/root/
 
 
 ./acme.sh --install-cert \
   --server $LETS_ENCRYPT_SERVER \
-  --domain jengalaxyart.test \
+  "$@" \
   --cert-file /etc/nginx/some-path.cer \
   --key-file /etc/nginx/some-path.key \
   --reloadcmd 'nginx -t && nginx -s reload' \

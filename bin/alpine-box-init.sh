@@ -35,20 +35,22 @@ DOAS_CONFIG
 sshd -t
 rc-service sshd restart
 
-export immutable_bucket_name="chillboximmutable"
+#export immutable_bucket_name="chillboximmutable"
 export IMMUTABLE_BUCKET_NAME="chillboximmutable"
-export artifact_bucket_name="chillboxartifact"
 export ARTIFACT_BUCKET_NAME="chillboxartifact"
-export endpoint_url="http://10.0.0.145:9000"
-export S3_ENDPOINT_URL=http://10.0.0.145:9000
-export S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
-export AWS_ACCESS_KEY_ID=localvagrantaccesskey
+export S3_ENDPOINT_URL="http://10.0.0.145:9000"
+export S3_ARTIFACT_ENDPOINT_URL="http://10.0.0.145:9000"
+export AWS_ACCESS_KEY_ID="localvagrantaccesskey"
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export chillbox_artifact=chillbox.0.0.1-beta.6.tar.gz
+export CHILLBOX_ARTIFACT=chillbox.0.0.1-beta.6.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 export SITES_ARTIFACT=chillbox-sites-snowflake-main-32b7d88.tar.gz
+export TECH_EMAIL="jake@weboftomorrow.com"
+export ACME_SH_VERSION="3.0.1"
+#export LETS_ENCRYPT_SERVER="letsencrypt"
+export LETS_ENCRYPT_SERVER="letsencrypt_test"
 
 #apk add --no-cache gnupg gnupg-dirmngr
 
@@ -73,14 +75,37 @@ python --version
 python -m pip install --disable-pip-version-check "$PIP_CHILL"
 chill --version
 
+## aws-cli, jq
 apk add jq aws-cli
 aws --version
 apk add gettext
 
+## letsencrypt acme.sh
+echo "letsencrypt acme.sh"
+mkdir -p /usr/local/bin/
+cd /usr/local/bin/
+tmp_acme_tar=$(mktemp)
+wget -O $tmp_acme_tar https://github.com/acmesh-official/acme.sh/archive/refs/tags/$ACME_SH_VERSION.tar.gz
+tmp_md5sum=$(mktemp)
+echo "21f4b4b88df5d7fb89bf15df9a8a8c94  -" > $tmp_md5sum
+cat $tmp_acme_tar | md5sum --check $tmp_md5sum
+tar x -z -f $tmp_acme_tar --strip-components 1 acme.sh-$ACME_SH_VERSION/acme.sh
+#mkdir -p /etc/acmesh
+#mkdir -p /etc/acmesh/certs
+acme.sh --install \
+  --email $TECH_EMAIL \
+  --server $LETS_ENCRYPT_SERVER \
+  --no-profile
+  #--home /etc/acmesh \
+  #--accountconf /etc/acmesh/account.conf \
+  #--cert-home /etc/acmesh/certs
+
+## chillbox artifact
+echo "chillbox artifact"
 tmp_chillbox_artifact=$(mktemp)
 aws \
-  --endpoint-url "$endpoint_url" \
-  s3 cp s3://${artifact_bucket_name}/chillbox/$chillbox_artifact \
+  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+  s3 cp s3://${ARTIFACT_BUCKET_NAME}/chillbox/$CHILLBOX_ARTIFACT \
   $tmp_chillbox_artifact
 
 cd /etc/nginx
@@ -112,7 +137,6 @@ echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
 mkdir -p /usr/local/src/
 cd /usr/local/src/
 
-echo "access key id $AWS_ACCESS_KEY_ID"
 aws --version
 
 # Support s6 init scripts.
@@ -237,5 +261,33 @@ for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
 
+# Create certs for all sites
+mkdir -p /var/lib/acmesh
+chown -R nginx:nginx /var/lib/acmesh
+for site_json in $sites; do
+  slugname=${site_json%.site.json}
+  slugname=${slugname#/etc/chillbox/sites/}
+  export slugname
+  domain_list=$(jq -r '.domain_list[]' $site_json)
+  # Reset and add the --domain option for each to the $@ variable
+  set -- ""
+  for domain in $domain_list; do
+    set -- "$@" --domain $domain
+  done
+
+  acme.sh --issue \
+    --server $LETS_ENCRYPT_SERVER \
+    "$@" \
+    --webroot /srv/$slugname/root/
+
+  acme.sh --install-cert \
+    --server $LETS_ENCRYPT_SERVER \
+    "$@" \
+    --cert-file /var/lib/acmesh/$slugname.cer \
+    --key-file /var/lib/acmesh/$slugname.key \
+    --reloadcmd 'nginx -t && nginx -s reload' \
+done
+
+nginx -t
 rc-update add nginx default
 rc-service nginx start
