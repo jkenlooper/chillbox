@@ -104,6 +104,7 @@ RUN --mount=type=secret,id=awscredentials <<SITE_INIT
 
 source /run/secrets/awscredentials
 
+set -v
 set -o errexit
 
 # TODO: make a backup directory of previous sites and then compare new sites to

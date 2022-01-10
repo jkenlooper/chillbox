@@ -9,6 +9,34 @@ addgroup dev
 adduser -G dev -D dev
 # TODO: Set password as expired to force user to reset when logging in
 
+# A box that has been provisioned via the cloud provider should already have
+# public keys added. This handles a locally provisioned box.
+if [ ! -e /root/.ssh/authorized_keys ]; then
+  mkdir -p /root/.ssh
+  for github_username in ${developer_ssh_key_github_list}; do
+    wget https://github.com/$github_username.keys -O - | tee -a /root/.ssh/authorized_keys
+  done
+  chown -R root:root /root/.ssh
+  chmod -R 700 /root/.ssh
+  chmod -R 644 /root/.ssh/authorized_keys
+fi
+
+# The dev user will also use the same keys as root.
+mkdir -p /home/dev/.ssh
+cp /root/.ssh/authorized_keys /home/dev/.ssh/
+chown -R dev:dev /home/dev/.ssh
+chmod -R 700 /home/dev/.ssh
+chmod -R 644 /home/dev/.ssh/authorized_keys
+
+# Use doas instead of sudo since sudo seems bloated.
+apk add doas
+cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
+permit persist dev as root
+DOAS_CONFIG
+
+# Configure sshd to only allow users with authorized_keys to ssh in. The root
+# user is blocked from logging in. PAM needs to be added and enabled for it to
+# work with the AuthorizedKeysFile and publickey method.
 apk add openssh-server-pam
 
 cat <<SSHD_CONFIG > /etc/ssh/sshd_config
@@ -21,33 +49,22 @@ PubkeyAuthentication yes
 UsePAM yes
 SSHD_CONFIG
 
-mkdir -p /home/dev/.ssh
-wget https://github.com/jkenlooper.keys -O - | tee -a /home/dev/.ssh/authorized_keys
-chown -R dev:dev /home/dev/.ssh
-chmod -R 700 /home/dev/.ssh
-chmod -R 644 /home/dev/.ssh/authorized_keys
-
-apk add doas
-cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
-permit persist dev as root
-DOAS_CONFIG
-
 sshd -t
 rc-service sshd restart
 
-#export immutable_bucket_name="chillboximmutable"
-export IMMUTABLE_BUCKET_NAME="chillboximmutable"
-export ARTIFACT_BUCKET_NAME="chillboxartifact"
+# TODO: move these to terraform vars
+export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
+export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
 export S3_ENDPOINT_URL="http://10.0.0.145:9000"
 export S3_ARTIFACT_ENDPOINT_URL="http://10.0.0.145:9000"
-export AWS_ACCESS_KEY_ID="localvagrantaccesskey"
-export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
+export AWS_ACCESS_KEY_ID="${access_key_id}"
+export AWS_SECRET_ACCESS_KEY="${secret_access_key}"
 export CHILLBOX_ARTIFACT=chillbox.0.0.1-beta.6.tar.gz
 export CHILLBOX_SERVER_NAME=10.0.0.192
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
-export SITES_ARTIFACT=chillbox-sites-snowflake-main-32b7d88.tar.gz
-export TECH_EMAIL="jake@weboftomorrow.com"
+export SITES_ARTIFACT="${sites_artifact}"
+export TECH_EMAIL="${tech_email}"
 export ACME_SH_VERSION="3.0.1"
 #export LETS_ENCRYPT_SERVER="letsencrypt"
 export LETS_ENCRYPT_SERVER="letsencrypt_test"
@@ -105,7 +122,7 @@ echo "chillbox artifact"
 tmp_chillbox_artifact=$(mktemp)
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp s3://${ARTIFACT_BUCKET_NAME}/chillbox/$CHILLBOX_ARTIFACT \
+  s3 cp s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT \
   $tmp_chillbox_artifact
 
 cd /etc/nginx
@@ -147,8 +164,8 @@ rc-update add s6-svscan boot
 current_working_dir=/usr/local/src
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
-  slugname=${site_json%.site.json}
-  slugname=${slugname#/etc/chillbox/sites/}
+  slugname=$${site_json%.site.json}
+  slugname=$${slugname#/etc/chillbox/sites/}
   export slugname
   export server_name="$slugname.test"
   echo "$slugname"
@@ -166,7 +183,7 @@ for site_json in $sites; do
 
   tmp_artifact=$(mktemp)
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
+    s3 cp s3://$ARTIFACT_BUCKET_NAME/$slugname/$slugname-$version.artifact.tar.gz \
     $tmp_artifact
   tar x -z -f $tmp_artifact $slugname
   rm $tmp_artifact
@@ -257,7 +274,7 @@ chown -R nginx:nginx /etc/nginx/conf.d/
 source /etc/chillbox/site_env_vars
 for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   template_file=$(basename $template_path)
-  envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
+  envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/$${template_file%.template}
 done
 chown -R nginx:nginx /etc/nginx/conf.d/
 
@@ -265,8 +282,8 @@ chown -R nginx:nginx /etc/nginx/conf.d/
 mkdir -p /var/lib/acmesh
 chown -R nginx:nginx /var/lib/acmesh
 for site_json in $sites; do
-  slugname=${site_json%.site.json}
-  slugname=${slugname#/etc/chillbox/sites/}
+  slugname=$${site_json%.site.json}
+  slugname=$${slugname#/etc/chillbox/sites/}
   export slugname
   domain_list=$(jq -r '.domain_list[]' $site_json)
   # Reset and add the --domain option for each to the $@ variable
