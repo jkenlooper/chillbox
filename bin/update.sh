@@ -6,14 +6,7 @@
 
 set -o errexit
 
-export IMMUTABLE_BUCKET_NAME="chillboximmutable"
-export ARTIFACT_BUCKET_NAME="chillboxartifact"
-export S3_ENDPOINT_URL=http://10.0.0.145:9000
-export S3_ARTIFACT_ENDPOINT_URL=http://10.0.0.145:9000
-export AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-export SITES_ARTIFACT=chillbox-sites-snowflake-main-32b7d88.tar.gz
-export CHILLBOX_SERVER_NAME=10.0.0.192
+source /home/dev/.env
 
 aws configure set default.s3.max_concurrent_requests 1
 

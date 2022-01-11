@@ -11,7 +11,7 @@ set -o errexit
 
 # Need to use a log file for stdout since the stdout will be parsed as JSON by
 # terraform external data source.
-BUILD_ARTIFACTS_LOG_FILE=build-artifacts.sh.log
+BUILD_ARTIFACTS_LOG_FILE=$PWD/build-artifacts.sh.log
 echo $(date) > $BUILD_ARTIFACTS_LOG_FILE
 
 test -n "$AWS_ACCESS_KEY_ID" || (echo "No AWS_ACCESS_KEY_ID set." && exit 1)
@@ -33,6 +33,7 @@ aws configure set default.s3.max_concurrent_requests 1
 
 working_dir=$PWD
 
+CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
 
 tmp_sites_dir=$(mktemp -d)
 git clone --depth 1 --single-branch --branch "$sites_branch" $sites_repo $tmp_sites_dir
@@ -41,21 +42,31 @@ cd $tmp_sites_dir
 sites_commit_id=$(git rev-parse --short HEAD)
 SITES_ARTIFACT=$(basename ${sites_repo%.git})-$sites_branch-$sites_commit_id.tar.gz
 
-# Check if sites artifact exists in s3 bucket and exit early if so.
+
+# Check if artifact files exists in s3 bucket and exit early if so.
 sites_artifact_exists=$(aws \
   --endpoint-url "$endpoint_url" \
   s3 ls \
   s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT || printf '')
-if [ -n "$sites_artifact_exists" ]; then
-  jq --null-input --arg sites_artifact "$SITES_ARTIFACT" '{sites_artifact:$sites_artifact}'
+chillbox_artifact_exists=$(aws \
+  --endpoint-url "$endpoint_url" \
+  s3 ls \
+  s3://${artifact_bucket_name}/chillbox/$CHILLBOX_ARTIFACT || printf '')
+if [ -n "$sites_artifact_exists" -a -n "$chillbox_artifact_exists" ]; then
+  jq --null-input \
+    --arg sites_artifact "$SITES_ARTIFACT" \
+    --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
+    '{
+      sites_artifact:$sites_artifact,
+      chillbox_artifact:$chillbox_artifact
+    }'
   echo "No changes to existing site artifact: $SITES_ARTIFACT" >> $BUILD_ARTIFACTS_LOG_FILE
   exit 0
 fi
 
 cd $working_dir
-chillbox_artifact=chillbox.$(cat VERSION).tar.gz
-if [ ! -e $chillbox_artifact ]; then
-  tar -c -z -f $chillbox_artifact \
+if [ ! -e $CHILLBOX_ARTIFACT ]; then
+  tar -c -z -f $CHILLBOX_ARTIFACT \
     default.nginx.conf \
     nginx.conf \
     templates \
@@ -65,7 +76,7 @@ fi
 #echo "endpoint_url = $endpoint_url"
 aws \
   --endpoint-url "$endpoint_url" \
-  s3 cp $chillbox_artifact \
+  s3 cp $CHILLBOX_ARTIFACT \
   s3://${artifact_bucket_name}/chillbox/ >> $BUILD_ARTIFACTS_LOG_FILE
 
 cd $tmp_sites_dir
@@ -171,4 +182,10 @@ aws \
   s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT >> $BUILD_ARTIFACTS_LOG_FILE
 
 echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $BUILD_ARTIFACTS_LOG_FILE
-jq --null-input --arg sites_artifact "$SITES_ARTIFACT" '{sites_artifact:$sites_artifact}'
+jq --null-input \
+  --arg sites_artifact "$SITES_ARTIFACT" \
+  --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  '{
+    sites_artifact:$sites_artifact,
+    chillbox_artifact:$chillbox_artifact
+  }'

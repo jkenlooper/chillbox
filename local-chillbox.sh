@@ -48,11 +48,8 @@ eval "$(jq --arg jq_immutable_bucket_name $immutable_bucket_name \
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
     chillbox_url: "",
-    sites_artifact: "TODO",
-}' | ./build-artifacts-test.sh | jq -r '@sh "SITES_ARTIFACT=\(.sites_artifact)"')"
+}' | ./build-artifacts.sh | jq -r '@sh "SITES_ARTIFACT=\(.sites_artifact)"')"
 echo $SITES_ARTIFACT
-
-exit 0
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {

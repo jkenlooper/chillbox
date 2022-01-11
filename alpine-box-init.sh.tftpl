@@ -52,15 +52,15 @@ SSHD_CONFIG
 sshd -t
 rc-service sshd restart
 
-# TODO: move these to terraform vars
+cat <<'ENVFILE' > /home/dev/.env
 export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
 export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
-export S3_ENDPOINT_URL="http://10.0.0.145:9000"
-export S3_ARTIFACT_ENDPOINT_URL="http://10.0.0.145:9000"
+export S3_ENDPOINT_URL="${s3_endpoint_url}"
+export S3_ARTIFACT_ENDPOINT_URL="${s3_endpoint_url}"
 export AWS_ACCESS_KEY_ID="${access_key_id}"
 export AWS_SECRET_ACCESS_KEY="${secret_access_key}"
-export CHILLBOX_ARTIFACT=chillbox.0.0.1-beta.6.tar.gz
-export CHILLBOX_SERVER_NAME=10.0.0.192
+export CHILLBOX_ARTIFACT="${chillbox_artifact}"
+export CHILLBOX_SERVER_NAME="${chillbox_hostname}"
 #export PIP_CHILL="chill==0.9.0"
 export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
 export SITES_ARTIFACT="${sites_artifact}"
@@ -68,6 +68,9 @@ export TECH_EMAIL="${tech_email}"
 export ACME_SH_VERSION="3.0.1"
 #export LETS_ENCRYPT_SERVER="letsencrypt"
 export LETS_ENCRYPT_SERVER="letsencrypt_test"
+ENVFILE
+chown dev:dev /home/dev/.env
+source /home/dev/.env
 
 #apk add --no-cache gnupg gnupg-dirmngr
 

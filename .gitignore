@@ -1,1 +1,9 @@
 /.vagrant
+/.terraform.lock.hcl
+/.terraform/
+/bin/alpine-box-init.sh
+/build-artifacts.sh.log
+/chillbox.*.tar.gz
+/crash.*.log
+/private.auto.tfvars
+/terraform.tfstate.d/

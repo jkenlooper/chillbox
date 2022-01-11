@@ -23,6 +23,10 @@ variable "app_secret_access_key" {
 variable "s3_endpoint_url" {
   type = string
   sensitive = false
+  validation {
+    condition = can(regex("https?://[^/]+", var.s3_endpoint_url))
+    error_message = "Must be a URL without a slash at the end."
+  }
 }
 variable "tech_email" {
   type        = string
@@ -32,6 +36,11 @@ variable "tech_email" {
 variable "chillbox_hostname" {
   type = string
   default = "todo.example.com"
+}
+variable "chillbox_url" {
+  type = string
+  default = ""
+  description = "The chillbox host URL. This will be an empty string if local."
 }
 
 

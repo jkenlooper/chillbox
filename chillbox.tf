@@ -11,5 +11,8 @@ resource "local_file" "alpine_box_init" {
     immutable_bucket_name: local.immutable_bucket_name,
     artifact_bucket_name: local.artifact_bucket_name,
     sites_artifact: data.external.build_artifacts.result.sites_artifact,
+    chillbox_artifact: data.external.build_artifacts.result.chillbox_artifact
+    s3_endpoint_url: var.s3_endpoint_url,
+    chillbox_hostname: var.chillbox_hostname,
   })
 }

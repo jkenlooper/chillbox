@@ -9,7 +9,7 @@ data "external" "build_artifacts" {
     immutable_bucket_name = local.immutable_bucket_name
     artifact_bucket_name= local.artifact_bucket_name
     endpoint_url="http://localhost:9000/"
-    chillbox_url="http://${var.chillbox_hostname}/"
+    chillbox_url="${var.chillbox_url}"
   }
 }
 
@@ -33,16 +33,16 @@ output "artifact_bucket_name" {
   value = local.artifact_bucket_name
   description = "Immutable bucket name is used by the NGINX server when serving a site's static resources."
 }
-output "chillbox_url" {
-  value = "http://${var.chillbox_hostname}/"
-  description = "The chillbox host URL."
-}
 output "endpoint_url" {
   # TODO
-  value = "http://localhost:9000/"
+  value = "http://10.0.0.145:9000/"
   description = "The S3 endpoint URL."
 }
 output "sites_artifact" {
   value = data.external.build_artifacts.result.sites_artifact
+  description = "Testing."
+}
+output "chillbox_artifact" {
+  value = data.external.build_artifacts.result.chillbox_artifact
   description = "Testing."
 }
