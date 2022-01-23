@@ -3,7 +3,7 @@
 set -o errexit
 
 apk update
-apk add sed attr grep
+apk add sed attr grep coreutils
 
 addgroup dev
 adduser -G dev -D dev
@@ -305,7 +305,7 @@ for site_json in $sites; do
     "$@" \
     --cert-file /var/lib/acmesh/$slugname.cer \
     --key-file /var/lib/acmesh/$slugname.key \
-    --reloadcmd 'nginx -t && nginx -s reload' \
+    --reloadcmd 'nginx -t && nginx -s reload'
 done
 
 nginx -t
