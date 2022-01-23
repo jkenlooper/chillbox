@@ -14,8 +14,16 @@ set -o errexit
 BUILD_ARTIFACTS_LOG_FILE=$PWD/build-artifacts.sh.log
 echo $(date) > $BUILD_ARTIFACTS_LOG_FILE
 
-test -n "$AWS_ACCESS_KEY_ID" || (echo "No AWS_ACCESS_KEY_ID set." && exit 1)
-test -n "$AWS_SECRET_ACCESS_KEY" || (echo "No AWS_SECRET_ACCESS_KEY set." && exit 1)
+showlog () {
+  # Terraform external data will need to echo to stderr to show the message to
+  # the user.
+  >&2 echo "See log file: $BUILD_ARTIFACTS_LOG_FILE for further details."
+  cat $BUILD_ARTIFACTS_LOG_FILE
+}
+trap showlog err
+
+test -n "$AWS_ACCESS_KEY_ID" || (echo "No AWS_ACCESS_KEY_ID set." >> $BUILD_ARTIFACTS_LOG_FILE && exit 1)
+test -n "$AWS_SECRET_ACCESS_KEY" || (echo "No AWS_SECRET_ACCESS_KEY set." >> $BUILD_ARTIFACTS_LOG_FILE && exit 1)
 
 # Extract and set shell variables from JSON input
 eval "$(jq -r '@sh "
@@ -116,7 +124,7 @@ for site_json in $sites; do
   # Only enable if not running local.
   if [ -n "$chillbox_url" ]; then
     version_url="${chillbox_url}$slugname/version.txt"
-    curl "$version_url" --head --silent --show-error || (echo "Error when getting $version_url" && exit 1)
+    curl "$version_url" --head --silent --show-error || (echo "Error when getting $version_url" >> $BUILD_ARTIFACTS_LOG_FILE && exit 1)
     deployed_version=$(curl "$version_url" --silent)
 
     if [ "$version" = "$deployed_version" ]; then
@@ -161,10 +169,10 @@ for site_json in $sites; do
   make >> $BUILD_ARTIFACTS_LOG_FILE
 
   immutable_archive_file=$tmp_dir/$slugname-$version.immutable.tar.gz
-  test -f $immutable_archive_file || (echo "No file at $immutable_archive_file" && exit 1)
+  test -f $immutable_archive_file || (echo "No file at $immutable_archive_file" >> $BUILD_ARTIFACTS_LOG_FILE && exit 1)
 
   artifact_file=$tmp_dir/$slugname-$version.artifact.tar.gz
-  test -f $artifact_file || (echo "No file at $artifact_file" && exit 1)
+  test -f $artifact_file || (echo "No file at $artifact_file" >> $BUILD_ARTIFACTS_LOG_FILE && exit 1)
 
   upload_immutable $immutable_archive_file
   upload_artifact $artifact_file

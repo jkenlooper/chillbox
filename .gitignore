@@ -1,4 +1,3 @@
-/.vagrant
 /.terraform.lock.hcl
 /.terraform/
 /bin/alpine-box-init.sh
