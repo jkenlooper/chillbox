@@ -8,50 +8,22 @@ variable "secret_access_key" {
   description = "S3 object storage secret access key. Keep this secure and use best practices when using these.  It is recommended to export an environment variable for this like TF_VAR_secret_access_key if you aren't entering it manually each time."
   sensitive   = true
 }
-variable "app_access_key_id" {
-  type        = string
-  description = "S3 object storage access key ID for the deployed application to use. These are stored on the server and used by the application to read and write to S3 object storage."
-  sensitive   = false
-  default     = "only-set-this-on-new-server-creation"
-}
-variable "app_secret_access_key" {
-  type        = string
-  description = "S3 object storage secret access key for the deployed application to use. These are stored on the server and used by the application to read and write to S3."
-  sensitive   = true
-  default     = "only-set-this-on-new-server-creation"
-}
-variable "s3_endpoint_url" {
-  type = string
-  sensitive = false
-  validation {
-    condition = can(regex("https?://[^/]+", var.s3_endpoint_url))
-    error_message = "Must be a URL without a slash at the end."
-  }
-}
 variable "tech_email" {
   type        = string
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
 }
 
-variable "chillbox_hostname" {
-  type = string
-  default = "todo.example.com"
-}
-variable "chillbox_url" {
-  type = string
-  default = ""
-  description = "The chillbox host URL. This will be an empty string if local."
-}
-
-
-variable "chillbox_artifact" {
-  description = ""
+variable "alpine_custom_image" {
+  description = "file name of the built alpine image from jkenlooper/alpine-droplet repo."
   type        = string
-  validation {
-    condition     = can(regex("chillbox.+\\.(tar\\.gz|bundle)", var.chillbox_artifact))
-    error_message = "Must be a file that was generated from the `make dist` command. The Development and Test environments will automatically create a git bundle instead."
-  }
 }
+
+variable "bucket_region" {
+  type        = string
+  description = "Bucket region."
+  default     = "nyc3"
+}
+
 
 variable "developer_ips" {
   description = "List of ips that will be allowed through the firewall on the SSH port."
@@ -78,6 +50,12 @@ variable "developer_ssh_key_github" {
   type        = list(string)
 }
 
+variable "developer_ssh_key_fingerprints" {
+  description = "The fingerprints of any public SSH keys that were added to the DigitalOcean account that should have access to the droplets."
+  type        = list(string)
+}
+
+
 variable "environment" {
   description = "Used as part of the name in the project as well as in the hostname of any created servers."
   type        = string
@@ -97,9 +75,21 @@ variable "project_environment" {
   }
 }
 
-variable "init_user_data_script" {
+variable "project_description" {
+  type        = string
+  default     = "Infrastructure for hosting websites that use Chill."
+  description = "Sets the DigitalOcean project description. Should be set to the current version that is being used."
+}
+
+variable "project_version" {
+  type        = string
+  default     = ""
+  description = "Appended to the end of the DigitialOcean project name."
+}
+
+variable "chillbox_droplet_size" {
   type    = string
-  default = ""
+  default = "s-1vcpu-1gb"
 }
 
 variable "region" {
@@ -109,13 +99,17 @@ variable "region" {
 
 variable "vpc_ip_range" {
   type    = string
-  default = "192.168.126.0/24"
+  default = "192.168.136.0/24"
 }
 
 variable "domain" {
-  default     = "massive.xyz"
+  default     = "example.com"
   description = "The domain that will be used when creating new DNS records."
   type        = string
+  validation {
+    condition     = can(regex("[a-zA-Z0-9_][a-zA-Z0-9._-]+[a-zA-Z0-9_]\\.[a-zA-Z0-9]+", var.domain))
+    error_message = "The domain must be a valid domain."
+  }
 }
 variable "sub_domain" {
   default     = "chillbox."
@@ -127,3 +121,12 @@ variable "sub_domain" {
   }
 }
 
+variable "dns_ttl" {
+  description = "DNS TTL to use for droplets. Minimum is 30 seconds. It is not recommended to use a value higher than 86400 (24 hours)."
+  default     = 3600
+  type        = number
+  validation {
+    condition     = can(var.dns_ttl >= 30)
+    error_message = "Values for DigitalOcean DNS TTLs must be at least 30 seconds."
+  }
+}
