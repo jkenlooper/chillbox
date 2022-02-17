@@ -2,6 +2,8 @@
 
 FROM alpine:3.15.0@sha256:21a3deaa0d32a8057914f36584b5288d2e5ecc984380bc0118285c70fa8c9300
 
+LABEL org.opencontainers.image.authors="Jake Hickenlooper <jake@weboftomorrow.com>"
+
 ## s6-overlay
 # https://github.com/just-containers/s6-overlay
 ARG S6_OVERLAY_RELEASE=v2.2.0.3
@@ -101,6 +103,14 @@ CHILLBOX
 
 WORKDIR /usr/local/src/
 RUN --mount=type=secret,id=awscredentials <<SITE_INIT
+apk update
+apk add --no-cache \
+  gcc \
+  python3 \
+  python3-dev \
+  libffi-dev \
+  build-base \
+  musl-dev
 
 source /run/secrets/awscredentials
 
@@ -131,7 +141,6 @@ for site_json in $sites; do
   # no home, or password for user
   adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
 
-  echo "access key id $AWS_ACCESS_KEY_ID"
   aws --version
   export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
 
@@ -184,6 +193,43 @@ chill serve
 MEOW
   fi
 
+  # init services
+  jq -c '.services // [] | .[]' /etc/chillbox/sites/$slugname.site.json \
+    | while read -r service_obj; do
+        test -n "${service_obj}" || continue
+
+
+        # Extract and set shell variables from JSON input
+        eval "$(echo $service_obj | jq -r '@sh "
+          service_name=\(.name)
+          service_lang=\(.lang)
+          service_handler=\(.handler)
+          "')"
+
+        cd $slugdir/${service_handler}
+
+        # Create the Flask config.py from the environment field
+        mkdir -p "/var/lib/${slugname}"
+        chown -R $slugname:$slugname "/var/lib/${slugname}"
+        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=" + .value' \
+          > "/var/lib/${slugname}/${service_name}.config.py"
+
+        python -m venv .venv
+        ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
+
+        # TODO: init_db only when first installing?
+        ./.venv/bin/flask init-db
+
+
+        cat <<PURR > /etc/services.d/{service_handler}-$slugname/run
+#!/usr/bin/execlineb -P
+s6-setuidgid $slugname
+cd $slugdir/${service_handler}
+./.venv/bin/${service_name}
+PURR
+
+      done
+
   cd $slugdir
   # install site root dir
   mkdir -p $slugdir/nginx/root
@@ -203,6 +249,13 @@ MEOW
   chown -R nginx /srv/chillbox/$slugname/
   echo "$version" > /srv/chillbox/$slugname/version.txt
 done
+
+apk --purge del \
+  gcc \
+  python3-dev \
+  libffi-dev \
+  build-base \
+  musl-dev
 SITE_INIT
 
 
