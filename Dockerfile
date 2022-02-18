@@ -102,7 +102,7 @@ echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
 CHILLBOX
 
 WORKDIR /usr/local/src/
-RUN --mount=type=secret,id=awscredentials <<SITE_INIT
+RUN --mount=type=secret,id=awscredentials --mount=type=secret,id=site_secrets <<SITE_INIT
 apk update
 apk add --no-cache \
   gcc \
@@ -114,7 +114,10 @@ apk add --no-cache \
 
 source /run/secrets/awscredentials
 
-set -v
+# Extract secrets to the /var/lib/
+mkdir -p /var/lib
+tar x -f /run/secrets/site_secrets -C /var/lib --strip-components=1
+
 set -o errexit
 
 # TODO: make a backup directory of previous sites and then compare new sites to
@@ -204,6 +207,7 @@ MEOW
           service_name=\(.name)
           service_lang=\(.lang)
           service_handler=\(.handler)
+          service_secrets_config=\(.secrets_config)
           "')"
 
         cd $slugdir/${service_handler}
@@ -211,20 +215,30 @@ MEOW
         # Create the Flask config.py from the environment field
         mkdir -p "/var/lib/${slugname}"
         chown -R $slugname:$slugname "/var/lib/${slugname}"
-        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=" + .value' \
+        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=\"" + .value + "\""' \
           > "/var/lib/${slugname}/${service_name}.config.py"
 
         python -m venv .venv
         ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
         # TODO: init_db only when first installing?
-        ./.venv/bin/flask init-db
+        FLASK_APP=${service_name}.app \
+        FLASK_ENV=production \
+        FLASK_INSTANCE_PATH=/var/lib/${slugname}/ \
+        SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config} \
+          ./.venv/bin/flask init-db
 
 
-        cat <<PURR > /etc/services.d/{service_handler}-$slugname/run
+        #TODO use ./.venv/bin/start or ./.venv/bin/${service_name} ?
+        mkdir -p /etc/services.d/${service_handler}-$slugname
+        cat <<PURR > /etc/services.d/${service_handler}-$slugname/run
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/${service_handler}
+s6-env FLASK_APP=${service_name}.app
+s6-env FLASK_ENV=production
+s6-env FLASK_INSTANCE_PATH=/var/lib/${slugname}/
+s6-env SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config}
 ./.venv/bin/${service_name}
 PURR
 
@@ -260,6 +274,9 @@ SITE_INIT
 
 
 RUN <<NGINX_CONF
+
+set -o errexit
+
 mkdir -p /srv/chillbox
 chown -R nginx /srv/chillbox/
 mkdir -p /var/cache/nginx

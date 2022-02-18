@@ -6,3 +6,4 @@
 /crash.*.log
 /private.auto.tfvars
 /terraform.tfstate.d/
+/local-secrets/

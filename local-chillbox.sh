@@ -55,11 +55,18 @@ tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {
   rm "$tmp_awscredentials"
 }
-trap remove_tmp_awscredentials err exit
+trap remove_tmp_awscredentials exit
 cat << MEOW > "$tmp_awscredentials"
 export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 MEOW
+
+tmp_site_secrets=$(mktemp)
+remove_tmp_site_secrets () {
+  rm "${tmp_site_secrets}"
+}
+trap remove_tmp_site_secrets exit
+tar c -z -f "${tmp_site_secrets}" local-secrets
 
 cd $working_dir
 # Use the '--network host' in order to connect to the local s3 (minio) when building.
@@ -72,6 +79,7 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
+  --secret=id=site_secrets,src="$tmp_site_secrets" \
   .
 
 docker run -d --name chillbox --network chillboxnet -p 9081:80 chillbox
