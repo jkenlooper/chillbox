@@ -56,6 +56,7 @@ apk add --no-cache \
   sqlite
 ln -s /usr/bin/python3 /usr/bin/python
 python --version
+pip install --upgrade pip
 python -m pip install --disable-pip-version-check "$PIP_CHILL"
 apk --purge del \
   gcc \
@@ -97,8 +98,19 @@ ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
 RUN <<CHILLBOX
-echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" > /etc/chillbox/site_env_vars
-echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
+cat <<SITE_ENV_VARS > /etc/chillbox/site_env_vars
+export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME
+#export S3_ENDPOINT_URL=$S3_ENDPOINT_URL
+#export IMMUTABLE_BUCKET_NAME=$IMMUTABLE_BUCKET_NAME
+#export ARTIFACT_BUCKET_NAME=$ARTIFACT_BUCKET_NAME
+SITE_ENV_VARS
+
+cat <<'SITE_ENV_NAMES' > /etc/chillbox/site_env_names
+$CHILLBOX_SERVER_NAME
+$S3_ENDPOINT_URL
+$IMMUTABLE_BUCKET_NAME
+$ARTIFACT_BUCKET_NAME
+SITE_ENV_NAMES
 CHILLBOX
 
 WORKDIR /usr/local/src/
@@ -110,7 +122,28 @@ apk add --no-cache \
   python3-dev \
   libffi-dev \
   build-base \
-  musl-dev
+  musl-dev \
+  zlib \
+  openjpeg \
+  libjpeg \
+  tiff \
+  freetype \
+  fribidi \
+  harfbuzz \
+  jpeg \
+  lcms2 \
+  tcl \
+  tk \
+  freetype-dev \
+  fribidi-dev \
+  harfbuzz-dev \
+  jpeg-dev \
+  lcms2-dev \
+  openjpeg-dev \
+  tcl-dev \
+  tiff-dev \
+  tk-dev \
+  zlib-dev
 
 source /run/secrets/awscredentials
 
@@ -149,7 +182,7 @@ for site_json in $sites; do
 
   jq -r \
     '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
-      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
+      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
   jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
 
   tmp_artifact=$(mktemp)
@@ -173,7 +206,7 @@ for site_json in $sites; do
     jq -r \
       '.chill_env[] | "export " + .name + "=" + .value' \
         /etc/chillbox/sites/$slugname.site.json \
-        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
           > .env
     chown $slugname:$slugname .env
     source .env
@@ -189,7 +222,7 @@ MEOW
     jq -r \
       '.chill_env[] | "s6-env " + .name + "=" + .value' \
         /etc/chillbox/sites/$slugname.site.json \
-        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' \
+        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
           >> /etc/services.d/chill-$slugname/run
     cat <<MEOW >> /etc/services.d/chill-$slugname/run
 chill serve
@@ -215,8 +248,16 @@ MEOW
         # Create the Flask config.py from the environment field
         mkdir -p "/var/lib/${slugname}"
         chown -R $slugname:$slugname "/var/lib/${slugname}"
-        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=\"" + .value + "\""' \
+
+         echo "from os import getenv" \
           > "/var/lib/${slugname}/${service_name}.config.py"
+        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=\"" + .value + "\""' \
+          >> "/var/lib/${slugname}/${service_name}.config.py"
+        cat <<S3SUPPORT >> "/var/lib/${slugname}/${service_name}.config.py"
+S3_ENDPOINT_URL = getenv("S3_ENDPOINT_URL")
+ARTIFACT_BUCKET_NAME = getenv("ARTIFACT_BUCKET_NAME")
+IMMUTABLE_BUCKET_NAME = getenv("IMMUTABLE_BUCKET_NAME")
+S3SUPPORT
 
         python -m venv .venv
         ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
@@ -225,9 +266,11 @@ MEOW
         FLASK_APP=${service_name}.app \
         FLASK_ENV=production \
         FLASK_INSTANCE_PATH=/var/lib/${slugname}/ \
+        S3_ENDPOINT_URL=$S3_ARTIFACT_ENDPOINT_URL \
         SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config} \
           ./.venv/bin/flask init-db
 
+        chown -R $slugname:$slugname "/var/lib/${slugname}/"
 
         #TODO use ./.venv/bin/start or ./.venv/bin/${service_name} ?
         mkdir -p /etc/services.d/${service_handler}-$slugname
@@ -236,9 +279,13 @@ MEOW
 s6-setuidgid $slugname
 cd $slugdir/${service_handler}
 s6-env FLASK_APP=${service_name}.app
-s6-env FLASK_ENV=production
+s6-env FLASK_ENV=development
+s6-env DEBUG=True
 s6-env FLASK_INSTANCE_PATH=/var/lib/${slugname}/
 s6-env SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config}
+s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
+s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 ./.venv/bin/${service_name}
 PURR
 
@@ -287,11 +334,19 @@ chown -R nginx /var/log/nginx/chillbox/
 rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
 chown -R nginx /etc/nginx/conf.d/
+
+cat <<'HISS' > dev.sh
+#!/usr/bin/env sh
 source /etc/chillbox/site_env_vars
 for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
   template_file=$(basename $template_path)
   envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
 done
+nginx -t
+nginx -g 'daemon off;'
+HISS
+
+chmod +x dev.sh
 chown -R nginx /etc/nginx/conf.d/
 NGINX_CONF
 
@@ -302,4 +357,5 @@ adduser -G dev -D dev
 DEV_USER
 #USER dev
 
-CMD ["nginx", "-g", "daemon off;"]
+#CMD ["nginx", "-g", "daemon off;"]
+CMD ["./dev.sh"]

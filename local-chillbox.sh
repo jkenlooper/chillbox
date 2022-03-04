@@ -72,8 +72,8 @@ cd $working_dir
 # Use the '--network host' in order to connect to the local s3 (minio) when building.
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
-  --build-arg S3_ARTIFACT_ENDPOINT_URL=http://$(hostname -I | cut -f1 -d ' '):9000 \
-  --build-arg S3_ENDPOINT_URL=http://minio:9000 \
+  --build-arg S3_ARTIFACT_ENDPOINT_URL="http://$(hostname -I | cut -f1 -d ' '):9000"  \
+  --build-arg S3_ENDPOINT_URL="http://minio:9000" \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
@@ -82,7 +82,12 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --secret=id=site_secrets,src="$tmp_site_secrets" \
   .
 
-docker run -d --name chillbox --network chillboxnet -p 9081:80 chillbox
+docker run -d --tty --name chillbox \
+  -e S3_ENDPOINT_URL="http://minio:9000" \
+  -e ARTIFACT_BUCKET_NAME="chillboxartifact" \
+  -e IMMUTABLE_BUCKET_NAME="chillboximmutable" \
+  --network chillboxnet \
+  -p 9081:80 chillbox
 
 echo "
 Sites running on http://localhost:9081
