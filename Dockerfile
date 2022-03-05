@@ -194,100 +194,87 @@ for site_json in $sites; do
   slugdir=$current_working_dir/$slugname
   chown -R $slugname:$slugname $slugdir
 
-  # init chill
-  cd $slugdir/chill
-  echo $slugname
-  su -p -s /bin/sh $slugname -c 'chill initdb'
-  su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
-
-
-  if [ "$(jq -r '.freeze // false' /etc/chillbox/sites/$slugname.site.json)" = "true" ]; then
-    echo 'freeze';
-    jq -r \
-      '.chill_env[] | "export " + .name + "=" + .value' \
-        /etc/chillbox/sites/$slugname.site.json \
-        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
-          > .env
-    chown $slugname:$slugname .env
-    source .env
-    su -p -s /bin/sh $slugname -c 'chill freeze'
-  else
-    echo 'dynamic';
-    mkdir -p /etc/services.d/chill-$slugname
-    cat <<MEOW > /etc/services.d/chill-$slugname/run
-#!/usr/bin/execlineb -P
-s6-setuidgid $slugname
-cd $slugdir/chill
-MEOW
-    jq -r \
-      '.chill_env[] | "s6-env " + .name + "=" + .value' \
-        /etc/chillbox/sites/$slugname.site.json \
-        | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
-          >> /etc/services.d/chill-$slugname/run
-    cat <<MEOW >> /etc/services.d/chill-$slugname/run
-chill serve
-MEOW
-  fi
-
   # init services
   jq -c '.services // [] | .[]' /etc/chillbox/sites/$slugname.site.json \
     | while read -r service_obj; do
         test -n "${service_obj}" || continue
 
-
         # Extract and set shell variables from JSON input
         eval "$(echo $service_obj | jq -r '@sh "
           service_name=\(.name)
-          service_lang=\(.lang)
+          service_lang_template=\(.lang)
           service_handler=\(.handler)
           service_secrets_config=\(.secrets_config)
           "')"
+        eval $(echo $service_obj | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""')
 
         cd $slugdir/${service_handler}
+        if [ "${service_lang_template}" = "flask" ]; then
 
-        # Create the Flask config.py from the environment field
-        mkdir -p "/var/lib/${slugname}"
-        chown -R $slugname:$slugname "/var/lib/${slugname}"
+          mkdir -p "/var/lib/${slugname}/${service_handler}"
+          chown -R $slugname:$slugname "/var/lib/${slugname}"
 
-         echo "from os import getenv" \
-          > "/var/lib/${slugname}/${service_name}.config.py"
-        echo $service_obj | jq -r '.environment // [] | .[] | .name + "=\"" + .value + "\""' \
-          >> "/var/lib/${slugname}/${service_name}.config.py"
-        cat <<S3SUPPORT >> "/var/lib/${slugname}/${service_name}.config.py"
-S3_ENDPOINT_URL = getenv("S3_ENDPOINT_URL")
-ARTIFACT_BUCKET_NAME = getenv("ARTIFACT_BUCKET_NAME")
-IMMUTABLE_BUCKET_NAME = getenv("IMMUTABLE_BUCKET_NAME")
-S3SUPPORT
+          python -m venv .venv
+          ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
-        python -m venv .venv
-        ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
+          # TODO: init_db only when first installing?
+          HOST=localhost \
+          FLASK_ENV="development" \
+          FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
+          S3_ENDPOINT_URL=$S3_ARTIFACT_ENDPOINT_URL \
+          SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config} \
+            ./.venv/bin/flask init-db
 
-        # TODO: init_db only when first installing?
-        FLASK_APP=${service_name}.app \
-        FLASK_ENV=production \
-        FLASK_INSTANCE_PATH=/var/lib/${slugname}/ \
-        S3_ENDPOINT_URL=$S3_ARTIFACT_ENDPOINT_URL \
-        SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config} \
-          ./.venv/bin/flask init-db
+          chown -R $slugname:$slugname "/var/lib/${slugname}/"
 
-        chown -R $slugname:$slugname "/var/lib/${slugname}/"
-
-        #TODO use ./.venv/bin/start or ./.venv/bin/${service_name} ?
-        mkdir -p /etc/services.d/${service_handler}-$slugname
-        cat <<PURR > /etc/services.d/${service_handler}-$slugname/run
+          mkdir -p /etc/services.d/${slugname}-${service_name}
+          cat <<PURR > /etc/services.d/${slugname}-${service_name}/run
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/${service_handler}
-s6-env FLASK_APP=${service_name}.app
+PURR
+          echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
+            >> /etc/services.d/${slugname}-${service_name}/run
+          cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
+s6-env HOST=localhost \
 s6-env FLASK_ENV=development
-s6-env DEBUG=True
-s6-env FLASK_INSTANCE_PATH=/var/lib/${slugname}/
+s6-env FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}"
 s6-env SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
-./.venv/bin/${service_name}
+./.venv/bin/start
 PURR
+        elif [ "${service_lang_template}" = "chill" ]; then
+
+          # init chill
+          su -p -s /bin/sh $slugname -c 'chill initdb'
+          su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
+
+          if [ "${freeze}" = "true" ]; then
+            echo 'freeze';
+            su -p -s /bin/sh $slugname -c 'chill freeze'
+          else
+            echo 'dynamic';
+            mkdir -p /etc/services.d/${slugname}-${service_name}
+
+            cat <<MEOW > /etc/services.d/${slugname}-${service_name}/run
+#!/usr/bin/execlineb -P
+s6-setuidgid $slugname
+cd $slugdir/${service_handler}
+MEOW
+            echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
+              | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
+              >> /etc/services.d/${slugname}-${service_name}/run
+            cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
+chill serve
+PURR
+          fi
+
+        else
+          echo "ERROR: The service 'lang' template: '${service_lang_template}' is not supported!"
+          exit 12
+        fi
 
       done
 
