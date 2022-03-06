@@ -98,19 +98,15 @@ ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
 RUN <<CHILLBOX
-cat <<SITE_ENV_VARS > /etc/chillbox/site_env_vars
-export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME
-#export S3_ENDPOINT_URL=$S3_ENDPOINT_URL
-#export IMMUTABLE_BUCKET_NAME=$IMMUTABLE_BUCKET_NAME
-#export ARTIFACT_BUCKET_NAME=$ARTIFACT_BUCKET_NAME
-SITE_ENV_VARS
-
-cat <<'SITE_ENV_NAMES' > /etc/chillbox/site_env_names
+cat <<'ENV_NAMES' > /etc/chillbox/env_names
 $CHILLBOX_SERVER_NAME
 $S3_ENDPOINT_URL
 $IMMUTABLE_BUCKET_NAME
 $ARTIFACT_BUCKET_NAME
-SITE_ENV_NAMES
+$slugname
+$version
+$server_name
+ENV_NAMES
 CHILLBOX
 
 WORKDIR /usr/local/src/
@@ -179,11 +175,6 @@ for site_json in $sites; do
 
   aws --version
   export version="$(jq -r '.version' /etc/chillbox/sites/$slugname.site.json)"
-
-  jq -r \
-    '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
-      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
-  jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
 
   tmp_artifact=$(mktemp)
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
@@ -264,11 +255,12 @@ s6-setuidgid $slugname
 cd $slugdir/${service_handler}
 MEOW
             echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
-              | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $ARTIFACT_BUCKET_NAME $slugname $version $server_name' \
+              | envsubst "$(cat /etc/chillbox/env_names | xargs)" \
               >> /etc/services.d/${slugname}-${service_name}/run
             cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
 chill serve
 PURR
+            cat /etc/services.d/${slugname}-${service_name}/run
           fi
 
         else
@@ -322,16 +314,44 @@ rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
 chown -R nginx /etc/nginx/conf.d/
 
+cat <<'HISS' > reload-templates.sh
+#!/usr/bin/env sh
+
+sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
+for site_json in $sites; do
+  slugname=${site_json%.site.json}
+  slugname=${slugname#/etc/chillbox/sites/}
+  export slugname
+  export server_name="$slugname.test"
+  export version="$(jq -r '.version' $site_json)"
+
+  eval $(jq -r \
+      '.env[] | "export " + .name + "=" + .value' $site_json \
+        | envsubst "$(cat /etc/chillbox/env_names | xargs)")
+
+  site_env_names=$(jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs)
+  site_env_names="$(cat /etc/chillbox/env_names | xargs) $site_env_names"
+
+  template_path=/etc/chillbox/templates/$slugname.nginx.conf.template
+  template_file=$(basename $template_path)
+  envsubst "${site_env_names}" < $template_path > /etc/nginx/conf.d/${template_file%.template}
+done
+
+template_path=/etc/chillbox/templates/chillbox.nginx.conf.template
+template_file=$(basename $template_path)
+envsubst '$CHILLBOX_SERVER_NAME' < $template_path > /etc/nginx/conf.d/${template_file%.template}
+HISS
+
 cat <<'HISS' > dev.sh
 #!/usr/bin/env sh
-source /etc/chillbox/site_env_vars
-for template_path in /etc/chillbox/templates/*.nginx.conf.template; do
-  template_file=$(basename $template_path)
-  envsubst "$(cat /etc/chillbox/site_env_names)" < $template_path > /etc/nginx/conf.d/${template_file%.template}
-done
+
+/usr/local/src/reload-templates.sh
 nginx -t
 nginx -g 'daemon off;'
 HISS
+
+chmod +x reload-templates.sh
+/usr/local/src/reload-templates.sh
 
 chmod +x dev.sh
 chown -R nginx /etc/nginx/conf.d/
@@ -341,6 +361,7 @@ NGINX_CONF
 RUN <<DEV_USER
 addgroup dev
 adduser -G dev -D dev
+chown dev:dev /etc/chillbox/env_names
 DEV_USER
 #USER dev
 
