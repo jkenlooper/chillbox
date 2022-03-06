@@ -207,7 +207,8 @@ for site_json in $sites; do
           service_handler=\(.handler)
           service_secrets_config=\(.secrets_config)
           "')"
-        eval $(echo $service_obj | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""')
+        eval $(echo $service_obj | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
+          | envsubst "$(cat /etc/chillbox/env_names | xargs)")
 
         cd $slugdir/${service_handler}
         if [ "${service_lang_template}" = "flask" ]; then
@@ -235,6 +236,7 @@ s6-setuidgid $slugname
 cd $slugdir/${service_handler}
 PURR
           echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
+            | envsubst "$(cat /etc/chillbox/env_names | xargs)" \
             >> /etc/services.d/${slugname}-${service_name}/run
           cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
 s6-env HOST=localhost \
