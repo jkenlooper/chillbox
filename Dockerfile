@@ -28,7 +28,7 @@ apk --purge del \
 S6_OVERLAY
 ENTRYPOINT [ "/init" ]
 
-## nginx
+## RUN NGINX
 EXPOSE 80
 RUN <<NGINX
 apk update
@@ -37,7 +37,7 @@ apk add --no-cache \
 nginx -v
 NGINX
 
-## chill
+## RUN CHILL
 # TODO: switch to released chill version
 #ARG PIP_CHILL="chill==0.9.0"
 ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
@@ -69,7 +69,7 @@ apk --purge del \
 chill --version
 CHILL
 
-## aws cli
+## RUN AWS_CLI
 RUN <<AWS_CLI
 apk update
 apk add --no-cache \
@@ -78,26 +78,16 @@ apk add --no-cache \
 aws --version
 AWS_CLI
 
-# gettext includes envsubst
+## RUN SUPPORT_ENVSUBST
 RUN <<SUPPORT_ENVSUBST
 apk update
+# gettext includes envsubst
 apk add gettext
 SUPPORT_ENVSUBST
 
-ENV CHILLBOX_SERVER_NAME=localhost
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY default.nginx.conf /etc/nginx/conf.d/default.conf
-COPY templates /etc/chillbox/templates
-
-ARG S3_ARTIFACT_ENDPOINT_URL
-ARG S3_ENDPOINT_URL
-ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
-ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
-ARG ARTIFACT_BUCKET_NAME=chillboxartifact
-# TODO: This needs to be updated in order for any new sites to be added.
-ARG SITES_ARTIFACT
-
-RUN <<CHILLBOX
+## RUN CHILLBOX_ENV_NAMES
+RUN <<CHILLBOX_ENV_NAMES
+mkdir -p /etc/chillbox
 cat <<'ENV_NAMES' > /etc/chillbox/env_names
 $CHILLBOX_SERVER_NAME
 $S3_ENDPOINT_URL
@@ -107,10 +97,10 @@ $slugname
 $version
 $server_name
 ENV_NAMES
-CHILLBOX
+CHILLBOX_ENV_NAMES
 
-WORKDIR /usr/local/src/
-RUN --mount=type=secret,id=awscredentials --mount=type=secret,id=site_secrets <<SITE_INIT
+## RUN SERVICES_DEPENDENCIES
+RUN <<SERVICES_DEPENDENCIES
 apk update
 apk add --no-cache \
   gcc \
@@ -140,6 +130,26 @@ apk add --no-cache \
   tiff-dev \
   tk-dev \
   zlib-dev
+SERVICES_DEPENDENCIES
+
+ENV CHILLBOX_SERVER_NAME=localhost
+ARG S3_ARTIFACT_ENDPOINT_URL
+ARG S3_ENDPOINT_URL
+ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
+ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
+ARG ARTIFACT_BUCKET_NAME=chillboxartifact
+ARG SITES_ARTIFACT
+
+## COPY chillbox artifact
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY default.nginx.conf /etc/nginx/conf.d/default.conf
+COPY templates /etc/chillbox/templates
+COPY bin /etc/chillbox/bin
+
+WORKDIR /usr/local/src/
+
+## RUN SITE_INIT
+RUN --mount=type=secret,id=awscredentials --mount=type=secret,id=site_secrets <<SITE_INIT
 
 source /run/secrets/awscredentials
 
@@ -247,6 +257,7 @@ PURR
             su -p -s /bin/sh $slugname -c 'chill freeze'
           else
             echo 'dynamic';
+
             mkdir -p /etc/services.d/${slugname}-${service_name}
 
             cat <<MEOW > /etc/services.d/${slugname}-${service_name}/run
@@ -260,7 +271,6 @@ MEOW
             cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
 chill serve
 PURR
-            cat /etc/services.d/${slugname}-${service_name}/run
           fi
 
         else
@@ -299,6 +309,7 @@ apk --purge del \
 SITE_INIT
 
 
+## RUN NGINX_CONF
 RUN <<NGINX_CONF
 
 set -o errexit
@@ -357,12 +368,13 @@ chmod +x dev.sh
 chown -R nginx /etc/nginx/conf.d/
 NGINX_CONF
 
-# TODO: best practice is to not run a container as root user.
+## RUN DEV_USER
 RUN <<DEV_USER
 addgroup dev
 adduser -G dev -D dev
-chown dev:dev /etc/chillbox/env_names
+chown dev /etc/chillbox/env_names
 DEV_USER
+# TODO: best practice is to not run a container as root user.
 #USER dev
 
 #CMD ["nginx", "-g", "daemon off;"]
