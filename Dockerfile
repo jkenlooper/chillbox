@@ -90,12 +90,14 @@ RUN <<CHILLBOX_ENV_NAMES
 mkdir -p /etc/chillbox
 cat <<'ENV_NAMES' > /etc/chillbox/env_names
 $CHILLBOX_SERVER_NAME
+$CHILLBOX_SERVER_PORT
 $S3_ENDPOINT_URL
 $IMMUTABLE_BUCKET_NAME
 $ARTIFACT_BUCKET_NAME
 $slugname
 $version
 $server_name
+$server_port
 ENV_NAMES
 CHILLBOX_ENV_NAMES
 
@@ -133,6 +135,7 @@ apk add --no-cache \
 SERVICES_DEPENDENCIES
 
 ENV CHILLBOX_SERVER_NAME=localhost
+ENV CHILLBOX_SERVER_PORT=80
 ARG S3_ARTIFACT_ENDPOINT_URL
 ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
@@ -330,6 +333,7 @@ chown -R nginx /etc/nginx/conf.d/
 cat <<'HISS' > reload-templates.sh
 #!/usr/bin/env sh
 
+export server_port=$CHILLBOX_SERVER_PORT
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname=${site_json%.site.json}
@@ -352,7 +356,7 @@ done
 
 template_path=/etc/chillbox/templates/chillbox.nginx.conf.template
 template_file=$(basename $template_path)
-envsubst '$CHILLBOX_SERVER_NAME' < $template_path > /etc/nginx/conf.d/${template_file%.template}
+envsubst '$CHILLBOX_SERVER_NAME $CHILLBOX_SERVER_PORT' < $template_path > /etc/nginx/conf.d/${template_file%.template}
 HISS
 
 cat <<'HISS' > dev.sh

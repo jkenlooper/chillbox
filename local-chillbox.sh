@@ -2,6 +2,7 @@
 
 set -o errexit
 
+app_port=9081
 working_dir=$PWD
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
@@ -86,16 +87,17 @@ docker run -d --tty --name chillbox \
   -e S3_ENDPOINT_URL="http://minio:9000" \
   -e ARTIFACT_BUCKET_NAME="chillboxartifact" \
   -e IMMUTABLE_BUCKET_NAME="chillboximmutable" \
+  -e CHILLBOX_SERVER_PORT=$app_port \
   --network chillboxnet \
-  -p 9081:80 chillbox
+  -p $app_port:$app_port chillbox
 
 echo "
-Sites running on http://localhost:9081
+Sites running on http://localhost:$app_port
 "
 for a in {0..3}; do
   test $a -eq 0 || sleep 1
   echo "Checking if chillbox is up."
-  curl --retry 3 --retry-connrefused --silent --show-error "http://localhost:9081/healthcheck/" || continue
+  curl --retry 3 --retry-connrefused --silent --show-error "http://localhost:$app_port/healthcheck/" || continue
   break
 done
 tmp_sites_dir=$(mktemp -d)
@@ -107,11 +109,11 @@ for site_json in $sites; do
   slugname=${site_json%.site.json}
   slugname=${slugname#sites/}
   echo $slugname
-  echo "http://localhost:9081/$slugname/version.txt"
+  echo "http://localhost:$app_port/$slugname/version.txt"
   printf " Version: "
-  test -z $(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://localhost:9081/$slugname/version.txt") && echo "NO VERSION FOUND" && continue
-  curl --fail --show-error --no-progress-meter "http://localhost:9081/$slugname/version.txt"
-  echo "http://$slugname.test:9081"
-  curl --fail --show-error --silent --head "http://$slugname.test:9081" || continue
+  test -z $(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://localhost:$app_port/$slugname/version.txt") && echo "NO VERSION FOUND" && continue
+  curl --fail --show-error --no-progress-meter "http://localhost:$app_port/$slugname/version.txt"
+  echo "http://$slugname.test:$app_port"
+  curl --fail --show-error --silent --head "http://$slugname.test:$app_port" || continue
 done
 cd -
