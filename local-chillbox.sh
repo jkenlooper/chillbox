@@ -78,6 +78,7 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
+  --build-arg CHILLBOX_SERVER_PORT=$app_port \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   --secret=id=site_secrets,src="$tmp_site_secrets" \

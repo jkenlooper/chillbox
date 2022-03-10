@@ -135,7 +135,8 @@ apk add --no-cache \
 SERVICES_DEPENDENCIES
 
 ENV CHILLBOX_SERVER_NAME=localhost
-ENV CHILLBOX_SERVER_PORT=80
+ARG CHILLBOX_SERVER_PORT=80
+ENV CHILLBOX_SERVER_PORT=$CHILLBOX_SERVER_PORT
 ARG S3_ARTIFACT_ENDPOINT_URL
 ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
@@ -172,6 +173,7 @@ aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
+export server_port=$CHILLBOX_SERVER_PORT
 current_working_dir=/usr/local/src
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
@@ -284,6 +286,27 @@ PURR
         fi
 
       done
+
+  eval $(jq -r \
+      '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
+        | envsubst "$(cat /etc/chillbox/env_names | xargs)")
+
+  site_env_names=$(jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs)
+  site_env_names="$(cat /etc/chillbox/env_names | xargs) $site_env_names"
+
+  # Set crontab
+  tmpcrontab=$(mktemp)
+  # Preserve any existing crontab entries
+  crontab -u $slugname -l || printf '' > $tmpcrontab
+  # Append all crontab entries, use envsubst replacements
+  jq -r '.crontab // [] | .[]' /etc/chillbox/sites/$slugname.site.json  \
+    | envsubst "${site_env_names}" \
+    | while read -r crontab_entry; do
+        test -n "${crontab_entry}" || continue
+        echo "${crontab_entry}" >> $tmpcrontab
+      done
+  cat $tmpcrontab | crontab -u $slugname -
+  rm -f $tmpcrontab
 
   cd $slugdir
   # install site root dir
