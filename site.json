@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chillbox.massive.xyz/site.json",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "git_repo",
+    "contact",
+    "domain_list"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "The name schema",
+      "description": "Name of site."
+    },
+    "version": {
+      "type": "string",
+      "title": "The version schema",
+      "description": "Name of site."
+    },
+    "contact": {
+      "type": "object",
+      "title": "The contact schema",
+      "description": "Contact",
+      "required": [
+        "owner",
+        "technical"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "title": "The owner schema",
+          "description": ""
+        },
+        "technical": {
+          "type": "string",
+          "title": "The technical schema",
+          "description": ""
+        }
+      },
+      "additionalProperties": false
+    },
+    "git_repo": {
+      "type": "string",
+      "title": "The git_repo schema",
+      "description": "Name of site."
+    },
+    "domain_list": {
+      "type": "array",
+      "title": "The domain_list schema",
+      "description": "",
+      "additionalItems": true,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "env": {
+      "type": "array",
+      "title": "The env schema",
+      "description": "",
+      "additionalItems": true,
+      "items": {
+        "type": "object",
+        "title": "Name/value",
+        "description": "",
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "The name schema",
+            "description": ""
+          },
+          "value": {
+            "type": "string",
+            "title": "The value schema",
+            "description": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "crontab": {
+      "type": "array",
+      "title": "The crontab schema",
+      "description": "",
+      "additionalItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "services": {
+      "type": "array",
+      "title": "The services schema",
+      "description": "",
+      "additionalItems": true,
+      "items": {
+        "type": "object",
+        "title": "The first anyOf schema",
+        "description": "",
+        "required": [
+          "name",
+          "lang",
+          "handler",
+          "secrets_config",
+          "environment"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "The name schema",
+            "description": ""
+          },
+          "lang": {
+            "type": "string",
+            "title": "The lang schema",
+            "description": ""
+          },
+          "handler": {
+            "type": "string",
+            "title": "The handler schema",
+            "description": ""
+          },
+          "secrets_config": {
+            "type": "string",
+            "title": "The secrets_config schema",
+            "description": ""
+          },
+          "environment": {
+            "type": "array",
+            "title": "The environment schema",
+            "description": "",
+            "additionalItems": true,
+            "items": {
+              "type": "object",
+              "title": "Name/value",
+              "description": "",
+              "required": [
+                "name",
+                "value"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "The name schema",
+                  "description": ""
+                },
+                "value": {
+                  "type": "string",
+                  "title": "The value schema",
+                  "description": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
