@@ -108,7 +108,6 @@
           "name",
           "lang",
           "handler",
-          "secrets_config",
           "environment"
         ],
         "properties": {

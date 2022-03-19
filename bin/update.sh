@@ -10,6 +10,15 @@ source /home/dev/.env
 
 aws configure set default.s3.max_concurrent_requests 1
 
+## WORKDIR /usr/local/src/
+mkdir -p /usr/local/src/
+cd /usr/local/src/
+
+## RUN SITE_INIT
+
+# TODO: make a backup directory of previous sites and then compare new sites to
+# find any sites that should be deleted. This would only be applicable to server
+# version; not docker version.
 tmp_sites_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
@@ -17,12 +26,10 @@ aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
-echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" > /etc/chillbox/site_env_vars
-echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
+#echo "export CHILLBOX_SERVER_NAME=$CHILLBOX_SERVER_NAME" > /etc/chillbox/site_env_vars
+#echo '$CHILLBOX_SERVER_NAME' > /etc/chillbox/site_env_names
 
-mkdir -p /usr/local/src/
-cd /usr/local/src/
-
+export server_port=$CHILLBOX_SERVER_PORT
 current_working_dir=/usr/local/src
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
@@ -31,7 +38,15 @@ for site_json in $sites; do
   export slugname
   export server_name="$slugname.test"
   echo $slugname
+  echo "$server_name"
+  cd $current_working_dir
+
+  # no home, or password for user
+  adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
+
+  aws --version
   export version="$(jq -r '.version' $site_json)"
+
   deployed_version=""
   if [ -e /srv/chillbox/$slugname/version.txt ]; then
     deployed_version=$(cat /srv/chillbox/$slugname/version.txt)
@@ -40,15 +55,11 @@ for site_json in $sites; do
     echo "Versions match for $slugname site."
     continue
   fi
-  cd $current_working_dir
 
-  # no home, or password for user
-  adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
-
-  jq -r \
-    '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
-      | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
-  jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
+  #jq -r \
+  #  '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \
+  #    | envsubst '$S3_ENDPOINT_URL $IMMUTABLE_BUCKET_NAME $slugname $version $server_name' >> /etc/chillbox/site_env_vars
+  #jq -r '.env[] | "$" + .name' /etc/chillbox/sites/$slugname.site.json | xargs >> /etc/chillbox/site_env_names
 
 
   tmp_artifact=$(mktemp)
@@ -56,6 +67,8 @@ for site_json in $sites; do
     s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
     $tmp_artifact
 
+  # TODO apply to any of the service types
+  # Stop running service before replacing it
   rc-service chill-$slugname status || printf ""
   status=$?
   if [ "$status" -eq "0" ]; then
