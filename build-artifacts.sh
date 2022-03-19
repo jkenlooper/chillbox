@@ -119,6 +119,9 @@ for site_json in $sites; do
   slugname=${site_json%.site.json}
   slugname=${slugname#sites/}
   echo $slugname >> $BUILD_ARTIFACTS_LOG_FILE
+
+  # TODO Validate the site_json file https://github.com/marksparkza/jschon
+
   version="$(jq -r '.version' $site_json)"
 
   # Only enable if not running local.
