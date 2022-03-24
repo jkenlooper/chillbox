@@ -191,12 +191,6 @@ aws \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT \
   $tmp_chillbox_artifact
 
-cd /etc/nginx
-tar x -z -f $tmp_chillbox_artifact nginx.conf
-
-mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar x -z -f $tmp_chillbox_artifact default.nginx.conf
-
 mkdir -p /etc/chillbox && cd /etc/chillbox
 tar x -z -f $tmp_chillbox_artifact templates
 
@@ -470,6 +464,14 @@ PURR
 done
 
 
+## COPY nginx conf and default
+cd /etc/nginx
+tar x -z -f $tmp_chillbox_artifact nginx.conf
+
+mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
+tar x -z -f $tmp_chillbox_artifact default.nginx.conf
+
+
 ## RUN NGINX_CONF
 mkdir -p /srv/chillbox
 chown -R nginx /srv/chillbox/
@@ -478,8 +480,8 @@ chown -R nginx /var/cache/nginx
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/chillbox/
 chown -R nginx /var/log/nginx/chillbox/
-rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
+find /etc/nginx/conf.d/ -name '*.conf' -not -name 'default.conf' -delete
 chown -R nginx /etc/nginx/conf.d/
 
 cat <<'HISS' > reload-templates.sh

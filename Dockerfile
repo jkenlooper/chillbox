@@ -40,7 +40,7 @@ NGINX
 ## RUN CHILL
 # TODO: switch to released chill version
 #ARG PIP_CHILL="chill==0.9.0"
-ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
+ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d884403d86ecf70abf293039f#egg=chill"
 RUN <<CHILL
 apk update
 apk add --no-cache \
@@ -145,8 +145,6 @@ ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
 ## COPY chillbox artifact
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY default.nginx.conf /etc/nginx/conf.d/default.conf
 COPY templates /etc/chillbox/templates
 COPY bin /etc/chillbox/bin
 
@@ -392,6 +390,11 @@ apk --purge del \
 SITE_INIT
 
 
+## COPY nginx conf and default
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY default.nginx.conf /etc/nginx/conf.d/default.conf
+
+
 ## RUN NGINX_CONF
 RUN <<NGINX_CONF
 
@@ -404,8 +407,8 @@ chown -R nginx /var/cache/nginx
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/chillbox/
 chown -R nginx /var/log/nginx/chillbox/
-rm -rf /etc/nginx/conf.d/
 mkdir -p /etc/nginx/conf.d/
+find /etc/nginx/conf.d/ -name '*.conf' -not -name 'default.conf' -delete
 chown -R nginx /etc/nginx/conf.d/
 
 cat <<'HISS' > reload-templates.sh
