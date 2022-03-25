@@ -28,6 +28,18 @@ apk --purge del \
 S6_OVERLAY
 ENTRYPOINT [ "/init" ]
 
+## RUN AWS_CLI
+RUN <<AWS_CLI
+apk update
+apk add --no-cache \
+  aws-cli
+aws --version
+AWS_CLI
+
+## COPY_chillbox_artifact
+COPY templates /etc/chillbox/templates
+COPY bin /etc/chillbox/bin
+
 ## RUN NGINX
 EXPOSE 80
 RUN <<NGINX
@@ -37,52 +49,17 @@ apk add --no-cache \
 nginx -v
 NGINX
 
-## RUN CHILL
+## RUN_INSTALL_CHILL
 # TODO: switch to released chill version
 #ARG PIP_CHILL="chill==0.9.0"
 ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d884403d86ecf70abf293039f#egg=chill"
-RUN <<CHILL
-apk update
-apk add --no-cache \
-  py3-pip \
-  gcc \
-  python3 \
-  python3-dev \
-  libffi-dev \
-  build-base \
-  musl-dev \
-  make \
-  git \
-  sqlite
-ln -s /usr/bin/python3 /usr/bin/python
-python --version
-pip install --upgrade pip
-python -m pip install --disable-pip-version-check "$PIP_CHILL"
-apk --purge del \
-  gcc \
-  python3-dev \
-  libffi-dev \
-  build-base \
-  musl-dev \
-  make \
-  git
-chill --version
-CHILL
+RUN apk update && /etc/chillbox/bin/install-chill.sh $PIP_CHILL
 
-## RUN AWS_CLI
-RUN <<AWS_CLI
-apk update
-apk add --no-cache \
-  jq \
-  aws-cli
-aws --version
-AWS_CLI
-
-## RUN SUPPORT_ENVSUBST
+## RUN_SUPPORT_ENVSUBST
 RUN <<SUPPORT_ENVSUBST
 apk update
 # gettext includes envsubst
-apk add gettext
+apk add jq gettext
 SUPPORT_ENVSUBST
 
 ## RUN CHILLBOX_ENV_NAMES
@@ -144,10 +121,7 @@ ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
-## COPY chillbox artifact
-COPY templates /etc/chillbox/templates
-COPY bin /etc/chillbox/bin
-
+## WORKDIR /usr/local/src/
 WORKDIR /usr/local/src/
 
 ## RUN SITE_INIT
