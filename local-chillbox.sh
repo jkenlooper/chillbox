@@ -78,7 +78,7 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
-  --build-arg CHILLBOX_SERVER_PORT=$app_port \
+  --build-arg CHILLBOX_SERVER_PORT=80 \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   --secret=id=site_secrets,src="$tmp_site_secrets" \
@@ -89,7 +89,7 @@ docker run -d --tty --name chillbox \
   -e S3_ENDPOINT_URL="http://minio:9000" \
   -e ARTIFACT_BUCKET_NAME="chillboxartifact" \
   -e IMMUTABLE_BUCKET_NAME="chillboximmutable" \
-  -e CHILLBOX_SERVER_PORT=$app_port \
+  -e CHILLBOX_SERVER_PORT=80 \
   --network chillboxnet \
   -p $app_port:80 chillbox
 

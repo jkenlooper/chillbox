@@ -1,5 +1,5 @@
 server {
-  listen 80;
+  listen ${CHILLBOX_SERVER_PORT};
 
   server_name ${CHILLBOX_SERVER_NAME};
 
