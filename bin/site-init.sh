@@ -3,19 +3,27 @@
 set -o errexit
 
 
-S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
+export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
 test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
 echo "INFO $0: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
 
-ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
+export S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $0: S3_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $0: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
+
+export ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $0: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $0: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
 
-SITES_ARTIFACT=${SITES_ARTIFACT}
+export IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
+test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $0: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
+echo "INFO $0: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
+
+export SITES_ARTIFACT=${SITES_ARTIFACT}
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: SITES_ARTIFACT variable is empty" && exit 1)
 echo "INFO $0: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 
-CHILLBOX_SERVER_PORT=${CHILLBOX_SERVER_PORT}
+export CHILLBOX_SERVER_PORT=${CHILLBOX_SERVER_PORT}
 test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $0: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
 echo "INFO $0: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
 
@@ -49,7 +57,6 @@ for site_json in $sites; do
   # no home, or password for user
   adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
 
-  aws --version
   export version="$(jq -r '.version' $site_json)"
 
   deployed_version=""
@@ -61,11 +68,11 @@ for site_json in $sites; do
     continue
   fi
 
-  tmp_artifact=$(mktemp)
+  export tmp_artifact=$(mktemp)
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
     $tmp_artifact
-  slugdir=$current_working_dir/$slugname
+  export slugdir=$current_working_dir/$slugname
   mkdir -p $slugdir
   chown -R $slugname:$slugname $slugdir
 
@@ -111,6 +118,8 @@ for site_json in $sites; do
         test -n "${service_obj}" || continue
 
         cd $current_working_dir
+
+        # TODO $(dirname $0)/site-init-service-object.sh "${service_obj}"
 
         # Extract and set shell variables from JSON input
         eval "$(echo $service_obj | jq -r '@sh "
