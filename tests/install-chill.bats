@@ -13,13 +13,14 @@ main() {
   export PIP_CHILL=""
   run main
   echo "$output"
-  test "${status}" -ne 0
+  assert_failure
 }
 
-@test "pass when PIP_CHILL is set" {
-  export PIP_CHILL="chill"
+@test "pass when PIP_CHILL is set and chill can be installed" {
+  export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
   run main
-  # TODO
-  assert_output "chicken"
-  test "${status}" -eq 1
+  assert_output --partial "Installing chill version"
+  assert_output --partial "Python 3.9.7"
+  assert_output --partial "Chill 0.9.0"
+  assert_success
 }

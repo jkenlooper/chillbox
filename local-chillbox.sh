@@ -4,6 +4,7 @@ set -o errexit
 
 app_port=9081
 working_dir=$PWD
+tech_email="local@example.com"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 endpoint_url="http://localhost:9000"
@@ -79,6 +80,8 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
   --build-arg CHILLBOX_SERVER_PORT=80 \
+  --build-arg TECH_EMAIL="${tech_email}" \
+  --build-arg LETS_ENCRYPT_SERVER="letsencrypt_test" \
   --network host \
   --secret=id=awscredentials,src="$tmp_awscredentials" \
   --secret=id=site_secrets,src="$tmp_site_secrets" \

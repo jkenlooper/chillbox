@@ -9,6 +9,7 @@ test -n "${PIP_CHILL}" || (echo "ERROR $0: PIP_CHILL variable is empty" && exit 
 echo "INFO $0: Installing chill version $PIP_CHILL"
 
 apk add \
+  -q --no-progress \
   py3-pip \
   gcc \
   python3 \
@@ -19,8 +20,13 @@ apk add \
   make \
   git \
   sqlite
-ln -s /usr/bin/python3 /usr/bin/python
+
+ln -s -f /usr/bin/python3 /usr/bin/python
+
+# Output the python version to verify tests.
 python --version
-pip install --upgrade pip
-python -m pip install --disable-pip-version-check "$PIP_CHILL"
-chill --version
+pip install --upgrade --quiet pip
+python -m pip install --quiet --disable-pip-version-check "$PIP_CHILL"
+
+# Output the chill version to verify tests.
+echo "Chill $(chill --version)"

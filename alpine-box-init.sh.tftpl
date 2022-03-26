@@ -71,6 +71,7 @@ export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d88
 export SITES_ARTIFACT="${sites_artifact}"
 export TECH_EMAIL="${tech_email}"
 export ACME_SH_VERSION="3.0.1"
+# TODO: switch to production version for letsencrypt server
 #export LETS_ENCRYPT_SERVER="letsencrypt"
 export LETS_ENCRYPT_SERVER="letsencrypt_test"
 ENVFILE
@@ -91,7 +92,9 @@ source /run/secrets/awscredentials
 #apk add --no-cache gnupg gnupg-dirmngr
 
 ## RUN AWS_CLI
+# Inline the bin/install-aws-cli.sh
 apk add \
+  -q --no-progress \
   aws-cli
 aws --version
 
@@ -108,78 +111,13 @@ tar x -z -f $tmp_chillbox_artifact templates
 mkdir -p /etc/chillbox/bin
 tar x -z -f $tmp_chillbox_artifact -C /etc/chillbox/bin --strip-components 1 bin
 
-## RUN NGINX
-apk add nginx
-nginx -v
-
-## RUN_INSTALL_CHILL
+## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-chill.sh $PIP_CHILL
+/etc/chillbox/bin/install-service-dependencies.sh
+/etc/chillbox/bin/install-acme.sh
 
-## RUN_SUPPORT_ENVSUBST
-# gettext includes envsubst
-apk add jq gettext
-
-## letsencrypt acme.sh
-echo "letsencrypt acme.sh"
-mkdir -p /usr/local/bin/
-cd /usr/local/bin/
-tmp_acme_tar=$(mktemp)
-wget -O $tmp_acme_tar https://github.com/acmesh-official/acme.sh/archive/refs/tags/$ACME_SH_VERSION.tar.gz
-tmp_md5sum=$(mktemp)
-echo "21f4b4b88df5d7fb89bf15df9a8a8c94  -" > $tmp_md5sum
-cat $tmp_acme_tar | md5sum --check $tmp_md5sum
-tar x -z -f $tmp_acme_tar --strip-components 1 acme.sh-$ACME_SH_VERSION/acme.sh
-#mkdir -p /etc/acmesh
-#mkdir -p /etc/acmesh/certs
-acme.sh --install \
-  --email $TECH_EMAIL \
-  --server $LETS_ENCRYPT_SERVER \
-  --no-profile
-  #--home /etc/acmesh \
-  #--accountconf /etc/acmesh/account.conf \
-  #--cert-home /etc/acmesh/certs
-
-## RUN CHILLBOX_ENV_NAMES
-mkdir -p /etc/chillbox
-cat <<'ENV_NAMES' > /etc/chillbox/env_names
-$CHILLBOX_SERVER_NAME
-$S3_ENDPOINT_URL
-$IMMUTABLE_BUCKET_NAME
-$ARTIFACT_BUCKET_NAME
-$slugname
-$version
-$server_name
-ENV_NAMES
-
-## RUN SERVICES_DEPENDENCIES
-apk add --no-cache \
-  gcc \
-  python3 \
-  python3-dev \
-  libffi-dev \
-  build-base \
-  musl-dev \
-  zlib \
-  openjpeg \
-  libjpeg \
-  tiff \
-  freetype \
-  fribidi \
-  harfbuzz \
-  jpeg \
-  lcms2 \
-  tcl \
-  tk \
-  freetype-dev \
-  fribidi-dev \
-  harfbuzz-dev \
-  jpeg-dev \
-  lcms2-dev \
-  openjpeg-dev \
-  tcl-dev \
-  tiff-dev \
-  tk-dev \
-  zlib-dev
+## RUN_CHILLBOX_ENV_NAMES
+/etc/chillbox/bin/create-env_names-file.sh
 
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
