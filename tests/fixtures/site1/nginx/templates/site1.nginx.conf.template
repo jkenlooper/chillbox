@@ -1,0 +1,86 @@
+server {
+  listen ${SITE1_SERVER_PORT};
+
+  server_name ${SITE1_SERVER_NAME};
+  proxy_cookie_domain ${SITE1_API} ${SITE1_SERVER_NAME};
+  proxy_set_header Host ${SITE1_SERVER_NAME}:${SITE1_SERVER_PORT};
+
+  root /srv/site1/root;
+  access_log /var/log/nginx/site1/access.log;
+  error_log /var/log/nginx/site1/error.log;
+
+  # Intercepting of errors is only needed when developing.
+  proxy_intercept_errors ${SITE1_PROXY_INTERCEPT_ERRORS};
+
+  # Limit all server wide to this small amount. Override on a location level.
+  client_max_body_size 20k;
+
+  # Ignore query parameters for cache.
+  proxy_cache_key $scheme$proxy_host$uri;
+
+  location / {
+    limit_except GET {
+      deny all;
+    }
+    # The frozen directory doesn't exist when developing or when not serving the
+    # frozen site. Fallback on the @chill proxy for dynamic sites.
+    root /usr/local/src/site1/chill/frozen;
+    add_header Cache-Control "public,no-cache";
+    ssi on;
+    try_files $uri $uri/index.html @chill;
+  }
+  location @chill {
+    add_header Cache-Control "public,no-cache";
+    ssi on;
+    proxy_pass ${SITE1_CHILL};
+  }
+
+  location /api/ {
+    proxy_pass ${SITE1_API}/api/;
+    proxy_redirect default;
+  }
+
+  location /.well-known/ {
+    limit_except GET {
+      deny all;
+    }
+    root /srv/site1/;
+  }
+
+  location /example/${SITE1_VERSION}/ {
+    limit_except GET {
+      deny all;
+    }
+    proxy_cache var_cache_nginx;
+    proxy_cache_valid ${SITE1_PROXY_CACHE_VALID};
+    add_header X-Proxy-Cache $upstream_cache_status;
+    proxy_pass ${SITE1_IMMUTABLE__DESIGN_TOKENS};
+  }
+
+  location ~* ^/(robots|humans).txt$ {
+    limit_except GET {
+      deny all;
+    }
+    add_header Cache-Control "public,max-age=86400";
+    try_files $uri =404;
+  }
+
+  error_page 500 501 504 505 506 507 /error.html;
+  location = /error.html {
+    internal;
+  }
+
+  error_page 502 503 /maintenance.html;
+  location = /maintenance.html {
+    internal;
+  }
+
+  error_page 404 /notfound.html;
+  location = /notfound.html {
+    internal;
+  }
+  error_page 403 /forbidden.html;
+  location = /forbidden.html {
+    internal;
+  }
+}
