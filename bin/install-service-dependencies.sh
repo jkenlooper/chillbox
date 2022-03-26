@@ -2,9 +2,6 @@
 
 set -o errexit
 
-# Output each command for verifying tests
-set -v
-
 apk add \
   -q --no-progress \
   nginx
