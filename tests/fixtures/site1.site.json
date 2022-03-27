@@ -1,0 +1,98 @@
+{
+  "name": "Site One",
+  "version": "0.1.0-alpha.1",
+  "git_repo": "https://github.com/jkenlooper/www.weboftomorrow.com.git",
+  "contact": {
+    "owner": "site1@weboftomorrow.com",
+    "technical": "site1@weboftomorrow.com"
+  },
+  "domain_list": [
+    "site1.weboftomorrow.com"
+  ],
+  "env": [
+    {
+      "name": "SITE1_SERVER_NAME",
+      "value": "$server_name"
+    },
+    {
+      "name": "SITE1_SERVER_PORT",
+      "value": "$server_port"
+    },
+    {
+      "name": "SITE1_PROXY_INTERCEPT_ERRORS",
+      "value": "on"
+    },
+    {
+      "name": "SITE1_VERSION",
+      "value": "$version"
+    },
+    {
+      "name": "SITE1_PROXY_CACHE_VALID",
+      "value": "1y"
+    },
+    {
+      "name": "SITE1_CHILL",
+      "value": "http://localhost:5000"
+    },
+    {
+      "name": "SITE1_API",
+      "value": "http://localhost:8084"
+    },
+    {
+     "name": "SITE1_IMMUTABLE__EXAMPLE",
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/"
+    }
+  ],
+  "crontab": [
+    "13 5 * * 6 echo 'do something'"
+  ],
+  "services": [
+    {
+      "name": "api",
+      "lang": "flask",
+      "handler": "api",
+      "secrets_config": "api.cfg",
+      "environment": [
+        {
+          "name": "SERVER_NAME",
+          "value": "$server_name"
+        },
+        {
+          "name": "PORT",
+          "value": "8084"
+        },
+        {
+          "name": "FLASK_APP",
+          "value": "site1_api.app"
+        }
+      ]
+    },
+    {
+      "name": "chill",
+      "lang": "chill",
+      "handler": "chill",
+      "environment": [
+        {
+          "name": "freeze",
+          "value": "true"
+        },
+        {
+          "name": "CHILL_HOST",
+          "value": "localhost"
+        },
+        {
+          "name": "CHILL_PORT",
+          "value": "5000"
+        },
+        {
+          "name": "CHILL_MEDIA_PATH",
+          "value": "/media/"
+        },
+        {
+          "name": "CHILL_THEME_STATIC_PATH",
+          "value": "/theme/${version}/"
+        }
+      ]
+    }
+  ]
+}

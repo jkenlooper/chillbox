@@ -10,6 +10,7 @@ echo "INFO $0: Using service_obj '${service_obj}'"
 
 export tmp_artifact=${tmp_artifact}
 test -n "${tmp_artifact}" || (echo "ERROR $0: tmp_artifact variable is empty" && exit 1)
+test -f "${tmp_artifact}" || (echo "ERROR $0: The $tmp_artifact is not a file" && exit 1)
 echo "INFO $0: Using tmp_artifact '${tmp_artifact}'"
 
 export slugname=${slugname}
@@ -18,6 +19,8 @@ echo "INFO $0: Using slugname '${slugname}'"
 
 export slugdir=${slugdir}
 test -n "${slugdir}" || (echo "ERROR $0: slugdir variable is empty" && exit 1)
+test -d "${slugdir}" || (echo "ERROR $0: slugdir should be a directory" && exit 1)
+test -d "$(dirname ${slugdir})" || (echo "ERROR $0: parent directory of slugdir should be a directory" && exit 1)
 echo "INFO $0: Using slugdir '${slugdir}'"
 
 export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
@@ -38,8 +41,6 @@ echo "INFO $0: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
 echo "INFO $0: Running site init for service object:\n ${service_obj}"
 
-exit 0
-
 # Extract and set shell variables from JSON input
 eval "$(echo $service_obj | jq -r '@sh "
   service_name=\(.name)
@@ -48,10 +49,12 @@ eval "$(echo $service_obj | jq -r '@sh "
   service_secrets_config=\(.secrets_config)
   "')"
 # Extract just the new service handler directory from the tmp_artifact
+cd $(dirname $slugdir)
 tar x -z -f $tmp_artifact $slugname/${service_handler}
 chown -R $slugname:$slugname $slugdir
 # Save the service object for later use when updating or removing the service.
 echo $service_obj | jq -c '.' > $slugdir/$service_handler.service_handler.json
+
 eval $(echo $service_obj | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
   | envsubst "$(cat /etc/chillbox/env_names | xargs)")
 
