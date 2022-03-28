@@ -1,5 +1,15 @@
 #!/usr/bin/env bats
 
+CRITICAL=50
+DEBUG=10
+ERROR=40
+FATAL=50
+INFO=20
+NOTSET=0
+WARN=30
+WARNING=30
+LOGGING_LEVEL=${LOGGING_LEVEL:-$WARNING}
+
 setup_file() {
   export slugname="site1"
 
@@ -31,13 +41,27 @@ setup() {
   load '/opt/bats-assert/load'
   load '/opt/bats-mock/load'
 
-  #DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
-  ## make executables in . visible to PATH
-  #export PATH="$DIR:$PATH"
+  mock_python="$(mock_create)"
+  ln -s "${mock_python}" $BATS_RUN_TMPDIR/python
+  PATH="$BATS_RUN_TMPDIR:$PATH"
+  test "${LOGGING_LEVEL}" -le $DEBUG \
+    && echo "# Creates a mock python symbolic link: $BATS_RUN_TMPDIR/python to $(readlink $BATS_RUN_TMPDIR/python)" >&3
+
+  mock_pip="$(mock_create)"
+  mock_flask="$(mock_create)"
+
 }
 
 teardown() {
   rm -rf  "/var/lib/site1"
+	rm -f $slugdir/api.service_handler.json
+	rm -f $slugdir/chill.service_handler.json
+	rm -rf /var/lib/${slugname}/api
+	rm -rf /var/lib/${slugname}/chill
+	rm -rf /etc/services.d/${slugname}-api
+	rm -rf /etc/services.d/${slugname}-chill
+
+  rm -f $BATS_RUN_TMPDIR/python
 }
 
 main() {
@@ -92,63 +116,44 @@ main() {
   assert_failure
 }
 
-# TODO
-# skips versions that have already been deployed
-# stops services and makes backups
-# extracts site nginx service
-# extracts each service listed in site json
-# handle flask service
-# handle chill service
-# show error if service not supported
-# set crontab
-# set site root dir, version.txt for nginx
-@test "pass when ..." {
+@test "pass when service lang template is flask" {
+  # Arrange
+  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
   # Match up with site1.site.json
   export service_handler=api
   export service_name=api
 
-  mock_python="$(mock_create)"
-  ln -s "${mock_python}" $BATS_RUN_TMPDIR/python
-  PATH="$BATS_RUN_TMPDIR:$PATH"
-  #echo "# Creates a mock python $mock_python" >&3
-  #echo "# $PATH" >&3
-
-  mock_pip="$(mock_create)"
-  mock_flask="$(mock_create)"
-
-  #echo "# Creates a venv $slugdir/$service_handler/.venv/bin" >&3
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a venv $slugdir/$service_handler/.venv/bin" >&3
   mkdir -p $slugdir/$service_handler/.venv/bin
   ln -s "${mock_pip}" $slugdir/$service_handler/.venv/bin/pip
+  test "${LOGGING_LEVEL}" -le $DEBUG \
+    && echo "# Creates a mock pip symbolic link: $slugdir/$service_handler/.venv/bin/pip to $(readlink $slugdir/$service_handler/.venv/bin/pip)" >&3
   ln -s "${mock_flask}" $slugdir/$service_handler/.venv/bin/flask
+  test "${LOGGING_LEVEL}" -le $DEBUG \
+    && echo "# Creates a mock flask symbolic link: $slugdir/$service_handler/.venv/bin/flask to $(readlink $slugdir/$service_handler/.venv/bin/flask)" >&3
 
+  # Act
   run main "${service_obj}"
+
+  # Assert
   test "$(mock_get_call_num "${mock_python}")" -eq 1
   test "$(mock_get_call_num "${mock_pip}")" -eq 1
   test "$(mock_get_call_num "${mock_flask}")" -eq 1
 
-  echo "# Creates a $service_handler.service_handler.json" >&3
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json
 
-  echo "# Creates a /var/lib/${slugname}/${service_handler} directory" >&3
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /var/lib/${slugname}/${service_handler} directory" >&3
   test -d "/var/lib/${slugname}/${service_handler}"
 
-  echo "# Creates a /etc/services.d/${slugname}-${service_name}/run command" >&3
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${slugname}-${service_name}/run command" >&3
   test -d "/etc/services.d/${slugname}-${service_name}"
   test -f "/etc/services.d/${slugname}-${service_name}/run"
-
 
   assert_success
 }
 
-# FIXTURES
-# tmp_artifact = $slugname-$version.artifact.tar.gz
-# /etc/chillbox/env_names
 
-# MOCKS
-# aws
-# rc-service
-# rc-update
-# python
-# ./.venv/bin/pip
-# ./.venv/bin/flask
-# su or chill ?
+# TODO
+# handle chill service
+# show error if service not supported
