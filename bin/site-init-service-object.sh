@@ -78,6 +78,24 @@ if [ "${service_lang_template}" = "flask" ]; then
 
   chown -R $slugname:$slugname "/var/lib/${slugname}/"
 
+  # Only for openrc
+  mkdir -p /etc/init.d
+  cat <<PURR > /etc/init.d/${slugname}-${service_name}
+#!/sbin/openrc-run
+name="${slugname}-${service_name}"
+description="${slugname}-${service_name}"
+user="$slugname"
+group="$slugname"
+supervisor=s6
+s6_service_path=/etc/services.d/${slugname}-${service_name}
+depend() {
+  need s6-svscan net localmount
+  after firewall
+}
+PURR
+  chmod +x /etc/init.d/${slugname}-${service_name}
+
+
   mkdir -p /etc/services.d/${slugname}-${service_name}
   cat <<PURR > /etc/services.d/${slugname}-${service_name}/run
 #!/usr/bin/execlineb -P
@@ -97,6 +115,14 @@ s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 ./.venv/bin/start
 PURR
+  chmod +x /etc/services.d/${slugname}-${service_name}/run
+  command -v rc-update > /dev/null \
+    && rc-update add ${slugname}-${service_name} default \
+    || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
+  command -v rc-service > /dev/null \
+    && rc-service ${slugname}-${service_name} start \
+    || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
+
 elif [ "${service_lang_template}" = "chill" ]; then
 
   # init chill
@@ -108,6 +134,23 @@ elif [ "${service_lang_template}" = "chill" ]; then
     su -p -s /bin/sh $slugname -c 'chill freeze'
   else
     echo 'dynamic';
+
+    # Only for openrc
+    mkdir -p /etc/init.d
+    cat <<PURR > /etc/init.d/${slugname}-${service_name}
+#!/sbin/openrc-run
+name="${slugname}-${service_name}"
+description="${slugname}-${service_name}"
+user="$slugname"
+group="$slugname"
+supervisor=s6
+s6_service_path=/etc/services.d/${slugname}-${service_name}
+depend() {
+  need s6-svscan net localmount
+  after firewall
+}
+PURR
+    chmod +x /etc/init.d/${slugname}-${service_name}
 
     mkdir -p /etc/services.d/${slugname}-${service_name}
 
@@ -122,6 +165,15 @@ MEOW
     cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
 chill serve
 PURR
+
+    chmod +x /etc/services.d/${slugname}-${service_name}/run
+    command -v rc-update > /dev/null \
+      && rc-update add ${slugname}-${service_name} default \
+      || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
+    command -v rc-service > /dev/null \
+      && rc-service ${slugname}-${service_name} start \
+      || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
+
   fi
 
 else
