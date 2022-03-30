@@ -114,7 +114,7 @@ tar x -z -f $tmp_chillbox_artifact -C /etc/chillbox/bin --strip-components 1 bin
 ## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-chill.sh $PIP_CHILL
 /etc/chillbox/bin/install-service-dependencies.sh
-/etc/chillbox/bin/install-acme.sh
+/etc/chillbox/bin/install-acme.sh $ACME_SH_VERSION $LETS_ENCRYPT_SERVER $TECH_EMAIL
 
 ## RUN_CHILLBOX_ENV_NAMES
 /etc/chillbox/bin/create-env_names-file.sh
@@ -141,32 +141,7 @@ tar x -z -f $tmp_chillbox_artifact default.nginx.conf
 chown dev /etc/chillbox/env_names
 
 ## acme.sh certs
-# Create certs for all sites
-mkdir -p /var/lib/acmesh
-chown -R nginx:nginx /var/lib/acmesh
-for site_json in $sites; do
-  slugname=$${site_json%.site.json}
-  slugname=$${slugname#/etc/chillbox/sites/}
-  export slugname
-  domain_list=$(jq -r '.domain_list[]' $site_json)
-  # Reset and add the --domain option for each to the $@ variable
-  set -- ""
-  for domain in $domain_list; do
-    set -- "$@" --domain $domain
-  done
-
-  acme.sh --issue \
-    --server $LETS_ENCRYPT_SERVER \
-    "$@" \
-    --webroot /srv/$slugname/root/
-
-  acme.sh --install-cert \
-    --server $LETS_ENCRYPT_SERVER \
-    "$@" \
-    --cert-file /var/lib/acmesh/$slugname.cer \
-    --key-file /var/lib/acmesh/$slugname.key \
-    --reloadcmd 'nginx -t && nginx -s reload'
-done
+/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh $LETS_ENCRYPT_SERVER
 
 nginx -t
 rc-update add nginx default
