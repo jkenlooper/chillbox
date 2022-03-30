@@ -29,6 +29,7 @@ tmp_sites_artifact=$(mktemp)
 aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
   $tmp_sites_artifact
+exit 0
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
@@ -40,8 +41,8 @@ for site_json in $sites; do
   slugname=${slugname#/etc/chillbox/sites/}
   export slugname
   export server_name="$slugname.test"
-  echo "$slugname"
-  echo "$server_name"
+  echo "INFO $0: $slugname"
+  echo "INFO $0: server_name=$server_name"
   cd $current_working_dir
 
   # no home, or password for user
@@ -54,7 +55,7 @@ for site_json in $sites; do
     deployed_version=$(cat /srv/chillbox/$slugname/version.txt)
   fi
   if [ "$version" = "$deployed_version" ]; then
-    echo "Versions match for $slugname site."
+    echo "INFO $0: Versions match for $slugname site."
     continue
   fi
 
@@ -62,45 +63,15 @@ for site_json in $sites; do
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
     $tmp_artifact
+
+
   export slugdir=$current_working_dir/$slugname
   mkdir -p $slugdir
   chown -R $slugname:$slugname $slugdir
 
-  # Stop all services in the $slugname directory and make backups
-  find $slugname -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler.json' \
-    | while read -r existing_service_handler; do
-      echo "Stopping existing service handler: $existing_service_handler"
-      eval "$(jq -r '@sh "
-      service_name=\(.name)
-      service_lang_template=\(.lang)
-      service_handler=\(.handler)
-      service_secrets_config=\(.secrets_config)
-      "' $existing_service_handler)"
-      rc-service ${slugname}-${service_name} stop || printf "Ignoring"
-      rc-update delete ${slugname}-${service_name} default || printf "Ignoring"
-      rm -f /etc/init.d/${slugname}-${service_name} || printf "Ignoring"
-      rm -rf /etc/services.d/${slugname}-${service_name} || printf "Ignoring"
+  $(dirname $0)/stop-site-services.sh "${slugname}" "${slugdir}"
 
-      rm -rf $slugname/${service_handler}.bak.tar.gz
-      rm -rf $slugname/${service_handler}.service_handler.json.bak
-      rm -rf /var/lib/${slugname}/secrets/${service_secrets_config}.bak
-      mv $slugname/${service_handler}.service_handler.json $slugname/${service_handler}.service_handler.json.bak
-      test -e $slugname/${service_handler} \
-        && tar c -f $slugname/${service_handler}.bak.tar.gz $slugname/${service_handler}
-      test -n "$service_secrets_config" -a -e /var/lib/${slugname}/secrets/${service_secrets_config} \
-        && mv /var/lib/${slugname}/secrets/${service_secrets_config} /var/lib/${slugname}/secrets/${service_secrets_config}.bak
-  done
-
-  # TODO Set nginx server for this $slugname to maintenance
-  # Extract just the nginx directory from the tmp_artifact
-  rm -rf $slugname/nginx.bak.tar.gz
-  test -e $slugname/nginx \
-    && tar c -f $slugname/nginx.bak.tar.gz $slugname/nginx
-  rm -rf $slugname/nginx
-  tar x -z -f $tmp_artifact $slugname/nginx
-  chown -R $slugname:$slugname $slugdir
-  echo "Extracted nginx service for $slugname"
-  ls -al $slugname/
+  $(dirname $0)/site-init-nginx-service.sh "${tmp_artifact}"
 
   # init services
   jq -c '.services // [] | .[]' /etc/chillbox/sites/$slugname.site.json \
@@ -109,13 +80,13 @@ for site_json in $sites; do
 
         cd $current_working_dir
 
-        $(dirname $0)/site-init-service-object.sh "${service_obj}"
+        $(dirname $0)/site-init-service-object.sh "${service_obj}" "${tmp_artifact}"
 
       done
 
   # TODO Handle errors if any service failed to start and rollback to the backup.
 
-  echo "Finished setting up services for $site_json"
+  echo "INFO $0: Finished setting up services for $site_json"
 
   eval $(jq -r \
       '.env[] | "export " + .name + "=" + .value' /etc/chillbox/sites/$slugname.site.json \

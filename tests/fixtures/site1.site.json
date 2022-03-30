@@ -68,7 +68,7 @@
       ]
     },
     {
-      "name": "chill",
+      "name": "chillstatic",
       "lang": "chill",
       "handler": "chill",
       "environment": [
@@ -83,6 +83,33 @@
         {
           "name": "CHILL_PORT",
           "value": "5000"
+        },
+        {
+          "name": "CHILL_MEDIA_PATH",
+          "value": "/media/"
+        },
+        {
+          "name": "CHILL_THEME_STATIC_PATH",
+          "value": "/theme/${version}/"
+        }
+      ]
+    },
+    {
+      "name": "chilldynamic",
+      "lang": "chill",
+      "handler": "chill",
+      "environment": [
+        {
+          "name": "freeze",
+          "value": "false"
+        },
+        {
+          "name": "CHILL_HOST",
+          "value": "localhost"
+        },
+        {
+          "name": "CHILL_PORT",
+          "value": "5001"
         },
         {
           "name": "CHILL_MEDIA_PATH",

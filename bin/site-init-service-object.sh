@@ -3,6 +3,7 @@
 set -o errexit
 
 service_obj="$1"
+tmp_artifact="$2"
 
 export service_obj=${service_obj}
 test -n "${service_obj}" || (echo "ERROR $0: service_obj variable is empty" && exit 1)
