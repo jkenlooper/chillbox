@@ -1,23 +1,19 @@
 #!/usr/bin/env bats
 
-CRITICAL=50
-DEBUG=10
-ERROR=40
-FATAL=50
-INFO=20
-NOTSET=0
-WARN=30
-WARNING=30
-LOGGING_LEVEL=${LOGGING_LEVEL:-$WARNING}
+source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 
 setup_file() {
+  test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
+
   export slugname="site1"
 
   mkdir -p /usr/local/src
 
   tmp_dir=$(mktemp -d)
-  export tmp_artifact=$tmp_dir/site1-artifact.tar.gz
-  "${BATS_TEST_DIRNAME}"/fixtures/site1/bin/artifact.sh $tmp_artifact
+  export sites_artifact=$tmp_dir/sites.tar.gz
+
+  cd "${BATS_TEST_DIRNAME}"/fixtures
+  tar -c -z -f $sites_artifact sites
 
   export S3_ARTIFACT_ENDPOINT_URL="TODO"
   export ARTIFACT_BUCKET_NAME="TODO"
@@ -30,7 +26,8 @@ setup_file() {
 
 teardown_file() {
   rm -f /etc/chillbox/env_names
-  test -d "$tmp_dir" && echo " rm -rf $tmp_dir"
+  test -d "$tmp_dir" && rm -rf $tmp_dir
+  rm -rf /usr/local/src/site1
 }
 
 
@@ -54,7 +51,13 @@ setup() {
   mock_aws="$(mock_create)"
   ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
 
+  mock_crontab="$(mock_create)"
+  ln -s "${mock_crontab}" $BATS_RUN_TMPDIR/crontab
+
   PATH="$BATS_RUN_TMPDIR:$PATH"
+
+  mkdir -p /usr/local/src/site1
+  cp -Rf "${BATS_TEST_DIRNAME}"/fixtures/site1/nginx /usr/local/src/site1/
 }
 
 teardown() {
@@ -73,12 +76,22 @@ teardown() {
   test -e "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh.bak \
     && mv "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh.bak "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh
 
+  test -L $BATS_RUN_TMPDIR/aws \
+    && rm -f $BATS_RUN_TMPDIR/aws
+
+  test -L $BATS_RUN_TMPDIR/crontab \
+    && rm -f $BATS_RUN_TMPDIR/crontab
+
   rm -rf /etc/chillbox/sites
-  rm -f $BATS_RUN_TMPDIR/aws
+  rm -rf /usr/local/src/site1
+  rm -rf /srv/site1/root
+  rm -rf /srv/chillbox/site1/version.txt
+  rm -rf /var/log/nginx/site1
+  rm -rf /etc/chillbox/templates/site1.nginx.conf.template
 }
 
 main() {
-  "${BATS_TEST_DIRNAME}"/../bin/site-init.sh
+  "${BATS_TEST_DIRNAME}"/../bin/site-init.sh $@
 }
 
 @test "fail when S3_ARTIFACT_ENDPOINT_URL is empty" {
@@ -105,32 +118,29 @@ main() {
   assert_failure
 }
 
-# TODO
-# skips versions that have already been deployed
-# stops services and makes backups
-# extracts site nginx service
-# extracts each service listed in site json
-# handle flask service
-# handle chill service
-# show error if service not supported
-# set crontab
-# set site root dir, version.txt for nginx
-@test "pass when ..." {
-  run main
+@test "pass when it cycles over sites from sites artifact file" {
+  echo "# sites_artifact $sites_artifact" >&3
+  run main "${sites_artifact}"
   assert_success
+
+  test "$(mock_get_call_num "${mock_aws}")" -eq 1
+  test "$(mock_get_call_num "${mock_crontab}")" -eq 1
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/sites/site1.site.json" >&3
+  test -f /etc/chillbox/sites/site1.site.json
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the directory /usr/local/src/site1" >&3
+  test -d /usr/local/src/site1
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the directory /srv/site1/root" >&3
+  test -d /srv/site1/root
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the directory /var/log/nginx/site1" >&3
+  test -d /var/log/nginx/site1
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/templates/site1.nginx.conf.template" >&3
+  test -f /etc/chillbox/templates/site1.nginx.conf.template
+
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /srv/chillbox/site1/version.txt" >&3
+  test -f /srv/chillbox/site1/version.txt
 }
-
-# FIXTURES
-# SITES_ARTIFACT
-# $slugname-$version.artifact.tar.gz
-# /etc/chillbox/env_names
-
-# MOCKS
-# aws
-# rc-service
-# rc-update
-# python
-# ./.venv/bin/pip
-# ./.venv/bin/flask
-# su or chill ?
-

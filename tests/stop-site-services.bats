@@ -1,17 +1,9 @@
-
 #!/usr/bin/env bats
 
-CRITICAL=50
-DEBUG=10
-ERROR=40
-FATAL=50
-INFO=20
-NOTSET=0
-WARN=30
-WARNING=30
-LOGGING_LEVEL=${LOGGING_LEVEL:-$WARNING}
+source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 
 setup_file() {
+  test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
   export slugname="site1"
 
   tmp_dir=$(mktemp -d)
@@ -21,7 +13,7 @@ setup_file() {
 }
 
 teardown_file() {
-  test -d "$tmp_dir" && echo " rm -rf $tmp_dir"
+  test -d "$tmp_dir" && rm -rf $tmp_dir
 }
 
 setup() {
@@ -40,7 +32,7 @@ setup() {
   test "${LOGGING_LEVEL}" -le $DEBUG \
     && echo "# Creates a mock rc-update symbolic link: $BATS_RUN_TMPDIR/rc-update to $(readlink $BATS_RUN_TMPDIR/rc-update)" >&3
 
-  service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
+  service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Make an existing service handler dir and json file
   echo $service_obj | jq -c '.' > $slugdir/api.service_handler.json
   mkdir -p $slugdir/api

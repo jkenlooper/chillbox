@@ -2,6 +2,7 @@
 
 set -o errexit
 
+sites_artifact=${1:-""}
 
 export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
 test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
@@ -25,11 +26,16 @@ echo "INFO $0: Running site init"
 # TODO: make a backup directory of previous sites and then compare new sites to
 # find any sites that should be deleted. This would only be applicable to server
 # version; not docker version.
-tmp_sites_artifact=$(mktemp)
-aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
-  $tmp_sites_artifact
-exit 0
+if [ -z "${sites_artifact}" ]; then
+  echo "INFO $0: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
+  tmp_sites_artifact=$(mktemp)
+  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+    s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
+    $tmp_sites_artifact
+else
+  echo "INFO $0: Using sites artifact file $sites_artifact"
+  tmp_sites_artifact=$sites_artifact
+fi
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
@@ -121,6 +127,7 @@ for site_json in $sites; do
   mkdir -p /var/log/nginx/$slugname/
   chown -R nginx /var/log/nginx/$slugname/
   # Install nginx templates that start with slugname
+  mkdir -p /etc/chillbox/templates/
   mv $slugdir/nginx/templates/$slugname*.nginx.conf.template /etc/chillbox/templates/
   rm -rf $slugdir/nginx
   # Set version

@@ -1,6 +1,9 @@
 #!/usr/bin/env bats
 
+source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
+
 setup_file() {
+  test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
   export TECH_EMAIL="test@example.com"
   export LETS_ENCRYPT_SERVER="letsencrypt_test"
   export ACME_SH_VERSION="3.0.1"

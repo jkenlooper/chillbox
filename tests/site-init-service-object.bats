@@ -1,16 +1,9 @@
 #!/usr/bin/env bats
 
-CRITICAL=50
-DEBUG=10
-ERROR=40
-FATAL=50
-INFO=20
-NOTSET=0
-WARN=30
-WARNING=30
-LOGGING_LEVEL=${LOGGING_LEVEL:-$WARNING}
+source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 
 setup_file() {
+  test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
   export slugname="site1"
 
   adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
@@ -19,7 +12,7 @@ setup_file() {
   export tmp_artifact=$tmp_dir/site1-artifact.tar.gz
   "${BATS_TEST_DIRNAME}"/fixtures/site1/bin/artifact.sh $tmp_artifact
 
-  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
+  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
 
   export slugdir="$tmp_dir/usr/local/src/$slugname"
   mkdir -p "$slugdir"
@@ -33,7 +26,7 @@ setup_file() {
 }
 teardown_file() {
   rm -f /etc/chillbox/env_names
-  test -d "$tmp_dir" && echo " rm -rf $tmp_dir"
+  test -d "$tmp_dir" && rm -rf $tmp_dir
 }
 
 setup() {
@@ -134,7 +127,7 @@ main() {
 
 @test "pass when service lang template is flask" {
   # Arrange
-  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
+  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
   export service_handler=api
   export service_name=api
@@ -173,7 +166,7 @@ main() {
 
 @test "pass when service lang template is chill and freeze is true" {
   # Arrange
-  export service_obj="$(jq -c '.services[1]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
+  export service_obj="$(jq -c '.services[1]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
   export service_handler=chill
   export service_name=chillstatic
@@ -197,7 +190,7 @@ main() {
 
 @test "pass when service lang template is chill and freeze is false" {
   # Arrange
-  export service_obj="$(jq -c '.services[2]' "${BATS_TEST_DIRNAME}"/fixtures/site1.site.json)"
+  export service_obj="$(jq -c '.services[2]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
   export service_handler=chill
   export service_name=chilldynamic
