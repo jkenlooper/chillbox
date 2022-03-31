@@ -2,7 +2,13 @@
 
 set -o errexit
 
-sites_artifact=${1:-""}
+sites_artifact_file=${1:-""}
+
+export SITES_ARTIFACT=${SITES_ARTIFACT}
+if [ -z "${sites_artifact_file}" ]; then
+  test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: SITES_ARTIFACT variable is empty" && exit 1)
+  echo "INFO $0: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
+fi
 
 export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
 test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
@@ -11,10 +17,6 @@ echo "INFO $0: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
 export ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $0: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $0: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
-
-export SITES_ARTIFACT=${SITES_ARTIFACT}
-test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: SITES_ARTIFACT variable is empty" && exit 1)
-echo "INFO $0: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 
 export CHILLBOX_SERVER_PORT=${CHILLBOX_SERVER_PORT}
 test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $0: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
@@ -26,15 +28,16 @@ echo "INFO $0: Running site init"
 # TODO: make a backup directory of previous sites and then compare new sites to
 # find any sites that should be deleted. This would only be applicable to server
 # version; not docker version.
-if [ -z "${sites_artifact}" ]; then
+if [ -z "${sites_artifact_file}" ]; then
   echo "INFO $0: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
   tmp_sites_artifact=$(mktemp)
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT \
     $tmp_sites_artifact
 else
-  echo "INFO $0: Using sites artifact file $sites_artifact"
-  tmp_sites_artifact=$sites_artifact
+  test -f "${sites_artifact_file}" || (echo "ERROR $0: No file found at ${sites_artifact_file}" && exit 1)
+  echo "INFO $0: Using sites artifact file $sites_artifact_file"
+  tmp_sites_artifact=$sites_artifact_file
 fi
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites

@@ -10,15 +10,15 @@ setup_file() {
   mkdir -p /usr/local/src
 
   tmp_dir=$(mktemp -d)
-  export sites_artifact=$tmp_dir/sites.tar.gz
+  export sites_artifact_file=$tmp_dir/sites.tar.gz
 
   cd "${BATS_TEST_DIRNAME}"/fixtures
-  tar -c -z -f $sites_artifact sites
+  tar -c -z -f $sites_artifact_file sites
 
-  export S3_ARTIFACT_ENDPOINT_URL="TODO"
-  export ARTIFACT_BUCKET_NAME="TODO"
-  export SITES_ARTIFACT="TODO"
-  export CHILLBOX_SERVER_PORT="TODO"
+  export S3_ARTIFACT_ENDPOINT_URL="https://s3.example.com"
+  export ARTIFACT_BUCKET_NAME="example-artifact-bucket-name"
+  export SITES_ARTIFACT="mock-sites-example.sites.tar.gz"
+  export CHILLBOX_SERVER_PORT="7777"
 
   "${BATS_TEST_DIRNAME}"/../bin/create-env_names-file.sh
 
@@ -119,8 +119,8 @@ main() {
 }
 
 @test "pass when it cycles over sites from sites artifact file" {
-  echo "# sites_artifact $sites_artifact" >&3
-  run main "${sites_artifact}"
+  echo "# sites_artifact_file $sites_artifact_file" >&3
+  run main "${sites_artifact_file}"
   assert_success
 
   test "$(mock_get_call_num "${mock_aws}")" -eq 1
