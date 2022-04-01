@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-# Move the minio specific bits into it's own script.
-# The local environment should set the tfvars to not create bucket resources on
-# linode and will use the local minio server.
-
 # Example of getting terraform variables.
 # echo "var.chillbox_artifact" | terraform console | xargs
 
@@ -103,6 +99,7 @@ upload_immutable() {
     s3 cp $immutable_tmp_dir/$slugname/ \
     s3://${immutable_bucket_name}/${slugname}/${version} \
     --cache-control 'public, max-age:31536000, immutable' \
+    --acl 'public-read' \
     --recursive >> $BUILD_ARTIFACTS_LOG_FILE
 }
 
@@ -179,7 +176,6 @@ for site_json in $sites; do
 
   upload_immutable $immutable_archive_file
   upload_artifact $artifact_file
-  # s3://${artifact_bucket_name}/${slugname}/$slugname-$version.artifact.tar.gz
 
 done
 

@@ -2,37 +2,72 @@
 
 set -o errexit
 
+#docker pull bitnami/minio:2022.3.26-debian-10-r4
+#docker image ls --digests bitnami/minio
+# https://github.com/bitnami/bitnami-docker-minio
+MINIO_IMAGE="bitnami/minio:2022.3.26-debian-10-r4@sha256:398ea232ada79b41d2d0b0b96d7d01be723c0c13904b58295302cb2908db7022"
+
 app_port=9081
 working_dir=$PWD
 tech_email="local@example.com"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 endpoint_url="http://localhost:9000"
+MINIO_ROOT_USER=${MINIO_ROOT_USER:-'chillbox-admin'}
+test "${#MINIO_ROOT_USER}" -ge 3 || (echo "Minio root user must be greater than 3 characters" && exit 1)
+MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-'chillllamabox'}
+test "${#MINIO_ROOT_PASSWORD}" -ge 8 || (echo "Minio root password must be greater than 8 characters" && exit 1)
+
 export AWS_ACCESS_KEY_ID=localvagrantaccesskey
 export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
 
 cleanup () {
   echo 'cleanup'
-  docker stop minio || printf 'ignored'
-  docker rm minio || printf 'ignored'
-  docker stop chillbox || printf 'ignored'
-  docker rm chillbox || printf 'ignored'
-  docker network rm chillboxnet || printf 'ignored'
+  docker stop chillbox-minio > /dev/null || echo '   ...ignored'
+  docker rm chillbox-minio > /dev/null || echo '   ...ignored'
+  docker stop chillbox > /dev/null || echo '   ...ignored'
+  docker rm chillbox > /dev/null || echo '   ...ignored'
+  docker network rm chillboxnet > /dev/null || echo '   ...ignored'
 }
 trap cleanup err
 cleanup
 
-docker network create chillboxnet --driver bridge || echo 'ignore existing network'
+docker network create chillboxnet --driver bridge || echo '   ...ignore existing network'
 
-docker run --name minio \
+docker run --name chillbox-minio \
   -d \
-  --env MINIO_ACCESS_KEY="$AWS_ACCESS_KEY_ID" \
-  --env MINIO_SECRET_KEY="$AWS_SECRET_ACCESS_KEY" \
+  --tty \
+  --env MINIO_ROOT_USER="$MINIO_ROOT_USER" \
+  --env MINIO_ROOT_PASSWORD="$MINIO_ROOT_PASSWORD" \
+  --env MINIO_DEFAULT_BUCKETS="${immutable_bucket_name}:public,${artifact_bucket_name}" \
   --publish 9000:9000 \
   --publish 9001:9001 \
   --network chillboxnet \
-  --mount 'type=volume,src=chillboxdata,dst=/data,readonly=false' \
-  bitnami/minio:latest
+  --mount 'type=volume,src=chillbox-minio-data,dst=/data,readonly=false' \
+  $MINIO_IMAGE
+
+printf "\nWaiting for chillbox-minio container to be in running state."
+while true; do
+  sleep 1
+  chillbox_minio_state="$(docker inspect --format '{{.State.Running}}' chillbox-minio)"
+  if [ "${chillbox_minio_state}" = "true" ]; then
+    printf "."
+    # Try to run a minio-client command to check if the minio server is online.
+    docker exec chillbox-minio mc admin info local --json | jq --exit-status '.info.mode == "online"' > /dev/null 2> /dev/null || continue
+    echo -e "\nSuccess: mc admin info local"
+    # Need to also check if the 'mc admin user list' command will respond
+    docker exec chillbox-minio mc admin user list local 2> /dev/null || continue
+    echo "Success: mc admin user list local"
+    break
+  else
+    printf "$(docker inspect --format '{{.State.Status}}' chillbox-minio) ..."
+  fi
+done
+#wget --quiet --tries=10 --retry-connrefused --show-progress --server-response --waitretry=1 -O /dev/null http://localhost:9001
+docker logs chillbox-minio
+docker exec chillbox-minio mc admin user add local $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY || echo "   ...ignored"
+
+exit 0
 
 for bucketname in $immutable_bucket_name $artifact_bucket_name; do
   aws \
@@ -51,7 +86,7 @@ eval "$(jq --arg jq_immutable_bucket_name $immutable_bucket_name \
     endpoint_url: $jq_endpoint_url,
     chillbox_url: "",
 }' | ./build-artifacts.sh | jq -r '@sh "SITES_ARTIFACT=\(.sites_artifact)"')"
-echo $SITES_ARTIFACT
+test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is empty." && exit 1)
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {
@@ -71,11 +106,11 @@ trap remove_tmp_site_secrets exit
 tar c -z -f "${tmp_site_secrets}" local-secrets
 
 cd $working_dir
-# Use the '--network host' in order to connect to the local s3 (minio) when building.
+# Use the '--network host' in order to connect to the local s3 (chillbox-minio) when building.
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
   --build-arg S3_ARTIFACT_ENDPOINT_URL="http://$(hostname -I | cut -f1 -d ' '):9000"  \
-  --build-arg S3_ENDPOINT_URL="http://minio:9000" \
+  --build-arg S3_ENDPOINT_URL="http://chillbox-minio:9000" \
   --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
   --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
@@ -89,7 +124,7 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
 
 docker run -d --tty --name chillbox \
   -e CHILLBOX_SERVER_NAME=chillbox.test \
-  -e S3_ENDPOINT_URL="http://minio:9000" \
+  -e S3_ENDPOINT_URL="http://chillbox-minio:9000" \
   -e ARTIFACT_BUCKET_NAME="chillboxartifact" \
   -e IMMUTABLE_BUCKET_NAME="chillboximmutable" \
   -e CHILLBOX_SERVER_PORT=80 \
