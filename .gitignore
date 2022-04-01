@@ -6,4 +6,6 @@
 /crash.*.log
 /private.auto.tfvars
 /terraform.tfstate.d/
-/local-secrets/
+/local-secrets/*
+!/local-secrets/.gitkeep
+/.local-env

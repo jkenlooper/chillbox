@@ -89,6 +89,8 @@ resource "digitalocean_firewall" "web" {
 data "external" "build_artifacts" {
   program = ["./build-artifacts.sh"]
   query = {
+    sites_git_repo = var.sites_git_repo
+    sites_git_branch = var.sites_git_branch
     immutable_bucket_name = digitalocean_spaces_bucket.immutable.name
     artifact_bucket_name  = digitalocean_spaces_bucket.artifact.name
     endpoint_url          = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"

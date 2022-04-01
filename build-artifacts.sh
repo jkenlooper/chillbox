@@ -23,14 +23,19 @@ test -n "$AWS_SECRET_ACCESS_KEY" || (echo "No AWS_SECRET_ACCESS_KEY set." >> $BU
 
 # Extract and set shell variables from JSON input
 eval "$(jq -r '@sh "
+  sites_git_repo=\(.sites_git_repo)
+  sites_git_branch=\(.sites_git_branch)
   immutable_bucket_name=\(.immutable_bucket_name)
   artifact_bucket_name=\(.artifact_bucket_name)
   endpoint_url=\(.endpoint_url)
   chillbox_url=\(.chillbox_url)
   "')"
 
-sites_repo="git@github.com:jkenlooper/chillbox-sites-snowflake.git"
-sites_branch="main"
+echo "set shell variables from JSON stdin" >> $BUILD_ARTIFACTS_LOG_FILE
+echo "  immutable_bucket_name=$immutable_bucket_name" >> $BUILD_ARTIFACTS_LOG_FILE
+echo "  artifact_bucket_name=$artifact_bucket_name" >> $BUILD_ARTIFACTS_LOG_FILE
+echo "  endpoint_url=$endpoint_url" >> $BUILD_ARTIFACTS_LOG_FILE
+echo "  chillbox_url=$chillbox_url" >> $BUILD_ARTIFACTS_LOG_FILE
 
 aws configure set default.s3.max_concurrent_requests 1
 #aws configure set default.s3.max_bandwidth 1MB/s
@@ -38,13 +43,16 @@ aws configure set default.s3.max_concurrent_requests 1
 working_dir=$PWD
 
 CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
+echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> $BUILD_ARTIFACTS_LOG_FILE
 
 tmp_sites_dir=$(mktemp -d)
-git clone --depth 1 --single-branch --branch "$sites_branch" $sites_repo $tmp_sites_dir
+echo "Cloning $sites_git_repo $sites_git_branch to tmp dir: $tmp_sites_dir" >> $BUILD_ARTIFACTS_LOG_FILE
+git clone --depth 1 --single-branch --branch "$sites_git_branch" $sites_git_repo $tmp_sites_dir
 cd $tmp_sites_dir
 
 sites_commit_id=$(git rev-parse --short HEAD)
-SITES_ARTIFACT=$(basename ${sites_repo%.git})-$sites_branch-$sites_commit_id.tar.gz
+SITES_ARTIFACT=$(basename ${sites_git_repo%.git})-$sites_git_branch-$sites_commit_id.tar.gz
+echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $BUILD_ARTIFACTS_LOG_FILE
 
 
 # Check if artifact files exists in s3 bucket and exit early if so.
@@ -181,7 +189,7 @@ done
 
 cd $tmp_sites_dir
 tmp_sites_artifact=$(mktemp)
-export SITES_ARTIFACT=$(basename ${sites_repo%.git})-$sites_branch-$sites_commit_id.tar.gz
+export SITES_ARTIFACT=$(basename ${sites_git_repo%.git})-$sites_git_branch-$sites_commit_id.tar.gz
 tar -c -z -f $tmp_sites_artifact sites >> $BUILD_ARTIFACTS_LOG_FILE
 aws \
   --endpoint-url "$endpoint_url" \

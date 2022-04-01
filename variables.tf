@@ -130,3 +130,15 @@ variable "dns_ttl" {
     error_message = "Values for DigitalOcean DNS TTLs must be at least 30 seconds."
   }
 }
+
+variable "sites_git_repo" {
+  default     = "git@github.com:jkenlooper/chillbox-sites-example.git"
+  description = "The git clone URL to use for the sites configuration."
+  type        = string
+}
+
+variable "sites_git_branch" {
+  default     = "main"
+  description = "The git branch name for the sites git repo."
+  type        = string
+}

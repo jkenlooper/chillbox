@@ -2,10 +2,26 @@
 
 set -o errexit
 
+# These are only used for local development. The AWS credentials specified here
+# are used for the local S3 object storage server; Minio in this case. Any other
+# apps that need to interact with the local S3 should also use the below
+# credentials.
+# WARNING: Do NOT use actual AWS credentials here!
+export AWS_ACCESS_KEY_ID="local-chillbox-app-key-id"
+export AWS_SECRET_ACCESS_KEY="local-secret-access-key-with-readwrite-policy"
+
 #docker pull bitnami/minio:2022.3.26-debian-10-r4
 #docker image ls --digests bitnami/minio
 # https://github.com/bitnami/bitnami-docker-minio
 MINIO_IMAGE="bitnami/minio:2022.3.26-debian-10-r4@sha256:398ea232ada79b41d2d0b0b96d7d01be723c0c13904b58295302cb2908db7022"
+
+# Allow setting defaults for local development
+LOCAL_ENV_CONFIG=${1:-".local-env"}
+test -f "${LOCAL_ENV_CONFIG}" && source "${LOCAL_ENV_CONFIG}"
+
+# The .local-env file (or the file that was the first arg) would typically set these variables.
+sites_git_repo=${sites_git_repo:-"git@github.com:jkenlooper/chillbox-sites-example.git"}
+sites_git_branch=${sites_git_branch:-"main"}
 
 app_port=9081
 working_dir=$PWD
@@ -18,9 +34,6 @@ test "${#MINIO_ROOT_USER}" -ge 3 || (echo "Minio root user must be greater than 
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-'chillllamabox'}
 test "${#MINIO_ROOT_PASSWORD}" -ge 8 || (echo "Minio root password must be greater than 8 characters" && exit 1)
 
-export AWS_ACCESS_KEY_ID=localvagrantaccesskey
-export AWS_SECRET_ACCESS_KEY="localvagrantsecretkey1234"
-
 cleanup () {
   echo 'cleanup'
   docker stop chillbox-minio > /dev/null || echo '   ...ignored'
@@ -29,7 +42,6 @@ cleanup () {
   docker rm chillbox > /dev/null || echo '   ...ignored'
   docker network rm chillboxnet > /dev/null || echo '   ...ignored'
 }
-trap cleanup err
 cleanup
 
 docker network create chillboxnet --driver bridge || echo '   ...ignore existing network'
@@ -65,28 +77,26 @@ while true; do
 done
 #wget --quiet --tries=10 --retry-connrefused --show-progress --server-response --waitretry=1 -O /dev/null http://localhost:9001
 docker logs chillbox-minio
-docker exec chillbox-minio mc admin user add local $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY || echo "   ...ignored"
-
-exit 0
-
-for bucketname in $immutable_bucket_name $artifact_bucket_name; do
-  aws \
-    --endpoint-url "$endpoint_url" \
-    s3 mb s3://$bucketname || echo "Ignoring error if bucket already exists."
-done
-# TODO: make the $immutable_bucket_name public
+docker exec chillbox-minio mc admin user add local "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" || echo "   ...ignored"
+docker exec chillbox-minio mc admin policy set local readwrite user="${AWS_ACCESS_KEY_ID}"
 
 # Set chillbox_url as empty string since this is local.
 eval "$(jq --arg jq_immutable_bucket_name $immutable_bucket_name \
   --arg jq_artifact_bucket_name $artifact_bucket_name \
   --arg jq_endpoint_url $endpoint_url \
+  --arg jq_sites_git_repo $sites_git_repo \
+  --arg jq_sites_git_branch $sites_git_branch \
   --null-input '{
+    sites_git_repo: $jq_sites_git_repo,
+    sites_git_branch: $jq_sites_git_branch,
     immutable_bucket_name: $jq_immutable_bucket_name,
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
     chillbox_url: "",
 }' | ./build-artifacts.sh | jq -r '@sh "SITES_ARTIFACT=\(.sites_artifact)"')"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is empty." && exit 1)
+
+echo "SITES_ARTIFACT=$SITES_ARTIFACT"
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {
