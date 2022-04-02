@@ -42,6 +42,16 @@ fi
 mkdir -p /etc/chillbox/sites/
 tar x -z -f $tmp_sites_artifact -C /etc/chillbox/sites --strip-components 1 sites
 
+
+# Most likely the nginx user has been added when the nginx package was
+# installed.
+if id -u nginx &> /dev/null; then
+  echo "nginx user already added."
+else
+  echo "Adding nginx user."
+  adduser -D -h /dev/null -H "nginx" || printf "Ignoring adduser error"
+fi
+
 export server_port=$CHILLBOX_SERVER_PORT
 current_working_dir=/usr/local/src
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
