@@ -142,3 +142,20 @@ variable "sites_git_branch" {
   description = "The git branch name for the sites git repo."
   type        = string
 }
+
+# TODO Create a chillbox-build.auto.tfvars file that sets these.
+variable "has_chillbox_artifact" {
+  default = false
+  description = "Has the chillbox artifact been created."
+  type = bool
+}
+variable "sites_artifact" {
+  default = ""
+  description = "The sites artifact file."
+  type        = string
+}
+variable "chillbox_artifact" {
+  default = ""
+  description = "The chillbox artifact file."
+  type        = string
+}

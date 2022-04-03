@@ -15,7 +15,7 @@ resource "digitalocean_custom_image" "alpine" {
 }
 
 resource "digitalocean_droplet" "chillbox" {
-  count      = 1
+  count      = var.has_chillbox_artifact ? 1 : 0
   name       = lower("chillbox-${var.environment}")
   size       = var.chillbox_droplet_size
   image      = digitalocean_custom_image.alpine.id
@@ -31,21 +31,25 @@ resource "digitalocean_droplet" "chillbox" {
       user_data,
     ]
   }
-  user_data = local_file.alpine_box_init.sensitive_content
+  user_data = one(local_sensitive_file.alpine_box_init[*].content)
 }
 
-resource "local_file" "alpine_box_init" {
+resource "local_sensitive_file" "alpine_box_init" {
+  count      = var.has_chillbox_artifact ? 1 : 0
   filename        = "${lower(var.environment)}/alpine-box-init.sh"
   file_permission = "0500"
-  sensitive_content = templatefile("alpine-box-init.sh.tftpl", {
+  content = templatefile("alpine-box-init.sh.tftpl", {
     developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
     access_key_id : var.access_key_id,
     secret_access_key : var.secret_access_key,
     tech_email : var.tech_email,
     immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,
     artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,
-    sites_artifact : data.external.build_artifacts.result.sites_artifact,
-    chillbox_artifact : data.external.build_artifacts.result.chillbox_artifact
+    #sites_artifact : data.external.build_artifacts.result.sites_artifact,
+    #chillbox_artifact : data.external.build_artifacts.result.chillbox_artifact
+
+    sites_artifact : var.sites_artifact,
+    chillbox_artifact : var.chillbox_artifact
     # No slash at the end of this s3_endpoint_url
     s3_endpoint_url : "https://${var.bucket_region}.digitaloceanspaces.com",
     chillbox_hostname : "${var.sub_domain}${var.domain}",
@@ -53,7 +57,7 @@ resource "local_file" "alpine_box_init" {
 }
 
 resource "digitalocean_record" "chillbox" {
-  count  = 1
+  count      = var.has_chillbox_artifact ? 1 : 0
   domain = var.domain
   type   = "A"
   name   = trimsuffix(var.sub_domain, ".")

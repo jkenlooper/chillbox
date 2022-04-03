@@ -1,11 +1,11 @@
-/.terraform.lock.hcl
-/.terraform/
+/terraform/.terraform/
+/terraform/terraform.tfstate.d/
+/terraform/private.auto.tfvars
+
 /bin/alpine-box-init.sh
 /build-artifacts.sh.log
 /chillbox.*.tar.gz
 /crash.*.log
-/private.auto.tfvars
-/terraform.tfstate.d/
 /local-secrets/*
 !/local-secrets/.gitkeep
 /.local-env
