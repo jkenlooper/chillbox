@@ -93,8 +93,41 @@ eval "$(jq --arg jq_immutable_bucket_name $immutable_bucket_name \
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
     chillbox_url: "",
-}' | ./build-artifacts.sh | jq -r '@sh "SITES_ARTIFACT=\(.sites_artifact)"')"
+}' | ./build-artifacts.sh | jq -r '@sh "
+    SITES_ARTIFACT=\(.sites_artifact)
+    CHILLBOX_ARTIFACT=\(.chillbox_artifact)
+    "')"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is empty." && exit 1)
+
+jq --arg jq_immutable_bucket_name "$immutable_bucket_name" \
+  --arg jq_artifact_bucket_name "$artifact_bucket_name" \
+  --arg jq_endpoint_url "$endpoint_url" \
+  --arg jq_sites_artifact "$SITES_ARTIFACT" \
+  --arg jq_chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  --null-input '{
+    sites_artifact: $jq_sites_artifact,
+    chillbox_artifact: $jq_chillbox_artifact,
+    immutable_bucket_name: $jq_immutable_bucket_name,
+    artifact_bucket_name: $jq_artifact_bucket_name,
+    endpoint_url: $jq_endpoint_url,
+    chillbox_url: "",
+}' | ./upload-artifacts.sh
+
+
+# TODO extract and upload the immutable archive files
+upload_immutable() {
+  archive_file=$1
+  immutable_tmp_dir=$(mktemp -d)
+  tar --directory=$immutable_tmp_dir --extract --gunzip -f $archive_file
+
+  aws \
+    --endpoint-url "$endpoint_url" \
+    s3 cp $immutable_tmp_dir/$slugname/ \
+    s3://${immutable_bucket_name}/${slugname}/${version} \
+    --cache-control 'public, max-age:31536000, immutable' \
+    --acl 'public-read' \
+    --recursive >> $LOG_FILE
+}
 
 echo "SITES_ARTIFACT=$SITES_ARTIFACT"
 

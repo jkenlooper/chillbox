@@ -64,3 +64,5 @@ resource "digitalocean_record" "chillbox" {
   value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
   ttl    = var.dns_ttl
 }
+# TODO create all other digitalocean_record resources for each domain listed in
+# sites.json. Prepend sub_domain with the environment.

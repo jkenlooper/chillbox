@@ -6,6 +6,31 @@
 
 set -o errexit
 
+# TODO Split up to have two terraform deployments: chillbox-infra, chillbox-server.
+# 0. Run build-artifact.sh to create the artifact files
+#      - move upload bits of build-artifacts.sh into upload-artifacts.sh
+# 1. Run terraform command on chillbox-infrastructure first to create or update
+#    the resources like s3 bucket and other supporting bits.
+#      - Create separate terraform directory for chillbox-infra (s3 buckets)
+#      - Create separate terraform directory for chillbox-server (droplets,
+#        DNS records for domains)
+# 2. Upload the built artifacts and extract and upload the immutable.
+# 3. Run terraform command for chillbox-server to deploy chillbox droplet and
+#    other resources needed.
+
+# ---
+
+#  program = ["../build-artifacts.sh"]
+#  query = {
+#    sites_git_repo        = var.sites_git_repo
+#    sites_git_branch      = var.sites_git_branch
+#    immutable_bucket_name = digitalocean_spaces_bucket.immutable.name
+#    artifact_bucket_name  = digitalocean_spaces_bucket.artifact.name
+#    endpoint_url          = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"
+#    chillbox_url          = "https://${var.sub_domain}${var.domain}"
+#  }
+
+
 # Create this file by following instructions at jkenlooper/alpine-droplet
 #"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-01-27-1339/alpine-virt-image-2022-01-27-1339.qcow2.bz2"
 ALPINE_CUSTOM_IMAGE="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-01-27-1339/alpine-virt-image-2022-01-27-1339.qcow2.bz2"
@@ -33,6 +58,16 @@ docker run \
   chillbox-terraform init
 docker cp chillbox-terraform:/usr/local/src/chillbox-terraform/.terraform.lock.hcl ./
 docker rm chillbox-terraform
+
+docker run \
+  --rm \
+  -e WORKSPACE=development \
+  --name chillbox-terraform \
+  chillbox-terraform output
+
+# TODO set the variables and then execute the build-artifacts.sh
+
+exit 0
 
 # TODO if init then drop the user in
 docker run \
