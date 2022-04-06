@@ -4,7 +4,7 @@ set -o errexit
 
 working_dir=$(realpath $(dirname $0))
 
-# Need to use a log file for stdout since the stdout will be parsed as JSON by
+# Need to use a log file for stdout since the stdout could be parsed as JSON by
 # terraform external data source.
 LOG_FILE="$working_dir/$0.log"
 echo $(date) > $LOG_FILE
@@ -63,7 +63,6 @@ sites_manifest_json="$working_dir/dist/sites.manifest.json"
 jq -r '.[]' $sites_manifest_json \
   | while read -r artifact_file; do
     test -n "${artifact_file}" || continue
-    echo "artifact file: $artifact_file" >> $LOG_FILE
     slugname=$(dirname $artifact_file)
     artifact=$(basename $artifact_file)
 
@@ -72,6 +71,7 @@ jq -r '.[]' $sites_manifest_json \
       s3 ls \
       s3://${artifact_bucket_name}/$slugname/artifacts/$artifact || printf '')
     if [ ! -n "$artifact_exists" ]; then
+      echo "Uploading artifact: $artifact_file" >> $LOG_FILE
       aws \
         --endpoint-url "$endpoint_url" \
         s3 cp "$working_dir/dist/$artifact_file" \
@@ -81,37 +81,12 @@ jq -r '.[]' $sites_manifest_json \
     fi
   done
 
-#upload_immutable() {
-#  archive_file=$1
-#  immutable_tmp_dir=$(mktemp -d)
-#  tar --directory=$immutable_tmp_dir --extract --gunzip -f $archive_file
-#
-#  aws \
-#    --endpoint-url "$endpoint_url" \
-#    s3 cp $immutable_tmp_dir/$slugname/ \
-#    s3://${immutable_bucket_name}/${slugname}/${version} \
-#    --cache-control 'public, max-age:31536000, immutable' \
-#    --acl 'public-read' \
-#    --recursive >> $LOG_FILE
-#}
-#
-#upload_artifact() {
-#  archive_file=$1
-#  aws \
-#    --endpoint-url "$endpoint_url" \
-#    s3 cp $archive_file \
-#    s3://${artifact_bucket_name}/${slugname}/ >> $LOG_FILE
-#}
-
-
-echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
-
-##
-
 jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $sites_manifest_json)" \
   '{
     sites_artifact:$sites_artifact,
-    chillbox_artifact:$chillbox_artifact
+    chillbox_artifact:$chillbox_artifact,
+    sites:$sites_immutable_and_artifacts
   }'

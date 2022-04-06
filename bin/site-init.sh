@@ -78,9 +78,12 @@ for site_json in $sites; do
     continue
   fi
 
+  # A version.txt file is also added to the immutable bucket to allow skipping.
+  $(dirname $0)/upload-immutable-files-from-artifact.sh "${slugname}" "${version}"
+
   export tmp_artifact=$(mktemp)
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/$slugname-$version.artifact.tar.gz \
+    s3 cp s3://$ARTIFACT_BUCKET_NAME/${slugname}/artifacts/$slugname-$version.artifact.tar.gz \
     $tmp_artifact
 
 
