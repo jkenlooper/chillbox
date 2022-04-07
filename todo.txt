@@ -1,9 +1,0 @@
-certs
-https://github.com/acmesh-official/acme.sh
-
-dns
-https://luadns.com/
-
-
-init scripts
-https://wiki.alpinelinux.org/wiki/Writing_Init_Scripts
