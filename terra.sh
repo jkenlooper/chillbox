@@ -28,8 +28,9 @@ set -o errexit
 #    chillbox_url          = "https://${var.sub_domain}${var.domain}"
 #  }
 
-terraform_dir="$(dirname $(realpath $0))"
-project_dir="$(dirname $terraform_dir)"
+project_dir="$(dirname $(realpath $0))"
+terraform_infra_dir="$project_dir/terraform-010-infra"
+terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
@@ -80,30 +81,32 @@ test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variabl
 test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
 
 
-cd "${terraform_dir}"
+cd "${terraform_infra_dir}"
 
+infra_image="chillbox-$(basename $terraform_infra_dir)"
+infra_container="chillbox-$(basename $terraform_infra_dir)"
 export DOCKER_BUILDKIT=1
 docker build \
   --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
   --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM=$ALPINE_CUSTOM_IMAGE_CHECKSUM \
   --build-arg WORKSPACE=development \
-  -t chillbox-terraform \
+  -t "$infra_image" \
   .
 
 
 docker run \
-  --name chillbox-terraform \
-  chillbox-terraform init
-docker cp chillbox-terraform:/usr/local/src/chillbox-terraform/.terraform.lock.hcl ./
-docker rm chillbox-terraform
+  --name "${infra_container}" \
+  "$infra_image" init
+docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
+docker rm "${infra_container}"
 
 exit 0
 
 docker run \
   --rm \
   -e WORKSPACE=development \
-  --name chillbox-terraform \
-  chillbox-terraform output
+  --name "${infra_container}" \
+  "$infra_image" output
 
 # TODO set the variables and then execute the build-artifacts.sh
 
@@ -113,15 +116,15 @@ exit 0
 docker run \
   -i --tty \
   --rm \
-  --name chillbox-terraform \
+  --name "${infra_container}" \
   -e WORKSPACE=development \
-  --mount "type=bind,src=${terraform_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
-  --mount "type=bind,src=${terraform_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
-  --mount "type=bind,src=${terraform_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-  --mount "type=bind,src=${terraform_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
-  --mount "type=bind,src=${terraform_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
+  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
+  --mount "type=bind,src=${terraform_infra_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
-  chillbox-terraform sh
+  "$infra_image" sh
 
 exit 0
 
@@ -130,7 +133,6 @@ docker run \
   -i --tty \
   --rm \
   -e WORKSPACE=development \
-  --mount "type=bind,src=${terraform_dir},dst=/usr/local/src/chillbox-terraform" \
   --entrypoint="" \
   chillbox-terraform doterra.sh plan
 
@@ -139,5 +141,4 @@ docker run \
   -i --tty \
   --rm \
   -e WORKSPACE=development \
-  --mount "type=bind,src=${terraform_dir},dst=/usr/local/src/chillbox-terraform" \
   chillbox-terraform workspace show

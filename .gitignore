@@ -1,12 +1,16 @@
-/terraform/.terraform/
-/terraform/terraform.tfstate.d/
-/terraform/private.auto.tfvars
+/terraform-010-infra/.terraform/
+/terraform-010-infra/terraform.tfstate.d/
+/terraform-010-infra/private.auto.tfvars
+
+/terraform-020-chillbox/.terraform/
+/terraform-020-chillbox/terraform.tfstate.d/
+/terraform-020-chillbox/private.auto.tfvars
 
 /bin/alpine-box-init.sh
 /build-artifacts.sh.log
 /upload-artifacts.sh.log
 /chillbox.*.tar.gz
-/crash.*.log
+crash.*.log
 /local-secrets/*
 !/local-secrets/.gitkeep
 /.local-env
