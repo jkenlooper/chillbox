@@ -10,5 +10,6 @@
 /local-secrets/*
 !/local-secrets/.gitkeep
 /.local-env
+/.env
 
 /dist

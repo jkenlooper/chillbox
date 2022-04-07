@@ -20,8 +20,8 @@ LOCAL_ENV_CONFIG=${1:-".local-env"}
 test -f "${LOCAL_ENV_CONFIG}" && source "${LOCAL_ENV_CONFIG}"
 
 # The .local-env file (or the file that was the first arg) would typically set these variables.
-sites_git_repo=${sites_git_repo:-"git@github.com:jkenlooper/chillbox-sites-example.git"}
-sites_git_branch=${sites_git_branch:-"main"}
+SITES_GIT_REPO=${SITES_GIT_REPO:-"git@github.com:jkenlooper/chillbox-sites-example.git"}
+SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
 
 app_port=9081
 working_dir=$PWD
@@ -80,41 +80,36 @@ docker logs chillbox-minio
 docker exec chillbox-minio mc admin user add local "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" || echo "   ...ignored"
 docker exec chillbox-minio mc admin policy set local readwrite user="${AWS_ACCESS_KEY_ID}"
 
-# Set chillbox_url as empty string since this is local.
-eval "$(jq --arg jq_immutable_bucket_name $immutable_bucket_name \
-  --arg jq_artifact_bucket_name $artifact_bucket_name \
-  --arg jq_endpoint_url $endpoint_url \
-  --arg jq_sites_git_repo $sites_git_repo \
-  --arg jq_sites_git_branch $sites_git_branch \
+eval "$(jq \
+  --arg jq_sites_git_repo "$SITES_GIT_REPO" \
+  --arg jq_sites_git_branch "$SITES_GIT_BRANCH" \
   --null-input '{
     sites_git_repo: $jq_sites_git_repo,
     sites_git_branch: $jq_sites_git_branch,
-    immutable_bucket_name: $jq_immutable_bucket_name,
-    artifact_bucket_name: $jq_artifact_bucket_name,
-    endpoint_url: $jq_endpoint_url,
-    chillbox_url: "",
 }' | ./build-artifacts.sh | jq -r '@sh "
     SITES_ARTIFACT=\(.sites_artifact)
     CHILLBOX_ARTIFACT=\(.chillbox_artifact)
+    SITES_MANIFEST=\(.sites_manifest)
     "')"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is empty." && exit 1)
 test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
+test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
 
-jq --arg jq_immutable_bucket_name "$immutable_bucket_name" \
+jq \
+  --arg jq_immutable_bucket_name "$immutable_bucket_name" \
   --arg jq_artifact_bucket_name "$artifact_bucket_name" \
   --arg jq_endpoint_url "$endpoint_url" \
   --arg jq_sites_artifact "$SITES_ARTIFACT" \
   --arg jq_chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  --arg jq_sites_manifest "$SITES_MANIFEST" \
   --null-input '{
     sites_artifact: $jq_sites_artifact,
     chillbox_artifact: $jq_chillbox_artifact,
+    sites_manifest: $jq_sites_manifest,
     immutable_bucket_name: $jq_immutable_bucket_name,
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
-    chillbox_url: "",
 }' | ./upload-artifacts.sh
-
-echo "SITES_ARTIFACT=$SITES_ARTIFACT"
 
 tmp_awscredentials=$(mktemp)
 remove_tmp_awscredentials () {

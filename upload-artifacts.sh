@@ -24,15 +24,15 @@ test -n "$AWS_SECRET_ACCESS_KEY" || (echo "No AWS_SECRET_ACCESS_KEY set." >> $LO
 eval "$(jq -r '@sh "
   SITES_ARTIFACT=\(.sites_artifact)
   CHILLBOX_ARTIFACT=\(.chillbox_artifact)
+  SITES_MANIFEST=\(.sites_manifest)
   immutable_bucket_name=\(.immutable_bucket_name)
   artifact_bucket_name=\(.artifact_bucket_name)
   endpoint_url=\(.endpoint_url)
   "')"
-export SITES_ARTIFACT
-export CHILLBOX_ARTIFACT
 echo "set shell variables from JSON stdin" >> $LOG_FILE
 echo "  SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
 echo "  CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> $LOG_FILE
+echo "  SITES_MANIFEST=$SITES_MANIFEST" >> $LOG_FILE
 echo "  immutable_bucket_name=$immutable_bucket_name" >> $LOG_FILE
 echo "  artifact_bucket_name=$artifact_bucket_name" >> $LOG_FILE
 echo "  endpoint_url=$endpoint_url" >> $LOG_FILE
@@ -58,9 +58,7 @@ else
   echo "No changes to existing site artifact: $SITES_ARTIFACT" >> $LOG_FILE
 fi
 
-sites_manifest_json="$working_dir/dist/sites.manifest.json"
-
-jq -r '.[]' $sites_manifest_json \
+jq -r '.[]' $SITES_MANIFEST \
   | while read -r artifact_file; do
     test -n "${artifact_file}" || continue
     slugname=$(dirname $artifact_file)
@@ -84,7 +82,7 @@ jq -r '.[]' $sites_manifest_json \
 jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
-  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $sites_manifest_json)" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $SITES_MANIFEST)" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$chillbox_artifact,

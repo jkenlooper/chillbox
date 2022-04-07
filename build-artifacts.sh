@@ -21,17 +21,11 @@ trap showlog err
 eval "$(jq -r '@sh "
   sites_git_repo=\(.sites_git_repo)
   sites_git_branch=\(.sites_git_branch)
-  immutable_bucket_name=\(.immutable_bucket_name)
-  artifact_bucket_name=\(.artifact_bucket_name)
-  endpoint_url=\(.endpoint_url)
-  chillbox_url=\(.chillbox_url)
   "')"
 
 echo "set shell variables from JSON stdin" >> $LOG_FILE
-echo "  immutable_bucket_name=$immutable_bucket_name" >> $LOG_FILE
-echo "  artifact_bucket_name=$artifact_bucket_name" >> $LOG_FILE
-echo "  endpoint_url=$endpoint_url" >> $LOG_FILE
-echo "  chillbox_url=$chillbox_url" >> $LOG_FILE
+echo "  sites_git_repo=$sites_git_repo" >> $LOG_FILE
+echo "  sites_git_branch=$sites_git_branch" >> $LOG_FILE
 
 CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
 echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> $LOG_FILE
@@ -135,9 +129,11 @@ rm -f $tmp_file_list
 jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  --arg jq_sites_manifest "$sites_manifest_json" \
   --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $sites_manifest_json)" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$chillbox_artifact,
+    sites_manifest:$jq_sites_manifest,
     sites:$sites_immutable_and_artifacts
   }'

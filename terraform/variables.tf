@@ -131,18 +131,6 @@ variable "dns_ttl" {
   }
 }
 
-variable "sites_git_repo" {
-  default     = "git@github.com:jkenlooper/chillbox-sites-example.git"
-  description = "The git clone URL to use for the sites configuration."
-  type        = string
-}
-
-variable "sites_git_branch" {
-  default     = "main"
-  description = "The git branch name for the sites git repo."
-  type        = string
-}
-
 # TODO Create a chillbox-build.auto.tfvars file that sets these.
 variable "has_chillbox_artifact" {
   default = false
