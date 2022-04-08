@@ -108,10 +108,44 @@ CREATE_SCRIPTS
 
 WORKDIR /usr/local/src/chillbox-terraform
 
+ARG ALPINE_CUSTOM_IMAGE=""
+ARG ALPINE_CUSTOM_IMAGE_CHECKSUM=""
+RUN <<WGET_ALPINE_CUSTOM_IMAGE
+set -o errexit
+test -n "${ALPINE_CUSTOM_IMAGE}"
+test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}"
+wget $ALPINE_CUSTOM_IMAGE
+alpine_custom_image_file="$(basename ${ALPINE_CUSTOM_IMAGE})"
+md5sum "${alpine_custom_image_file}"
+echo "${ALPINE_CUSTOM_IMAGE_CHECKSUM}  ${alpine_custom_image_file}" | md5sum -c
+cat <<HERE > alpine_custom_image.auto.tfvars
+alpine_custom_image = "${alpine_custom_image_file}"
+HERE
+WGET_ALPINE_CUSTOM_IMAGE
+
 COPY . .
 
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
+
+ARG SITES_ARTIFACT=""
+ENV SITES_ARTIFACT=${SITES_ARTIFACT}
+ARG CHILLBOX_ARTIFACT=""
+ENV CHILLBOX_ARTIFACT=${CHILLBOX_ARTIFACT}
+ARG SITES_MANIFEST=""
+ENV SITES_MANIFEST=${SITES_MANIFEST}
+
+RUN <<SITES_ARTIFACT_CONFIG
+cat <<HERE > chillbox_sites.auto.tfvars
+sites_artifact = "${SITES_ARTIFACT}"
+chillbox_artifact = "${CHILLBOX_ARTIFACT}"
+sites_manifest = "${SITES_MANIFEST}"
+# TODO add site domain list
+HERE
+# Set the immutable_bucket_name and artifact_bucket_name from the infra output.
+jq -r 'map_values(.value) | to_entries | .[] | "\(.key) = \"\(.value)\""' \
+  terraform-010-infra.output.json >> chillbox_sites.auto.tfvars
+SITES_ARTIFACT_CONFIG
 
 RUN <<SETUP
 addgroup dev

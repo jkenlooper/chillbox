@@ -87,8 +87,6 @@ infra_image="chillbox-$(basename $terraform_infra_dir)"
 infra_container="chillbox-$(basename $terraform_infra_dir)"
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
-  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM=$ALPINE_CUSTOM_IMAGE_CHECKSUM \
   --build-arg WORKSPACE=development \
   -t "$infra_image" \
   .
@@ -100,17 +98,47 @@ docker run \
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
 docker rm "${infra_container}"
 
-exit 0
+# TODO How should terraform credentials be used with the container?
+docker run \
+  -i --tty \
+  --rm \
+  --name "${infra_container}" \
+  -e WORKSPACE=development \
+  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  "$infra_image" $terraform_command
 
 docker run \
   --rm \
-  -e WORKSPACE=development \
   --name "${infra_container}" \
-  "$infra_image" output
+  -e WORKSPACE=development \
+  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
 
-# TODO set the variables and then execute the build-artifacts.sh
 
-exit 0
+cd "${terraform_chillbox_dir}"
+
+terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
+terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
+export DOCKER_BUILDKIT=1
+docker build \
+  --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
+  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM=$ALPINE_CUSTOM_IMAGE_CHECKSUM \
+  --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
+  --build-arg CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT \
+  --build-arg SITES_MANIFEST=$SITES_MANIFEST \
+  --build-arg WORKSPACE=development \
+  -t "$terraform_chillbox_image" \
+  .
+
+
+docker run \
+  --name "${terraform_chillbox_container}" \
+  "$terraform_chillbox_image" init
+docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
+docker rm "${terraform_chillbox_container}"
+
 
 # TODO if init then drop the user in
 docker run \
@@ -119,10 +147,11 @@ docker run \
   --name "${infra_container}" \
   -e WORKSPACE=development \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
-  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
-  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
-  --mount "type=bind,src=${terraform_infra_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist" \
   --entrypoint="" \
   "$infra_image" sh
 

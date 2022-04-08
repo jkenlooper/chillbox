@@ -2,9 +2,14 @@
 /*
 
 # Except these specific files and directories
+!/chillbox.tf
 !/variables.tf
 !/main.tf
+!/alpine-box-init.sh.tftpl
 !/private.auto.tfvars
+
+# Created from the infra container and copied over
+!/terraform-010-infra.output.json
 
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock
