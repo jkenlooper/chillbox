@@ -1,13 +1,19 @@
-variable "access_key_id" {
+variable "do_token" {
   type        = string
-  description = "S3 object storage access key ID. Keep this secure and use best practices when using these.  It is recommended to export an environment variable for this like TF_VAR_access_key_id if you aren't entering it manually each time."
+  description = "DigitalOcean access token.  Keep this secure and use best practices when using these."
   sensitive   = true
 }
-variable "secret_access_key" {
+variable "do_spaces_access_key_id" {
   type        = string
-  description = "S3 object storage secret access key. Keep this secure and use best practices when using these.  It is recommended to export an environment variable for this like TF_VAR_secret_access_key if you aren't entering it manually each time."
+  description = "DigitalOcean Spaces access key ID. Keep this secure and use best practices when using these."
   sensitive   = true
 }
+variable "do_spaces_secret_access_key" {
+  type        = string
+  description = "DigitalOcean Spaces secret access key. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+
 variable "tech_email" {
   type        = string
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."

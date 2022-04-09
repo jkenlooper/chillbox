@@ -7,6 +7,7 @@
 !/main.tf
 !/alpine-box-init.sh.tftpl
 !/private.auto.tfvars
+!/bin/doterra.sh
 
 # Created from the infra container and copied over
 !/terraform-010-infra.output.json
@@ -14,13 +15,3 @@
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock
 !/.terraform.lock.hcl
-
-
-# TODO maybe?
-#/development
-#/acceptance
-#/.terraform
-#/terraform.tfstate.d
-#/production
-#/test
-

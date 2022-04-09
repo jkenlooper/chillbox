@@ -13,16 +13,13 @@ apk add \
 
 INSTALL
 
-COPY bin/doterra-init.sh /usr/local/bin/doterra-init.sh
-COPY bin/doterra-encrypt_tfvars.sh /usr/local/bin/doterra-encrypt_tfvars.sh
-COPY bin/doterra.sh /usr/local/bin/doterra.sh
-
 WORKDIR /usr/local/src/chillbox-terraform
 
 COPY . .
 
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
+ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 
 RUN <<SETUP
 addgroup dev

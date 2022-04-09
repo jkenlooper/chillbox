@@ -1,32 +1,8 @@
 #!/usr/bin/env bash
 
-# Helper script for using terraform commands in a workspace.
-# Don't use this script if doing anything other then mundane main commands like
-# console, plan, apply, or destroy.
+# Helper script for isolating use of terraform in a container.
 
 set -o errexit
-
-# TODO Split up to have two terraform deployments: chillbox-infra, chillbox-server.
-# 0. Run build-artifact.sh to create the artifact files
-#      - move upload bits of build-artifacts.sh into upload-artifacts.sh
-# 1. Run terraform command on chillbox-infrastructure first to create or update
-#    the resources like s3 bucket and other supporting bits.
-#      - Create separate terraform directory for chillbox-infra (s3 buckets)
-#      - Create separate terraform directory for chillbox-server (droplets,
-#        DNS records for domains)
-# 2. Upload the built artifacts and extract and upload the immutable.
-# 3. Run terraform command for chillbox-server to deploy chillbox droplet and
-#    other resources needed.
-
-# ---
-
-#  program = ["../build-artifacts.sh"]
-#  query = {
-#    immutable_bucket_name = digitalocean_spaces_bucket.immutable.name
-#    artifact_bucket_name  = digitalocean_spaces_bucket.artifact.name
-#    endpoint_url          = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"
-#    chillbox_url          = "https://${var.sub_domain}${var.domain}"
-#  }
 
 WORKSPACE=development
 
@@ -87,6 +63,7 @@ cd "${terraform_infra_dir}"
 
 infra_image="chillbox-$(basename $terraform_infra_dir)"
 infra_container="chillbox-$(basename $terraform_infra_dir)"
+docker rm "${infra_container}" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
@@ -94,7 +71,7 @@ docker build \
   .
 
 docker run \
-  -it \
+  -i --tty \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
@@ -120,22 +97,21 @@ docker run \
   --entrypoint="" \
   "$infra_image" sh
 
-# TODO WIP
-exit 0
-
 docker run \
   --rm \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
+  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
 
-
+# Start the chillbox terraform
 cd "${terraform_chillbox_dir}"
 
 terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
 terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
+docker rm "${terraform_chillbox_container}" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
@@ -147,20 +123,21 @@ docker build \
   -t "$terraform_chillbox_image" \
   .
 
-
 docker run \
   --name "${terraform_chillbox_container}" \
   "$terraform_chillbox_image" init
 docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
 docker rm "${terraform_chillbox_container}"
 
-
-# TODO if init then drop the user in
 docker run \
   -i --tty \
   --rm \
-  --name "${infra_container}" \
+  --name "${terraform_chillbox_container}" \
   -e WORKSPACE="${WORKSPACE}" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
@@ -168,21 +145,4 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist" \
   --entrypoint="" \
-  "$infra_image" sh
-
-exit 0
-
-# run normal command
-docker run \
-  -i --tty \
-  --rm \
-  -e WORKSPACE="${WORKSPACE}" \
-  --entrypoint="" \
-  chillbox-terraform doterra.sh plan
-
-# can run other terraform commands
-docker run \
-  -i --tty \
-  --rm \
-  -e WORKSPACE="${WORKSPACE}" \
-  chillbox-terraform workspace show
+  "$terraform_chillbox_image" sh

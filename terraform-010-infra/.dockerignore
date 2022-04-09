@@ -12,13 +12,3 @@
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock
 !/.terraform.lock.hcl
-
-
-# TODO maybe?
-#/development
-#/acceptance
-#/.terraform
-#/terraform.tfstate.d
-#/production
-#/test
-

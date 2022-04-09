@@ -40,8 +40,8 @@ resource "local_sensitive_file" "alpine_box_init" {
   file_permission = "0500"
   content = templatefile("alpine-box-init.sh.tftpl", {
     developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
-    access_key_id : var.access_key_id,
-    secret_access_key : var.secret_access_key,
+    access_key_id : var.do_spaces_access_key_id,
+    secret_access_key : var.do_spaces_secret_access_key,
     tech_email : var.tech_email,
     immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,
     artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,

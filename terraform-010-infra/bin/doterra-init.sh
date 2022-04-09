@@ -8,7 +8,7 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-/usr/local/bin/doterra-encrypt_tfvars.sh
+doterra-encrypt_tfvars.sh
 
 # Run the terraform init command to update or create .terraform.lock.hcl file.
 terraform init

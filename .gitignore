@@ -5,6 +5,7 @@
 /terraform-020-chillbox/.terraform/
 /terraform-020-chillbox/terraform.tfstate.d/
 /terraform-020-chillbox/private.auto.tfvars
+/terraform-020-chillbox/chillbox-terraform-010-infra.output.json
 
 /bin/alpine-box-init.sh
 /build-artifacts.sh.log
