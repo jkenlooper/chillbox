@@ -28,6 +28,8 @@ set -o errexit
 #    chillbox_url          = "https://${var.sub_domain}${var.domain}"
 #  }
 
+WORKSPACE=development
+
 project_dir="$(dirname $(realpath $0))"
 terraform_infra_dir="$project_dir/terraform-010-infra"
 terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
@@ -87,31 +89,44 @@ infra_image="chillbox-$(basename $terraform_infra_dir)"
 infra_container="chillbox-$(basename $terraform_infra_dir)"
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg WORKSPACE=development \
+  --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$infra_image" \
   .
 
-
 docker run \
+  -it \
   --name "${infra_container}" \
-  "$infra_image" init
+  -e WORKSPACE="${WORKSPACE}" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
+  --entrypoint="" \
+  "$infra_image" doterra-init.sh
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
 docker rm "${infra_container}"
 
-# TODO How should terraform credentials be used with the container?
 docker run \
   -i --tty \
   --rm \
   --name "${infra_container}" \
-  -e WORKSPACE=development \
+  -e WORKSPACE="${WORKSPACE}" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-  "$infra_image" $terraform_command
+  --entrypoint="" \
+  "$infra_image" sh
+
+# TODO WIP
+exit 0
 
 docker run \
   --rm \
   --name "${infra_container}" \
-  -e WORKSPACE=development \
+  -e WORKSPACE="${WORKSPACE}" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
@@ -128,7 +143,7 @@ docker build \
   --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
   --build-arg CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT \
   --build-arg SITES_MANIFEST=$SITES_MANIFEST \
-  --build-arg WORKSPACE=development \
+  --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$terraform_chillbox_image" \
   .
 
@@ -145,7 +160,7 @@ docker run \
   -i --tty \
   --rm \
   --name "${infra_container}" \
-  -e WORKSPACE=development \
+  -e WORKSPACE="${WORKSPACE}" \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
@@ -161,7 +176,7 @@ exit 0
 docker run \
   -i --tty \
   --rm \
-  -e WORKSPACE=development \
+  -e WORKSPACE="${WORKSPACE}" \
   --entrypoint="" \
   chillbox-terraform doterra.sh plan
 
@@ -169,5 +184,5 @@ docker run \
 docker run \
   -i --tty \
   --rm \
-  -e WORKSPACE=development \
+  -e WORKSPACE="${WORKSPACE}" \
   chillbox-terraform workspace show

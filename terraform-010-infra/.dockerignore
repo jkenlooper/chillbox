@@ -5,6 +5,9 @@
 !/variables.tf
 !/main.tf
 !/private.auto.tfvars
+!/bin/doterra-encrypt_tfvars.sh
+!/bin/doterra-init.sh
+!/bin/doterra.sh
 
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock

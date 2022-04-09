@@ -1,3 +1,19 @@
+variable "do_token" {
+  type        = string
+  description = "DigitalOcean access token.  Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+variable "do_spaces_access_key_id" {
+  type        = string
+  description = "DigitalOcean Spaces access key ID. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+variable "do_spaces_secret_access_key" {
+  type        = string
+  description = "DigitalOcean Spaces secret access key. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+
 variable "bucket_region" {
   type        = string
   description = "Bucket region."
