@@ -33,6 +33,10 @@ resource "digitalocean_spaces_bucket" "immutable" {
   acl    = "public-read"
 }
 
+output "s3_endpoint_url" {
+  value = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"
+  description = "The s3 endpoint url for DigitalOcean Spaces set to the region of the artifact bucket."
+}
 output "immutable_bucket_name" {
   value       = digitalocean_spaces_bucket.immutable.name
   description = "Immutable bucket name is used by the NGINX server when serving a site's static resources."

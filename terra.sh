@@ -87,6 +87,7 @@ docker run \
   -i --tty \
   --rm \
   --name "${infra_container}" \
+  --hostname "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
   --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
@@ -125,6 +126,12 @@ docker build \
 
 docker run \
   --name "${terraform_chillbox_container}" \
+  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
+  --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   "$terraform_chillbox_image" init
 docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
 docker rm "${terraform_chillbox_container}"
@@ -133,6 +140,7 @@ docker run \
   -i --tty \
   --rm \
   --name "${terraform_chillbox_container}" \
+  --hostname "${terraform_chillbox_container}" \
   -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
   --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
@@ -143,6 +151,7 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  --mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist" \
+  --mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
+  --mount "type=bind,src=${project_dir}/upload-artifacts.sh,dst=/usr/local/src/chillbox-terraform/upload-artifacts.sh,readonly=true" \
   --entrypoint="" \
   "$terraform_chillbox_image" sh

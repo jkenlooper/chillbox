@@ -8,6 +8,8 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 RUN <<INSTALL
 apk update
 apk add \
+  aws-cli \
+  jq \
   gpg \
   gpg-agent
 
@@ -42,20 +44,23 @@ ARG CHILLBOX_ARTIFACT=""
 ENV CHILLBOX_ARTIFACT=${CHILLBOX_ARTIFACT}
 ARG SITES_MANIFEST=""
 ENV SITES_MANIFEST=${SITES_MANIFEST}
+ENV endpoint_url="http://localhost:9000"
 
 RUN <<SITES_ARTIFACT_CONFIG
+# TODO create chillbox_sites.auto.tfvars.json instead
 cat <<HERE > chillbox_sites.auto.tfvars
 sites_artifact = "${SITES_ARTIFACT}"
 chillbox_artifact = "${CHILLBOX_ARTIFACT}"
 sites_manifest = "${SITES_MANIFEST}"
 # TODO add site domain list
 HERE
-if [ -f "terraform-010-infra.output.json" ]; then
+if [ -f "chillbox-terraform-010-infra.output.json" ]; then
   # Set the immutable_bucket_name and artifact_bucket_name from the infra output.
   jq -r 'map_values(.value // {}) | to_entries | .[] | "\(.key) = \"\(.value)\""' \
-    terraform-010-infra.output.json >> chillbox_sites.auto.tfvars
+    chillbox-terraform-010-infra.output.json >> chillbox_sites.auto.tfvars
 else
-  echo "Missing file: terraform-010-infra.output.json"
+  echo "Missing file: chillbox-terraform-010-infra.output.json"
+  exit 1
 fi
 
 SITES_ARTIFACT_CONFIG
