@@ -29,6 +29,23 @@ variable "bucket_region" {
   description = "Bucket region."
   default     = "nyc3"
 }
+variable "immutable_bucket_name" {
+  type        = string
+  description = "Immutable bucket name."
+}
+variable "artifact_bucket_name" {
+  type        = string
+  description = "Artifact bucket name."
+}
+variable "s3_endpoint_url" {
+  type        = string
+  description = "The s3 endpoint URL."
+}
+variable "sites_manifest" {
+  type        = string
+  description = "The sites manifest."
+  default = "dist/sites.manifest.json"
+}
 
 
 variable "developer_ips" {
@@ -139,7 +156,7 @@ variable "dns_ttl" {
 
 # TODO Create a chillbox-build.auto.tfvars file that sets these.
 variable "has_chillbox_artifact" {
-  default = false
+  default = true
   description = "Has the chillbox artifact been created."
   type = bool
 }

@@ -70,11 +70,20 @@ docker build \
   -t "$infra_image" \
   .
 
+cleanup_run_tmp_secrets() {
+  docker stop "${infra_container}" 2> /dev/null || printf ""
+  docker rm "${infra_container}" 2> /dev/null || printf ""
+  docker stop "${terraform_chillbox_container}" 2> /dev/null || printf ""
+  docker rm "${terraform_chillbox_container}" 2> /dev/null || printf ""
+  docker volume rm chillbox-terraform-run-tmp-secrets || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets'. Does it exist?"
+}
+trap cleanup_run_tmp_secrets EXIT
+
 docker run \
   -i --tty \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
   --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
@@ -89,7 +98,7 @@ docker run \
   --name "${infra_container}" \
   --hostname "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
   --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
@@ -142,7 +151,7 @@ docker run \
   --name "${terraform_chillbox_container}" \
   --hostname "${terraform_chillbox_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0777" \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
   --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
   --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \

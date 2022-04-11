@@ -9,8 +9,8 @@ if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && 
 fi
 
 
-encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.asc
-decrypted_credentials_tfvars_file=/run/tmp/secrets/doterra/credentials.tfvars
+encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
+decrypted_credentials_tfvars_file=/run/tmp/secrets/doterra/credentials.tfvars.json
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
   echo "INFO $0: Decrypting file '${encrypted_credentials_tfvars_file}' to '${decrypted_credentials_tfvars_file}'"
   test -d "/run/tmp/secrets" || (echo "ERROR $0: The path '/run/tmp/secrets' is not a directory" && exit 1)

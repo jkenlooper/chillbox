@@ -14,12 +14,11 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
 fi
 
 test -d "/run/tmp/secrets" || (echo "ERROR $0: The path '/run/tmp/secrets' is not a directory" && exit 1)
-# TODO Verify that "/run/tmp/secrets" is also a tmpfs mount type by parsing /proc/mounts.
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "${secure_tmp_secrets_dir}"
 chmod -R 0700 "${secure_tmp_secrets_dir}"
 
-encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.asc
+encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 
 gpg_key_name="chillbox_doterra"
 
@@ -45,10 +44,10 @@ if [ $qgk_err_code -eq 2 -o $qgk_err_code -eq 1 -o $qgk_err_code -eq 0 ]; then
   fi
 
   cleanup() {
-    echo "INFO $0: Clean up and remove the file '${secure_tmp_secrets_dir}/credentials.tfvars' if exists."
-    if [ -e "${secure_tmp_secrets_dir}/credentials.tfvars" ]; then
+    echo "INFO $0: Clean up and remove the file '${secure_tmp_secrets_dir}/credentials.tfvars.json' if exists."
+    if [ -e "${secure_tmp_secrets_dir}/credentials.tfvars.json" ]; then
       # Fallback on rm command if shred fails.
-      shred -z -u "${secure_tmp_secrets_dir}/credentials.tfvars" || rm -f "${secure_tmp_secrets_dir}/credentials.tfvars"
+      shred -z -u "${secure_tmp_secrets_dir}/credentials.tfvars.json" || rm -f "${secure_tmp_secrets_dir}/credentials.tfvars.json"
     fi
   }
   trap cleanup EXIT
@@ -65,17 +64,22 @@ if [ $qgk_err_code -eq 2 -o $qgk_err_code -eq 1 -o $qgk_err_code -eq 0 ]; then
   " do_spaces_secret_access_key
 
   # Create the tf vars file that will be encrypted.
-  cat <<HERE > "${secure_tmp_secrets_dir}/credentials.tfvars"
-do_token = "$do_token"
-do_spaces_access_key_id = "$do_spaces_access_key_id"
-do_spaces_secret_access_key = "$do_spaces_secret_access_key"
-HERE
+  jq --null-input \
+    --arg jq_do_token "$do_token" \
+    --arg jq_do_spaces_access_key_id "$do_spaces_access_key_id" \
+    --arg jq_do_spaces_secret_access_key "$do_spaces_secret_access_key" \
+    '{
+    do_token: $jq_do_token,
+    do_spaces_access_key_id: $jq_do_spaces_access_key_id,
+    do_spaces_secret_access_key: $jq_do_spaces_secret_access_key,
+    }' > "${secure_tmp_secrets_dir}/credentials.tfvars.json"
+
     gpg --encrypt --recipient "${gpg_key_name}" --armor --output "${encrypted_credentials_tfvars_file}" \
       --comment "Chillbox doterra credentials tfvars" \
       --comment "$WORKSPACE" \
       --comment "Date: $(date)" \
-      "${secure_tmp_secrets_dir}/credentials.tfvars"
-    shred -z -u "${secure_tmp_secrets_dir}/credentials.tfvars"
+      "${secure_tmp_secrets_dir}/credentials.tfvars.json"
+    shred -z -u "${secure_tmp_secrets_dir}/credentials.tfvars.json"
 
 else
   echo "ERROR $0: Failed running command: 'gpg --quick-generate-key \"${gpg_key_name}\" default encrypt never' exited with error code: $qgk_err_code"

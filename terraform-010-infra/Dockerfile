@@ -8,6 +8,7 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 RUN <<INSTALL
 apk update
 apk add \
+  jq \
   gpg \
   gpg-agent
 
@@ -26,6 +27,10 @@ addgroup dev
 adduser -G dev -D dev
 chown -R dev:dev .
 
+mkdir -p /run/tmp/secrets
+chown -R dev:dev /run/tmp/secrets
+chmod -R 0700 /run/tmp/secrets
+
 mkdir -p /home/dev/.gnupg
 chown -R dev:dev /home/dev/.gnupg
 chmod -R 0700 /home/dev/.gnupg
@@ -38,10 +43,5 @@ chmod -R 0700 /var/lib/doterra
 su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
 SETUP
-
-VOLUME /home/dev/.gnupg
-VOLUME /var/lib/doterra
-VOLUME /usr/local/src/chillbox-terraform/.terraform
-VOLUME /usr/local/src/chillbox-terraform/terraform.tfstate.d
 
 USER dev

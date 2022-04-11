@@ -1,6 +1,6 @@
 resource "digitalocean_spaces_bucket_object" "alpine_custom_image" {
-  region = digitalocean_spaces_bucket.artifact.region
-  bucket = digitalocean_spaces_bucket.artifact.name
+  region = var.bucket_region
+  bucket = var.artifact_bucket_name
   key    = "chillbox/${var.alpine_custom_image}"
   acl    = "public-read"
   source = var.alpine_custom_image
@@ -43,15 +43,15 @@ resource "local_sensitive_file" "alpine_box_init" {
     access_key_id : var.do_spaces_access_key_id,
     secret_access_key : var.do_spaces_secret_access_key,
     tech_email : var.tech_email,
-    immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,
-    artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,
+    immutable_bucket_name : var.immutable_bucket_name,
+    artifact_bucket_name : var.artifact_bucket_name,
     #sites_artifact : data.external.build_artifacts.result.sites_artifact,
     #chillbox_artifact : data.external.build_artifacts.result.chillbox_artifact
 
     sites_artifact : var.sites_artifact,
     chillbox_artifact : var.chillbox_artifact
     # No slash at the end of this s3_endpoint_url
-    s3_endpoint_url : "https://${var.bucket_region}.digitaloceanspaces.com",
+    s3_endpoint_url : var.s3_endpoint_url,
     chillbox_hostname : "${var.sub_domain}${var.domain}",
   })
 }
