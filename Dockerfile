@@ -38,6 +38,13 @@ ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
 ARG ARTIFACT_BUCKET_NAME=chillboxartifact
 ARG SITES_ARTIFACT
 
+## RUN_SETUP
+RUN <<SETUP
+apk update
+apk add sed attr grep coreutils
+apk add mandoc man-pages
+SETUP
+
 ## RUN AWS_CLI
 COPY bin/install-aws-cli.sh /etc/chillbox/bin/
 RUN <<AWS_CLI

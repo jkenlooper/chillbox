@@ -2,8 +2,11 @@
 
 set -o errexit
 
+## RUN_SETUP
 apk update
 apk add sed attr grep coreutils
+apk add mandoc man-pages
+
 
 addgroup dev
 adduser -G dev -D dev
