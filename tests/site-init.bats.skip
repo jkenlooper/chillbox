@@ -17,6 +17,7 @@ setup_file() {
 
   export S3_ARTIFACT_ENDPOINT_URL="https://s3.example.com"
   export ARTIFACT_BUCKET_NAME="example-artifact-bucket-name"
+  export IMMUTABLE_BUCKET_NAME="example-immutable-bucket-name"
   export SITES_ARTIFACT="mock-sites-example.sites.tar.gz"
   export CHILLBOX_SERVER_PORT="7777"
 
@@ -49,6 +50,7 @@ setup() {
   ln -s "${mock_site_init_service_object_sh}" "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh
 
   mock_aws="$(mock_create)"
+  mock_set_output "${mock_aws}" "something" 2
   ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
 
   mock_crontab="$(mock_create)"
@@ -123,7 +125,7 @@ main() {
   run main "${sites_artifact_file}"
   assert_success
 
-  test "$(mock_get_call_num "${mock_aws}")" -eq 1
+  test "$(mock_get_call_num "${mock_aws}")" -eq 4
   test "$(mock_get_call_num "${mock_crontab}")" -eq 1
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/sites/site1.site.json" >&3
