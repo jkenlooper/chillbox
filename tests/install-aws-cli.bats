@@ -15,8 +15,8 @@ main() {
   "${BATS_TEST_DIRNAME}"/../bin/install-aws-cli.sh
 }
 
-@test "pass when aws cli v1 is installed" {
+@test "pass when aws cli v2 is installed" {
   run main
-  assert_output --partial "aws-cli/1.19"
+  assert_output --partial "aws-cli/2"
   assert_success
 }

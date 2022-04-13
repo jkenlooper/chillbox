@@ -45,13 +45,6 @@ apk add sed attr grep coreutils
 apk add mandoc man-pages
 SETUP
 
-## RUN AWS_CLI
-COPY bin/install-aws-cli.sh /etc/chillbox/bin/
-RUN <<AWS_CLI
-apk update
-/etc/chillbox/bin/install-aws-cli.sh
-AWS_CLI
-
 ## COPY_chillbox_artifact
 COPY templates /etc/chillbox/templates
 COPY bin /etc/chillbox/bin
@@ -68,6 +61,7 @@ ARG LETS_ENCRYPT_SERVER=""
 ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d884403d86ecf70abf293039f#egg=chill"
 RUN <<INSTALL_SCRIPTS
 apk update
+/etc/chillbox/bin/install-aws-cli.sh
 /etc/chillbox/bin/install-chill.sh $PIP_CHILL
 /etc/chillbox/bin/install-service-dependencies.sh
 SKIP_INSTALL_ACMESH="y" /etc/chillbox/bin/install-acme.sh

@@ -94,12 +94,12 @@ source /run/secrets/awscredentials
 
 #apk add --no-cache gnupg gnupg-dirmngr
 
-## RUN AWS_CLI
-# Inline the bin/install-aws-cli.sh
+## RUN TEMP_AWS_CLI
+# Only need aws s3 to get the chillbox artifact. Will use the
+# bin/install-aws-cli.sh to install latest aws version.
 apk add \
   -q --no-progress \
   aws-cli
-aws --version
 
 ## COPY_chillbox_artifact
 tmp_chillbox_artifact=$(mktemp)
@@ -107,6 +107,7 @@ aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT \
   $tmp_chillbox_artifact
+apk del aws-cli
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
 tar x -z -f $tmp_chillbox_artifact templates
@@ -115,6 +116,7 @@ mkdir -p /etc/chillbox/bin
 tar x -z -f $tmp_chillbox_artifact -C /etc/chillbox/bin --strip-components 1 bin
 
 ## RUN_INSTALL_SCRIPTS
+/etc/chillbox/bin/install-aws-cli.sh
 /etc/chillbox/bin/install-chill.sh $PIP_CHILL
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh $ACME_SH_VERSION $LETS_ENCRYPT_SERVER $TECH_EMAIL

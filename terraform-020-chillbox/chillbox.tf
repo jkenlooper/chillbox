@@ -45,14 +45,12 @@ resource "local_sensitive_file" "alpine_box_init" {
     tech_email : var.tech_email,
     immutable_bucket_name : var.immutable_bucket_name,
     artifact_bucket_name : var.artifact_bucket_name,
-    #sites_artifact : data.external.build_artifacts.result.sites_artifact,
-    #chillbox_artifact : data.external.build_artifacts.result.chillbox_artifact
-
     sites_artifact : var.sites_artifact,
     chillbox_artifact : var.chillbox_artifact
     # No slash at the end of this s3_endpoint_url
     s3_endpoint_url : var.s3_endpoint_url,
     chillbox_hostname : "${var.sub_domain}${var.domain}",
+    #install_aws_cli_sh : file("${path.root}/bin/install-aws-cli.sh"),
   })
 }
 
