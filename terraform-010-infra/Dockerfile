@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.3.0-labs
 
+# UPKEEP due: "2022-08-12" label: "hashicorp/terraform base image" interval: "+4 months"
 # docker pull hashicorp/terraform:1.2.0-alpha-20220328
-# sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
-
+# docker image ls --digests hashicorp/terraform
 FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
 
 RUN <<INSTALL

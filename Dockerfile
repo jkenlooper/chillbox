@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.3.0-labs
 
-FROM alpine:3.15.0@sha256:21a3deaa0d32a8057914f36584b5288d2e5ecc984380bc0118285c70fa8c9300
-
-LABEL org.opencontainers.image.authors="Jake Hickenlooper <jake@weboftomorrow.com>"
+# UPKEEP due: "2022-07-12" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.15.4
+# docker image ls --digests alpine
+FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5acce2c4f9454
 
 ## s6-overlay
 # https://github.com/just-containers/s6-overlay
