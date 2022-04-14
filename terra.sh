@@ -76,7 +76,7 @@ cleanup_run_tmp_secrets() {
   docker rm "${infra_container}" 2> /dev/null || printf ""
   docker stop "${terraform_chillbox_container}" 2> /dev/null || printf ""
   docker rm "${terraform_chillbox_container}" 2> /dev/null || printf ""
-  docker volume rm chillbox-terraform-run-tmp-secrets || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets'. Does it exist?"
+  docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
 }
 trap cleanup_run_tmp_secrets EXIT
 
@@ -84,10 +84,10 @@ docker run \
   -i --tty \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
-  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --entrypoint="" \
   "$infra_image" doterra-init.sh
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
@@ -99,10 +99,10 @@ docker run \
   --name "${infra_container}" \
   --hostname "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
-  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --entrypoint="" \
@@ -112,7 +112,7 @@ docker run \
   --rm \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
@@ -136,7 +136,7 @@ docker build \
 
 docker run \
   --name "${terraform_chillbox_container}" \
-  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
+  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
@@ -152,10 +152,10 @@ docker run \
   --name "${terraform_chillbox_container}" \
   --hostname "${terraform_chillbox_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets,dst=/run/tmp/secrets" \
-  --mount 'type=volume,src=chillbox-terraform-dev-dotgnupg,dst=/home/dev/.gnupg,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-dev-terraformdotd,dst=/home/dev/.terraform.d,readonly=false' \
-  --mount 'type=volume,src=chillbox-terraform-var-lib,dst=/var/lib/doterra,readonly=false' \
+  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
