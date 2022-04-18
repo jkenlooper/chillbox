@@ -7,6 +7,8 @@ FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5ac
 
 ## s6-overlay
 # https://github.com/just-containers/s6-overlay
+# UPKEEP due: "2022-02-01" label: "Alpine Linux just-containers/s6-overlay" interval: "+3 months"
+#        Update to v3 will require changes other then a version bump.
 ARG S6_OVERLAY_RELEASE=v2.2.0.3
 ENV S6_OVERLAY_RELEASE=${S6_OVERLAY_RELEASE}
 RUN <<S6_OVERLAY
@@ -29,16 +31,6 @@ apk --purge del \
 S6_OVERLAY
 ENTRYPOINT [ "/init" ]
 
-ENV CHILLBOX_SERVER_NAME=localhost
-ARG CHILLBOX_SERVER_PORT=80
-ENV CHILLBOX_SERVER_PORT=$CHILLBOX_SERVER_PORT
-ARG S3_ARTIFACT_ENDPOINT_URL
-ARG S3_ENDPOINT_URL
-ENV S3_ENDPOINT_URL=$S3_ENDPOINT_URL
-ARG IMMUTABLE_BUCKET_NAME=chillboximmutable
-ARG ARTIFACT_BUCKET_NAME=chillboxartifact
-ARG SITES_ARTIFACT
-
 ## RUN_SETUP
 RUN <<SETUP
 apk update
@@ -50,16 +42,15 @@ SETUP
 COPY templates /etc/chillbox/templates
 COPY bin /etc/chillbox/bin
 
-# TECH_EMAIL is used when registering with letsencrypt
-ARG TECH_EMAIL=""
-ARG ACME_SH_VERSION="3.0.1"
-# Set LETS_ENCRYPT_SERVER variable to either 'letsencrypt_test' or 'letsencrypt'
-ARG LETS_ENCRYPT_SERVER=""
-
 ## RUN_INSTALL_SCRIPTS
 # TODO: switch to released chill version
 #ARG PIP_CHILL="chill==0.9.0"
 ARG PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d884403d86ecf70abf293039f#egg=chill"
+# TECH_EMAIL is used when registering with letsencrypt
+ARG TECH_EMAIL="local@example.com"
+ENV TECH_EMAIL="$TECH_EMAIL"
+ARG LETS_ENCRYPT_SERVER="letsencrypt_test"
+ENV LETS_ENCRYPT_SERVER="$LETS_ENCRYPT_SERVER"
 RUN <<INSTALL_SCRIPTS
 apk update
 /etc/chillbox/bin/install-aws-cli.sh
@@ -68,33 +59,12 @@ apk update
 SKIP_INSTALL_ACMESH="y" /etc/chillbox/bin/install-acme.sh
 INSTALL_SCRIPTS
 
+
 ## RUN_CHILLBOX_ENV_NAMES
 RUN /etc/chillbox/bin/create-env_names-file.sh
 
 ## WORKDIR /usr/local/src/
 WORKDIR /usr/local/src/
-
-## RUN SITE_INIT
-RUN --mount=type=secret,id=awscredentials --mount=type=secret,id=site_secrets <<SITE_INIT
-
-source /run/secrets/awscredentials
-
-# Extract secrets to the /var/lib/
-mkdir -p /var/lib
-tar x -f /run/secrets/site_secrets -C /var/lib --strip-components=1
-
-set -o errexit
-
-/etc/chillbox/bin/site-init.sh
-
-apk --purge del \
-  gcc \
-  python3-dev \
-  libffi-dev \
-  build-base \
-  musl-dev
-SITE_INIT
-
 
 ## COPY nginx conf and default
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -111,12 +81,43 @@ RUN <<DEV_USER
 addgroup dev
 adduser -G dev -D dev
 chown dev /etc/chillbox/env_names
+
+cat <<'HERE' > dev.sh
+#!/usr/bin/env sh
+
+set -o errexit
+
+# The site-init.sh and other scripts it calls will use the aws-cli. These aws
+# commands should only interact with the local s3 object storage.
+aws configure import --csv "file:///var/lib/chillbox-shared-secrets/chillbox-minio/local-chillbox.credentials.csv"
+export AWS_PROFILE="local-chillbox"
+
+/etc/chillbox/bin/site-init.sh
+
+/etc/chillbox/bin/reload-templates.sh
+nginx -t
+nginx -g 'daemon off;'
+HERE
+chmod +x dev.sh
 DEV_USER
-# TODO: best practice is to not run a container as root user.
-#USER dev
 
 EXPOSE 80
 
+# Set environment and build-args for create-env_names-file.sh to use
+ENV CHILLBOX_SERVER_NAME=localhost
+ENV CHILLBOX_SERVER_PORT=80
+#ARG S3_ENDPOINT_URL
+ENV S3_ENDPOINT_URL=""
+#ARG S3_ARTIFACT_ENDPOINT_URL
+ENV S3_ARTIFACT_ENDPOINT_URL=""
+ENV IMMUTABLE_BUCKET_NAME=""
+ENV ARTIFACT_BUCKET_NAME=""
+#ARG SITES_ARTIFACT
+ENV SITES_ARTIFACT=""
 
-#CMD ["nginx", "-g", "daemon off;"]
+
+
+# TODO: best practice is to not run a container as root user.
+#USER dev
+
 CMD ["./dev.sh"]

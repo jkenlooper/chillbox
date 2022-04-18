@@ -14,8 +14,9 @@ test "${LETS_ENCRYPT_SERVER}" = "letsencrypt" \
   || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable should be either letsencrypt or letsencrypt_test" && exit 1)
 echo "INFO $0: Using LETS_ENCRYPT_SERVER '${LETS_ENCRYPT_SERVER}'"
 
-ACME_SH_VERSION=${ACME_SH_VERSION:-$1}
-test -n "${ACME_SH_VERSION}" || (echo "ERROR $0: ACME_SH_VERSION variable is empty" && exit 1)
+# UPKEEP due: "2022-07-18" label: "Update acme.sh version" interval: "+3 months"
+ACME_SH_VERSION="3.0.1"
+ACME_SH_CHECKSUM="21f4b4b88df5d7fb89bf15df9a8a8c94"
 
 echo "INFO $0: Installing letsencrypt acme.sh version $ACME_SH_VERSION"
 
@@ -24,7 +25,7 @@ cd /usr/local/bin/
 tmp_acme_tar=$(mktemp)
 wget -O $tmp_acme_tar https://github.com/acmesh-official/acme.sh/archive/refs/tags/$ACME_SH_VERSION.tar.gz
 tmp_md5sum=$(mktemp)
-echo "21f4b4b88df5d7fb89bf15df9a8a8c94  $tmp_acme_tar" > $tmp_md5sum
+echo "$ACME_SH_CHECKSUM  $tmp_acme_tar" > $tmp_md5sum
 md5sum -c $tmp_md5sum
 tar x -z -f $tmp_acme_tar --strip-components 1 acme.sh-$ACME_SH_VERSION/acme.sh
 #mkdir -p /etc/acmesh

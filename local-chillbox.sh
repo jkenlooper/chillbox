@@ -2,14 +2,21 @@
 
 set -o errexit
 
+# This script depends on 'aws s3' commands to interact with the local
+# chillbox-minio s3 object store. It will automatically create
+# a 'local-chillbox' profile with the credentials needed for interacting with
+# the local chillbox-minio s3 object store.
+command -v aws > /dev/null || (echo "ERROR $0: Requires the aws command to be installed" && exit 1)
+
 # These are only used for local development. The AWS credentials specified here
 # are used for the local S3 object storage server; Minio in this case. Any other
 # apps that need to interact with the local S3 should also use the below
 # credentials.
 # WARNING: Do NOT use actual AWS credentials here!
-export AWS_ACCESS_KEY_ID="local-chillbox-app-key-id"
-export AWS_SECRET_ACCESS_KEY="local-secret-access-key-with-readwrite-policy"
+export local_chillbox_app_key_id="local-chillbox-app-key-id"
+export local_chillbox_secret_access_key="local-secret-access-key-with-readwrite-policy"
 
+# UPKEEP due: "2022-06-15" label: "bitnami/minio image" interval: "2 months"
 #docker pull bitnami/minio:2022.3.26-debian-10-r4
 #docker image ls --digests bitnami/minio
 # https://github.com/bitnami/bitnami-docker-minio
@@ -77,9 +84,41 @@ while true; do
 done
 #wget --quiet --tries=10 --retry-connrefused --show-progress --server-response --waitretry=1 -O /dev/null http://localhost:9001
 docker logs chillbox-minio
-docker exec chillbox-minio mc admin user add local "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" || echo "   ...ignored"
-docker exec chillbox-minio mc admin policy set local readwrite user="${AWS_ACCESS_KEY_ID}"
+docker exec chillbox-minio mc admin user add local "${local_chillbox_app_key_id}" "${local_chillbox_secret_access_key}" || echo "   ...ignored"
+docker exec chillbox-minio mc admin policy set local readwrite user="${local_chillbox_app_key_id}"
 
+## Setup for a local shared secrets container.
+tmp_cred_csv=$(mktemp)
+rm_tmp_cred_csv() {
+  test -f "$tmp_cred_csv" && rm "$tmp_cred_csv"
+}
+trap rm_tmp_cred_csv EXIT
+docker stop --time 0 chillbox-local-shared-secrets || printf ""
+docker rm  chillbox-local-shared-secrets || printf ""
+# Avoid adding docker context by using stdin for the Dockerfile.
+cat local-shared-secrets.Dockerfile | DOCKER_BUILDKIT=1 docker build -t chillbox-local-shared-secrets -
+docker run -d --rm \
+  --name  chillbox-local-shared-secrets \
+  --mount "type=volume,src=chillbox-local-shared-secrets-var-lib,dst=/var/lib/chillbox-shared-secrets,readonly=false" \
+  chillbox-local-shared-secrets
+# Create a 'local-chillbox' aws profile with the chillbox-minio user
+cat <<HERE > $tmp_cred_csv
+User Name, Access Key ID, Secret Access Key
+local-chillbox,${local_chillbox_app_key_id},${local_chillbox_secret_access_key}
+HERE
+aws configure import --csv "file://$tmp_cred_csv"
+
+# Make this local-chillbox.credentials.csv available for other containers that
+# may need to interact with the local chillbox minio s3 object store.
+docker exec chillbox-local-shared-secrets mkdir -p /var/lib/chillbox-shared-secrets/chillbox-minio
+docker exec chillbox-local-shared-secrets chmod -R 700 /var/lib/chillbox-shared-secrets/chillbox-minio
+docker cp $tmp_cred_csv chillbox-local-shared-secrets:/var/lib/chillbox-shared-secrets/chillbox-minio/local-chillbox.credentials.csv
+# Export the AWS_PROFILE env var so the rest of the commands in upload-artifacts
+# will use the local-chillbox profile when running the aws commands.
+export AWS_PROFILE="local-chillbox"
+rm_tmp_cred_csv
+
+## Build the artifacts
 eval "$(jq \
   --arg jq_sites_git_repo "$SITES_GIT_REPO" \
   --arg jq_sites_git_branch "$SITES_GIT_BRANCH" \
@@ -95,6 +134,10 @@ test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is e
 test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
 test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
 
+# TODO Create a local gpg key and upload the public key to the artifacts bucket.
+# Prompt to continue so any local secret files can be manually encrypted and uploaded to the artifacts bucket?
+
+## Upload the artifacts
 jq \
   --arg jq_immutable_bucket_name "$immutable_bucket_name" \
   --arg jq_artifact_bucket_name "$artifact_bucket_name" \
@@ -111,48 +154,34 @@ jq \
     endpoint_url: $jq_endpoint_url,
 }' | ./upload-artifacts.sh
 
-tmp_awscredentials=$(mktemp)
-remove_tmp_awscredentials () {
-  rm "$tmp_awscredentials"
-}
-trap remove_tmp_awscredentials exit
-cat << MEOW > "$tmp_awscredentials"
-export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-MEOW
-
-tmp_site_secrets=$(mktemp)
-remove_tmp_site_secrets () {
-  rm "${tmp_site_secrets}"
-}
-trap remove_tmp_site_secrets exit
-tar c -z -f "${tmp_site_secrets}" local-secrets
-
 cd $working_dir
 # Use the '--network host' in order to connect to the local s3 (chillbox-minio) when building.
+  #--build-arg S3_ARTIFACT_ENDPOINT_URL="http://$(hostname -I | cut -f1 -d ' '):9000"  \
+  #--build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
+  #--build-arg LETS_ENCRYPT_SERVER="letsencrypt_test" \
+  #--build-arg TECH_EMAIL="${tech_email}" \
+  #--build-arg S3_ENDPOINT_URL="http://chillbox-minio:9000" \
+  #--build-arg IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
+  #--build-arg ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
+  #--build-arg CHILLBOX_SERVER_PORT=80 \
 DOCKER_BUILDKIT=1 docker build --progress=plain \
   -t chillbox \
-  --build-arg S3_ARTIFACT_ENDPOINT_URL="http://$(hostname -I | cut -f1 -d ' '):9000"  \
-  --build-arg S3_ENDPOINT_URL="http://chillbox-minio:9000" \
-  --build-arg IMMUTABLE_BUCKET_NAME=$immutable_bucket_name \
-  --build-arg ARTIFACT_BUCKET_NAME=$artifact_bucket_name \
-  --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
-  --build-arg CHILLBOX_SERVER_PORT=80 \
-  --build-arg TECH_EMAIL="${tech_email}" \
-  --build-arg LETS_ENCRYPT_SERVER="letsencrypt_test" \
   --network host \
-  --secret=id=awscredentials,src="$tmp_awscredentials" \
-  --secret=id=site_secrets,src="$tmp_site_secrets" \
   .
 
+  #-e CHILLBOX_SERVER_PORT=80 \
 docker run -d --tty --name chillbox \
   -e CHILLBOX_SERVER_NAME=chillbox.test \
   -e S3_ENDPOINT_URL="http://chillbox-minio:9000" \
-  -e ARTIFACT_BUCKET_NAME="chillboxartifact" \
-  -e IMMUTABLE_BUCKET_NAME="chillboximmutable" \
-  -e CHILLBOX_SERVER_PORT=80 \
+  -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
+  -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
+  -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
+  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  --mount "type=volume,src=chillbox-local-shared-secrets-var-lib,dst=/var/lib/chillbox-shared-secrets,readonly=false" \
   --network chillboxnet \
   -p $app_port:80 chillbox
+
+# TODO How to wait for the healthcheck?
 
 echo "
 Sites running on http://chillbox.test:$app_port

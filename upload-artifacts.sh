@@ -16,8 +16,7 @@ showlog () {
 }
 trap showlog exit
 
-test -n "$AWS_ACCESS_KEY_ID" || (echo "ERROR $0: No AWS_ACCESS_KEY_ID set." >> $LOG_FILE && exit 1)
-test -n "$AWS_SECRET_ACCESS_KEY" || (echo "ERROR $0: No AWS_SECRET_ACCESS_KEY set." >> $LOG_FILE && exit 1)
+test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." >> $LOG_FILE && exit 1)
 
 # Extract and set shell variables from JSON input
 eval "$(jq -r '@sh "
@@ -35,8 +34,6 @@ echo "  SITES_MANIFEST=$SITES_MANIFEST" >> $LOG_FILE
 echo "  immutable_bucket_name=$immutable_bucket_name" >> $LOG_FILE
 echo "  artifact_bucket_name=$artifact_bucket_name" >> $LOG_FILE
 echo "  endpoint_url=$endpoint_url" >> $LOG_FILE
-
-aws configure set default.s3.max_concurrent_requests 1
 
 # Upload chillbox artifact file
 if [ ! -n "$chillbox_artifact_exists" ]; then

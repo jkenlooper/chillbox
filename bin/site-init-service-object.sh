@@ -64,6 +64,8 @@ if [ "${service_lang_template}" = "flask" ]; then
 
   mkdir -p "/var/lib/${slugname}/${service_handler}"
   chown -R $slugname:$slugname "/var/lib/${slugname}"
+  mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
+  chown -R $slugname:$slugname "/var/lib/chillbox-shared-secrets/${slugname}"
 
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
@@ -73,7 +75,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
   S3_ENDPOINT_URL=$S3_ARTIFACT_ENDPOINT_URL \
-  SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config} \
+  SECRETS_CONFIG=/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config} \
     ./.venv/bin/flask init-db
 
   chown -R $slugname:$slugname "/var/lib/${slugname}/"
@@ -109,7 +111,7 @@ PURR
 s6-env HOST=localhost \
 s6-env FLASK_ENV=development
 s6-env FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}"
-s6-env SECRETS_CONFIG=/var/lib/${slugname}/secrets/${service_secrets_config}
+s6-env SECRETS_CONFIG=/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}

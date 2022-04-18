@@ -117,6 +117,10 @@ docker run \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
 
+
+# TODO Create a gpg key and upload the public key to artifacts bucket.
+# Prompt to continue so any secret files can be manually encrypted and uploaded to the artifacts bucket.
+
 # Start the chillbox terraform
 cd "${terraform_chillbox_dir}"
 

@@ -24,3 +24,16 @@ Infrastructure for websites that use Chill and custom Python Flask services.
 
 
 TODO Add chillbox overview graphic
+
+## Maintenance
+
+Where possible, an upkeep comment has been added to various parts of the source
+code that are known areas that will require updates over time to reduce
+software rot. The upkeep comment follows this pattern to make it easier for
+commands like grep to find these comments.
+
+
+```bash
+# Search for upkeep comments.
+grep --fixed-strings --recursive 'UPKEEP'
+```

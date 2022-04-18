@@ -25,8 +25,7 @@ export IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $0: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $0: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
-test -n "$AWS_ACCESS_KEY_ID" || (echo "ERROR $0: No AWS_ACCESS_KEY_ID set." && exit 1)
-test -n "$AWS_SECRET_ACCESS_KEY" || (echo "ERROR $0: No AWS_SECRET_ACCESS_KEY set." && exit 1)
+test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." && exit 1)
 
 echo "INFO $0: Checking and extracting files to immutable bucket for: ${slugname} ${version}"
 
