@@ -89,7 +89,6 @@ main() {
 
 @test "pass when stops services and creates backups" {
   # Arrange
-  # TODO
 
   # Act
   run main

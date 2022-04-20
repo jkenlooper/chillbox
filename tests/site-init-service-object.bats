@@ -211,5 +211,3 @@ main() {
   test -d "/etc/services.d/${slugname}-${service_name}"
   test -f "/etc/services.d/${slugname}-${service_name}/run"
 }
-# TODO
-# show error if service not supported

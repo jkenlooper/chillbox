@@ -51,20 +51,17 @@ variable "sites_manifest" {
 variable "developer_ips" {
   description = "List of ips that will be allowed through the firewall on the SSH port."
   type        = list(string)
-  # TODO: add validation for ips
 }
 
 variable "admin_ips" {
   description = "List of ips that will be allowed access to /chill/site/admin/ routes."
   type        = list(string)
-  # TODO: add validation for ips
 }
 
 variable "web_ips" {
   description = "List of ips that will be allowed through the firewall on port 80 and 443."
   type        = list(string)
   default     = ["0.0.0.0/0", "::/0"]
-  # TODO: add validation for ips
 }
 
 
@@ -154,7 +151,6 @@ variable "dns_ttl" {
   }
 }
 
-# TODO Create a chillbox-build.auto.tfvars file that sets these.
 variable "has_chillbox_artifact" {
   default = true
   description = "Has the chillbox artifact been created."

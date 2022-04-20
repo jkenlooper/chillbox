@@ -82,7 +82,7 @@ addgroup dev
 adduser -G dev -D dev
 chown dev /etc/chillbox/env_names
 
-cat <<'HERE' > dev.sh
+cat <<'HERE' > /usr/local/bin/chillbox-dev-nginx.sh
 #!/usr/bin/env sh
 
 set -o errexit
@@ -92,13 +92,17 @@ set -o errexit
 aws configure import --csv "file:///var/lib/chillbox-shared-secrets/chillbox-minio/local-chillbox.credentials.csv"
 export AWS_PROFILE="local-chillbox"
 
-/etc/chillbox/bin/site-init.sh
+if [ ! -e /etc/chillbox/site-init.skip ]; then
+  /etc/chillbox/bin/site-init.sh && touch /etc/chillbox/site-init.skip
+else
+  echo "Skipping /etc/chillbox/bin/site-init.sh since file /etc/chillbox/site-init.skip exists."
+fi
 
 /etc/chillbox/bin/reload-templates.sh
 nginx -t
-nginx -g 'daemon off;'
+nginx -s reload
 HERE
-chmod +x dev.sh
+chmod +x /usr/local/bin/chillbox-dev-nginx.sh
 DEV_USER
 
 EXPOSE 80
@@ -106,18 +110,14 @@ EXPOSE 80
 # Set environment and build-args for create-env_names-file.sh to use
 ENV CHILLBOX_SERVER_NAME=localhost
 ENV CHILLBOX_SERVER_PORT=80
-#ARG S3_ENDPOINT_URL
 ENV S3_ENDPOINT_URL=""
-#ARG S3_ARTIFACT_ENDPOINT_URL
 ENV S3_ARTIFACT_ENDPOINT_URL=""
 ENV IMMUTABLE_BUCKET_NAME=""
 ENV ARTIFACT_BUCKET_NAME=""
-#ARG SITES_ARTIFACT
 ENV SITES_ARTIFACT=""
-
 
 
 # TODO: best practice is to not run a container as root user.
 #USER dev
 
-CMD ["./dev.sh"]
+CMD ["nginx", "-g", "daemon off;"]

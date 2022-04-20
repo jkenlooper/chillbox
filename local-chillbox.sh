@@ -11,7 +11,7 @@ command -v aws > /dev/null || (echo "ERROR $0: Requires the aws command to be in
 # These are only used for local development. The AWS credentials specified here
 # are used for the local S3 object storage server; Minio in this case. Any other
 # apps that need to interact with the local S3 should also use the below
-# credentials.
+# credentials by setting the AWS_PROFILE to 'local-chillbox'.
 # WARNING: Do NOT use actual AWS credentials here!
 export local_chillbox_app_key_id="local-chillbox-app-key-id"
 export local_chillbox_secret_access_key="local-secret-access-key-with-readwrite-policy"
@@ -32,7 +32,6 @@ SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
 
 app_port=9081
 working_dir=$PWD
-tech_email="local@example.com"
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 endpoint_url="http://localhost:9000"
@@ -101,7 +100,9 @@ docker run -d --rm \
   --name  chillbox-local-shared-secrets \
   --mount "type=volume,src=chillbox-local-shared-secrets-var-lib,dst=/var/lib/chillbox-shared-secrets,readonly=false" \
   chillbox-local-shared-secrets
-# Create a 'local-chillbox' aws profile with the chillbox-minio user
+# Create a 'local-chillbox' aws profile with the chillbox-minio user. This way
+# local apps can interact with the local chillbox minio s3 object store by
+# setting the AWS_PROFILE to 'local-chillbox'.
 cat <<HERE > $tmp_cred_csv
 User Name, Access Key ID, Secret Access Key
 local-chillbox,${local_chillbox_app_key_id},${local_chillbox_secret_access_key}
@@ -181,7 +182,29 @@ docker run -d --tty --name chillbox \
   --network chillboxnet \
   -p $app_port:80 chillbox
 
-# TODO How to wait for the healthcheck?
+printf "\nWaiting for chillbox container to be in running state."
+while true; do
+  chillbox_state="$(docker inspect --format '{{.State.Running}}' chillbox)"
+  if [ "${chillbox_state}" = "true" ]; then
+    break
+  else
+    printf "$(docker inspect --format '{{.State.Status}}' chillbox) ..."
+  fi
+  sleep 1
+done
+
+docker exec -i --tty \
+  -e CHILLBOX_SERVER_NAME=chillbox.test \
+  -e S3_ENDPOINT_URL="http://chillbox-minio:9000" \
+  -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
+  -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
+  -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
+  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  chillbox /usr/local/bin/chillbox-dev-nginx.sh
+
+# Reload chillbox container to start the services
+docker stop chillbox
+docker start chillbox
 
 echo "
 Sites running on http://chillbox.test:$app_port
@@ -209,3 +232,14 @@ for site_json in $sites; do
   curl --fail --show-error --silent --head "http://$slugname.test:$app_port" || continue
 done
 cd -
+rm -rf "$tmp_sites_dir"
+
+# Drop into the container to continue any other tasks as needed.
+docker exec -i --tty \
+  -e CHILLBOX_SERVER_NAME=chillbox.test \
+  -e S3_ENDPOINT_URL="http://chillbox-minio:9000" \
+  -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
+  -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
+  -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
+  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  chillbox sh

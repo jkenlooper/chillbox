@@ -65,7 +65,9 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${slugname}/${service_handler}"
   chown -R $slugname:$slugname "/var/lib/${slugname}"
   mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
-  chown -R $slugname:$slugname "/var/lib/chillbox-shared-secrets/${slugname}"
+  chown -R $slugname:dev "/var/lib/chillbox-shared-secrets/${slugname}"
+  chmod -R 755 "/var/lib/chillbox-shared-secrets/${slugname}"
+  chmod 744 "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
 
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
@@ -87,7 +89,7 @@ if [ "${service_lang_template}" = "flask" ]; then
 name="${slugname}-${service_name}"
 description="${slugname}-${service_name}"
 user="$slugname"
-group="$slugname"
+group="dev"
 supervisor=s6
 s6_service_path=/etc/services.d/${slugname}-${service_name}
 depend() {
@@ -144,7 +146,7 @@ elif [ "${service_lang_template}" = "chill" ]; then
 name="${slugname}-${service_name}"
 description="${slugname}-${service_name}"
 user="$slugname"
-group="$slugname"
+group="dev"
 supervisor=s6
 s6_service_path=/etc/services.d/${slugname}-${service_name}
 depend() {

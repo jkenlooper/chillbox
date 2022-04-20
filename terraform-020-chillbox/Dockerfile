@@ -47,7 +47,6 @@ ENV SITES_MANIFEST=${SITES_MANIFEST}
 ENV endpoint_url="http://localhost:9000"
 
 RUN <<SITES_ARTIFACT_CONFIG
-# TODO create chillbox_sites.auto.tfvars.json instead
 if [ ! -f "chillbox-terraform-010-infra.output.json" ]; then
   echo "Missing file: chillbox-terraform-010-infra.output.json"
   exit 1
