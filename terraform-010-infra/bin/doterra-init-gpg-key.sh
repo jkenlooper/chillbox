@@ -26,3 +26,8 @@ else
   echo "ERROR $0: Failed running command: 'gpg --quick-generate-key \"${gpg_key_name}\" default encrypt never' exited with error code: $qgk_err_code"
   exit 1
 fi
+
+# Export the public gpg key for this workspace so the site secrets can be
+# encrypted and uploaded to the s3 artifact bucket.
+gpg --list-keys
+gpg --armor --output "${gpg_key_name}.gpg" --export "${gpg_key_name}"

@@ -91,6 +91,8 @@ docker run \
   --entrypoint="" \
   "$infra_image" doterra-init.sh
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
+test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
+docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
 docker rm "${infra_container}"
 
 docker run \

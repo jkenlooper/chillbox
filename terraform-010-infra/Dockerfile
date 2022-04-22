@@ -18,6 +18,7 @@ WORKDIR /usr/local/src/chillbox-terraform
 
 COPY . .
 
+# Set WORKSPACE before SETUP to invalidate that layer.
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
