@@ -65,7 +65,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${slugname}/${service_handler}"
   chown -R $slugname:$slugname "/var/lib/${slugname}"
   mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
-  chown -R $slugname:dev "/var/lib/chillbox-shared-secrets/${slugname}"
+  chown -R $slugname:$slugname "/var/lib/chillbox-shared-secrets/${slugname}"
   chmod -R 755 "/var/lib/chillbox-shared-secrets/${slugname}"
   chmod 744 "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
 

@@ -116,7 +116,21 @@ ENV IMMUTABLE_BUCKET_NAME=""
 ENV ARTIFACT_BUCKET_NAME=""
 ENV SITES_ARTIFACT=""
 
+RUN <<GUIDE > /usr/local/src/_troubleshooting-guide.README.md
+Stop a running service by using the s6-svc command. The s6 service path for each
+service is defined in /etc/services.d/ directory.
 
+# https://skarnet.org/software/s6/s6-svc.html
+# Bring down a running service and wait for it to finish
+s6-svc -wD -d /var/run/s6/services/$name_of_service
+
+# Run the service in the foreground
+/etc/services.d/$name_of_service/run
+
+# Bring a service back up
+s6-svc -u /var/run/s6/services/$name_of_service
+
+GUIDE
 # TODO: best practice is to not run a container as root user.
 #USER dev
 

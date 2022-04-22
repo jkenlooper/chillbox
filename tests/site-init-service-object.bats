@@ -17,6 +17,9 @@ setup_file() {
   export slugdir="$tmp_dir/usr/local/src/$slugname"
   mkdir -p "$slugdir"
 
+  mkdir -p /var/lib/chillbox-shared-secrets/$slugname
+  touch /var/lib/chillbox-shared-secrets/$slugname/api.cfg
+
   export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
@@ -27,6 +30,9 @@ setup_file() {
 teardown_file() {
   rm -f /etc/chillbox/env_names
   test -d "$tmp_dir" && rm -rf $tmp_dir
+
+  rm /var/lib/chillbox-shared-secrets/$slugname/api.cfg
+  rmdir /var/lib/chillbox-shared-secrets/$slugname
 }
 
 setup() {

@@ -23,17 +23,6 @@ def create_app(test_config=None):
         app.config.from_envvar('SECRETS_CONFIG', silent=False)
         if not app.config.get('SALT'):
             raise ValueError(f"No SALT set in {os.environ.get('SECRETS_CONFIG')}.")
-        if not app.config.get('AWS_ACCESS_KEY_ID'):
-            raise ValueError(f"No AWS_ACCESS_KEY_ID set in {os.environ.get('SECRETS_CONFIG')}.")
-        if not app.config.get('AWS_SECRET_ACCESS_KEY'):
-            raise ValueError(f"No AWS_SECRET_ACCESS_KEY set in {os.environ.get('SECRETS_CONFIG')}.")
-
-        if not app.config.get('S3_ENDPOINT_URL'):
-            raise ValueError("No S3_ENDPOINT_URL set in environment.")
-        if not app.config.get('ARTIFACT_BUCKET_NAME'):
-            raise ValueError("No ARTIFACT_BUCKET_NAME set in environment.")
-        if not app.config.get('IMMUTABLE_BUCKET_NAME'):
-            raise ValueError("No IMMUTABLE_BUCKET_NAME set in environment.")
 
     else:
         # load the test config if passed in
