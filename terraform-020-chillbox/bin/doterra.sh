@@ -10,11 +10,11 @@ fi
 
 
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
-decrypted_credentials_tfvars_file=/run/tmp/secrets/doterra/credentials.tfvars.json
+secure_tmp_secrets_dir=/run/tmp/secrets/doterra
+decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
   echo "INFO $0: Decrypting file '${encrypted_credentials_tfvars_file}' to '${decrypted_credentials_tfvars_file}'"
   test -d "/run/tmp/secrets" || (echo "ERROR $0: The path '/run/tmp/secrets' is not a directory" && exit 1)
-  secure_tmp_secrets_dir=/run/tmp/secrets/doterra
   mkdir -p "${secure_tmp_secrets_dir}"
   chmod -R 0700 "${secure_tmp_secrets_dir}"
   gpg --quiet --decrypt "${encrypted_credentials_tfvars_file}" > "${decrypted_credentials_tfvars_file}"
@@ -28,10 +28,18 @@ echo "INFO $0: aws-cli version: $(aws --version)"
 echo "INFO $0: jq version: $(jq --version)"
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
-eval "$(jq -r '@sh "
-  export AWS_ACCESS_KEY_ID=\(.do_spaces_access_key_id)
-  export AWS_SECRET_ACCESS_KEY=\(.do_spaces_secret_access_key)
-  "' ${decrypted_credentials_tfvars_file})"
+tmp_cred_csv=$(mktemp)
+jq '@text "
+User Name, Access Key ID, Secret Access Key
+digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)
+"' ${decrypted_credentials_tfvars_file} > $tmp_cred_csv
+aws configure import --csv "file://$tmp_cred_csv"
+export AWS_PROFILE=digitalocean-spaces-chillbox
+rm $tmp_cred_csv
+#eval "$(jq -r '@sh "
+#  export AWS_ACCESS_KEY_ID=\(.do_spaces_access_key_id)
+#  export AWS_SECRET_ACCESS_KEY=\(.do_spaces_secret_access_key)
+#  "' ${decrypted_credentials_tfvars_file})"
 
 cd /usr/local/src/chillbox-terraform
 
@@ -64,6 +72,8 @@ jq \
     endpoint_url: $jq_endpoint_url,
   }' | ./upload-artifacts.sh || (echo "ERROR $0: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
 
+# TODO find and extract .tf files in each artifact and then 'terraform init'
+# before running terraform command.
 
 
 terraform \

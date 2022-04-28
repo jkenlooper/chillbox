@@ -10,11 +10,11 @@ fi
 
 
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
-decrypted_credentials_tfvars_file=/run/tmp/secrets/doterra/credentials.tfvars.json
+secure_tmp_secrets_dir=/run/tmp/secrets/doterra
+decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
   echo "INFO $0: Decrypting file '${encrypted_credentials_tfvars_file}' to '${decrypted_credentials_tfvars_file}'"
   test -d "/run/tmp/secrets" || (echo "ERROR $0: The path '/run/tmp/secrets' is not a directory" && exit 1)
-  secure_tmp_secrets_dir=/run/tmp/secrets/doterra
   mkdir -p "${secure_tmp_secrets_dir}"
   chmod -R 0700 "${secure_tmp_secrets_dir}"
   gpg --quiet --decrypt "${encrypted_credentials_tfvars_file}" > "${decrypted_credentials_tfvars_file}"
