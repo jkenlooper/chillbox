@@ -110,7 +110,7 @@ tar -c -z -f "$working_dir/dist/$SITES_ARTIFACT" sites >> $LOG_FILE
 echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
 
 # Make a sites manifest json file
-sites_manifest_json="$working_dir/dist/sites.manifest.json"
+sites_manifest_json="dist/sites.manifest.json"
 cd $tmp_sites_dir
 tmp_file_list=$(mktemp)
 sites=$(find sites -type f -name '*.site.json')
@@ -122,7 +122,7 @@ for site_json in $sites; do
   echo "$slugname/$slugname-$version.immutable.tar.gz" >> $tmp_file_list
   echo "$slugname/$slugname-$version.artifact.tar.gz" >> $tmp_file_list
 done
-cat $tmp_file_list | xargs jq --null-input --args '$ARGS.positional' > "$sites_manifest_json"
+cat $tmp_file_list | xargs jq --null-input --args '$ARGS.positional' > "$working_dir/$sites_manifest_json"
 rm -f $tmp_file_list
 
 # Output the json
@@ -130,7 +130,7 @@ jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
   --arg jq_sites_manifest "$sites_manifest_json" \
-  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $sites_manifest_json)" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' $working_dir/$sites_manifest_json)" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$chillbox_artifact,

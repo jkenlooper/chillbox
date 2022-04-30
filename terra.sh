@@ -122,11 +122,6 @@ docker run \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
 
-# TODO extract and find any .tf files in the artifact for each site. Run
-# terraform on these? Treat the different services as different modules that can
-# set the terraform required providers as needed. Top level will define the
-# terraform providers.
-
 # TODO Create a gpg key and upload the public key to artifacts bucket.
 # TODO Can each app include a terraform variables file for the secrets? Then it
 # could use terraform command to prompt for these if they were not already
@@ -136,6 +131,8 @@ docker run \
 # Start the chillbox terraform
 cd "${terraform_chillbox_dir}"
 
+# TODO temporary move of dist
+mv "${project_dir}/dist" "${terraform_chillbox_dir}/"
 terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
 terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
 docker rm "${terraform_chillbox_container}" || printf ""
@@ -149,6 +146,7 @@ docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$terraform_chillbox_image" \
   .
+mv "${terraform_chillbox_dir}/dist" "${project_dir}/"
 
 docker run \
   --name "${terraform_chillbox_container}" \
@@ -163,6 +161,7 @@ docker run \
 docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
 docker rm "${terraform_chillbox_container}"
 
+# TODO include volume mount of outputs "chillbox-output-parameters"
 docker run \
   -i --tty \
   --rm \
@@ -179,7 +178,9 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  --mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
   --mount "type=bind,src=${project_dir}/upload-artifacts.sh,dst=/usr/local/src/chillbox-terraform/upload-artifacts.sh,readonly=true" \
   --entrypoint="" \
   "$terraform_chillbox_image" sh
+  #--mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
+
+# TODO save output from terraform as an auto.tfvars.json

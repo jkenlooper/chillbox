@@ -33,6 +33,7 @@ resource "digitalocean_spaces_bucket" "immutable" {
   acl    = "public-read"
 }
 
+# outputs.tf
 output "s3_endpoint_url" {
   value = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"
   description = "The s3 endpoint url for DigitalOcean Spaces set to the region of the artifact bucket."

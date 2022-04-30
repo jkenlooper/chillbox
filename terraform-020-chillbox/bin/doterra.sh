@@ -36,10 +36,6 @@ digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_acc
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=digitalocean-spaces-chillbox
 rm $tmp_cred_csv
-#eval "$(jq -r '@sh "
-#  export AWS_ACCESS_KEY_ID=\(.do_spaces_access_key_id)
-#  export AWS_SECRET_ACCESS_KEY=\(.do_spaces_secret_access_key)
-#  "' ${decrypted_credentials_tfvars_file})"
 
 cd /usr/local/src/chillbox-terraform
 
@@ -54,7 +50,6 @@ endpoint_url=\(.s3_endpoint_url)
 immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
-
 
 jq \
   --arg jq_immutable_bucket_name "$immutable_bucket_name" \

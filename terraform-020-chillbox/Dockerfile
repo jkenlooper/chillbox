@@ -32,8 +32,6 @@ alpine_custom_image = "${alpine_custom_image_file}"
 HERE
 WGET_ALPINE_CUSTOM_IMAGE
 
-COPY . .
-
 # Set WORKSPACE before SETUP to invalidate that layer.
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
@@ -47,6 +45,25 @@ ARG SITES_MANIFEST=""
 ENV SITES_MANIFEST=${SITES_MANIFEST}
 ENV endpoint_url="http://localhost:9000"
 
+RUN <<SETUP
+addgroup dev
+adduser -G dev -D dev
+chown -R dev:dev .
+
+mkdir -p /run/tmp/secrets
+chown -R dev:dev /run/tmp/secrets
+chmod -R 0700 /run/tmp/secrets
+
+mkdir -p /home/dev/.gnupg
+chown -R dev:dev /home/dev/.gnupg
+chmod -R 0700 /home/dev/.gnupg
+
+mkdir -p /var/lib/doterra
+chown -R dev:dev /var/lib/doterra
+chmod -R 0700 /var/lib/doterra
+SETUP
+
+COPY --chown=dev:dev chillbox-terraform-010-infra.output.json .
 RUN <<SITES_ARTIFACT_CONFIG
 if [ ! -f "chillbox-terraform-010-infra.output.json" ]; then
   echo "Missing file: chillbox-terraform-010-infra.output.json"
@@ -66,27 +83,37 @@ jq \
   } + map_values(.value)' \
   chillbox-terraform-010-infra.output.json \
   > chillbox_sites.auto.tfvars.json
+chown dev:dev chillbox_sites.auto.tfvars.json
 SITES_ARTIFACT_CONFIG
 
-RUN <<SETUP
-addgroup dev
-adduser -G dev -D dev
-chown -R dev:dev .
+COPY extract-terraform-artifact-modules.sh .
+COPY --chown=dev:dev dist ./dist
+RUN <<ARTIFACT_MODULES
+# TODO extract each tar.gz in the dist/ if the site has defined a terraform module.
+# TODO extract and find any .tf files in the artifact for each site. Treat the
+# different services as different modules that can set the terraform required
+# providers as needed. Top level will define the terraform providers.
+jq '{
+  sites_artifact: .sites_artifact,
+  sites_manifest: .sites_manifest,
+  }' chillbox_sites.auto.tfvars.json \
+  | ./extract-terraform-artifact-modules.sh
+# the artifact-modules.tf file is created via the above command.
 
-mkdir -p /run/tmp/secrets
-chown -R dev:dev /run/tmp/secrets
-chmod -R 0700 /run/tmp/secrets
 
-mkdir -p /home/dev/.gnupg
-chown -R dev:dev /home/dev/.gnupg
-chmod -R 0700 /home/dev/.gnupg
+ARTIFACT_MODULES
 
-mkdir -p /var/lib/doterra
-chown -R dev:dev /var/lib/doterra
-chmod -R 0700 /var/lib/doterra
+COPY --chown=dev:dev chillbox.tf .
+COPY --chown=dev:dev variables.tf .
+COPY --chown=dev:dev main.tf .
+COPY --chown=dev:dev alpine-box-init.sh.tftpl .
+COPY --chown=dev:dev private.auto.tfvars .
+COPY --chown=dev:dev bin/doterra.sh ./bin/doterra.sh
+COPY --chown=dev:dev .terraform.lock.hcl .
 
+RUN <<TERRAFORM_INIT
 su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
-SETUP
+TERRAFORM_INIT
 
 USER dev

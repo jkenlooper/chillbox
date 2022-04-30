@@ -5,6 +5,14 @@
 !/chillbox.tf
 !/variables.tf
 !/main.tf
+
+# The artifact-modules.tf is generated.
+# !/artifact-modules.tf
+# The dist directory is include so the artifact-modules directory can be created
+# with the contents of each artifact.
+!/dist/*
+!/extract-terraform-artifact-modules.sh
+
 !/alpine-box-init.sh.tftpl
 !/private.auto.tfvars
 !/bin/doterra.sh
