@@ -7,6 +7,7 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 
 RUN <<INSTALL
 apk update
+# TODO /etc/chillbox/bin/install-aws-cli.sh
 apk add \
   aws-cli \
   jq \
@@ -93,11 +94,16 @@ RUN <<ARTIFACT_MODULES
 # TODO extract and find any .tf files in the artifact for each site. Treat the
 # different services as different modules that can set the terraform required
 # providers as needed. Top level will define the terraform providers.
-jq '{
+mkdir -p artifact-modules
+chown dev:dev artifact-modules
+touch artifact-modules.tf
+chown dev:dev artifact-modules.tf
+su dev -c "jq '{
   sites_artifact: .sites_artifact,
   sites_manifest: .sites_manifest,
   }' chillbox_sites.auto.tfvars.json \
   | ./extract-terraform-artifact-modules.sh
+  "
 # the artifact-modules.tf file is created via the above command.
 
 

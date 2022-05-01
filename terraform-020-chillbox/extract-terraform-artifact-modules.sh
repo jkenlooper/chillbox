@@ -18,7 +18,7 @@ eval "$(jq -r '@sh "
 # inputs again.
 
 tmp_dir=$(mktemp -d)
-tar x -z -f $sites_artifact -C "${tmp_dir}"
+tar x -z -f dist/$sites_artifact -C "${tmp_dir}"
 find $tmp_dir/sites -type f -name '*.site.json' | \
   while read site_json; do
     echo "$site_json"
@@ -29,6 +29,7 @@ find $tmp_dir/sites -type f -name '*.site.json' | \
       # No terraform module defined; skip.
       continue
     fi
+    mkdir -p artifact-modules
     jq -c '.terraform[]' "${site_json}" | \
       while read terraform_json; do
 
@@ -41,5 +42,6 @@ module "${slugname}-${module}" {
   ${terraform_variables}
 }
 HERE
+      done
 
   done
