@@ -69,6 +69,7 @@ export DOCKER_BUILDKIT=1
 docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$infra_image" \
+  -f "${project_dir}/terraform-010-infra.Dockerfile" \
   .
 
 cleanup_run_tmp_secrets() {
@@ -145,6 +146,7 @@ docker build \
   --build-arg SITES_MANIFEST=$SITES_MANIFEST \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$terraform_chillbox_image" \
+  -f "${project_dir}/terraform-020-chillbox.Dockerfile" \
   .
 mv "${terraform_chillbox_dir}/dist" "${project_dir}/"
 

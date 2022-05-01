@@ -119,6 +119,11 @@ docker cp $tmp_cred_csv chillbox-local-shared-secrets:/var/lib/chillbox-shared-s
 export AWS_PROFILE="local-chillbox"
 rm_tmp_cred_csv
 
+# TODO No longer running a local chillbox container that builds everything
+# locally.
+exit 0
+
+
 ## Build the artifacts
 eval "$(jq \
   --arg jq_sites_git_repo "$SITES_GIT_REPO" \
