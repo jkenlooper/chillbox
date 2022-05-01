@@ -5,18 +5,18 @@
 # docker image ls --digests hashicorp/terraform
 FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
 
+WORKDIR /usr/local/src/chillbox-terraform
+
+COPY bin/install-aws-cli.sh bin/
 RUN <<INSTALL
 apk update
-# TODO /etc/chillbox/bin/install-aws-cli.sh
+/usr/local/src/chillbox-terraform/bin/install-aws-cli.sh
 apk add \
-  aws-cli \
   jq \
   gpg \
   gpg-agent
 
 INSTALL
-
-WORKDIR /usr/local/src/chillbox-terraform
 
 ARG ALPINE_CUSTOM_IMAGE=""
 ARG ALPINE_CUSTOM_IMAGE_CHECKSUM=""
@@ -64,7 +64,7 @@ chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
 SETUP
 
-COPY --chown=dev:dev chillbox-terraform-010-infra.output.json .
+COPY --chown=dev:dev terraform-020-chillbox/chillbox-terraform-010-infra.output.json .
 RUN <<SITES_ARTIFACT_CONFIG
 if [ ! -f "chillbox-terraform-010-infra.output.json" ]; then
   echo "Missing file: chillbox-terraform-010-infra.output.json"
@@ -87,7 +87,7 @@ jq \
 chown dev:dev chillbox_sites.auto.tfvars.json
 SITES_ARTIFACT_CONFIG
 
-COPY extract-terraform-artifact-modules.sh .
+COPY terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
 # TODO extract each tar.gz in the dist/ if the site has defined a terraform module.
@@ -109,17 +109,19 @@ su dev -c "jq '{
 
 ARTIFACT_MODULES
 
-COPY --chown=dev:dev chillbox.tf .
-COPY --chown=dev:dev variables.tf .
-COPY --chown=dev:dev main.tf .
-COPY --chown=dev:dev alpine-box-init.sh.tftpl .
-COPY --chown=dev:dev private.auto.tfvars .
-COPY --chown=dev:dev bin/doterra.sh ./bin/doterra.sh
-COPY --chown=dev:dev .terraform.lock.hcl .
+COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
+COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
+COPY --chown=dev:dev terraform-020-chillbox/main.tf .
+COPY --chown=dev:dev terraform-020-chillbox/alpine-box-init.sh.tftpl .
+COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
+COPY --chown=dev:dev terraform-020-chillbox/bin/doterra.sh ./bin/doterra.sh
+COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
 su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
+
+COPY --chown=dev:dev upload-artifacts.sh .
 
 USER dev

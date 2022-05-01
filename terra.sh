@@ -60,8 +60,6 @@ test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variabl
 test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
 
 
-cd "${terraform_infra_dir}"
-
 infra_image="chillbox-$(basename $terraform_infra_dir)"
 infra_container="chillbox-$(basename $terraform_infra_dir)"
 docker rm "${infra_container}" || printf ""
@@ -92,7 +90,7 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --entrypoint="" \
   "$infra_image" doterra-init.sh
-docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
+docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
 test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
 docker rm "${infra_container}"
@@ -130,10 +128,7 @@ docker run \
 # Prompt to continue so any secret files can be manually encrypted and uploaded to the artifacts bucket.
 
 # Start the chillbox terraform
-cd "${terraform_chillbox_dir}"
 
-# TODO temporary move of dist
-mv "${project_dir}/dist" "${terraform_chillbox_dir}/"
 terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
 terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
 docker rm "${terraform_chillbox_container}" || printf ""
@@ -148,7 +143,6 @@ docker build \
   -t "$terraform_chillbox_image" \
   -f "${project_dir}/terraform-020-chillbox.Dockerfile" \
   .
-mv "${terraform_chillbox_dir}/dist" "${project_dir}/"
 
 docker run \
   --name "${terraform_chillbox_container}" \
@@ -160,7 +154,7 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   "$terraform_chillbox_image" init
-docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" ./
+docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${terraform_chillbox_container}"
 
 # TODO include volume mount of outputs "chillbox-output-parameters"
@@ -180,9 +174,7 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  --mount "type=bind,src=${project_dir}/upload-artifacts.sh,dst=/usr/local/src/chillbox-terraform/upload-artifacts.sh,readonly=true" \
   --entrypoint="" \
   "$terraform_chillbox_image" sh
-  #--mount "type=bind,src=${project_dir}/dist,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
 
 # TODO save output from terraform as an auto.tfvars.json

@@ -39,10 +39,21 @@ chmod -R 0700 /home/dev/.gnupg
 mkdir -p /var/lib/doterra
 chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
+SETUP
 
+COPY terraform-010-infra/variables.tf ./
+COPY terraform-010-infra/main.tf ./
+#COPY terraform-010-infra/private.auto.tfvars ./
+COPY terraform-010-infra/.terraform.lock.hcl ./
+RUN <<TERRAFORM_INIT
 # Creates the /home/dev/.terraform.d directory.
 su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
-SETUP
+TERRAFORM_INIT
+
+COPY terraform-010-infra/bin/doterra-init-gpg-key.sh bin/
+COPY terraform-010-infra/bin/doterra-encrypt_tfvars.sh bin/
+COPY terraform-010-infra/bin/doterra-init.sh bin/
+COPY terraform-010-infra/bin/doterra.sh bin/
 
 USER dev

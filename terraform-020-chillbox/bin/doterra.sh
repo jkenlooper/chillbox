@@ -29,10 +29,8 @@ echo "INFO $0: jq version: $(jq --version)"
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv=$(mktemp)
-jq '@text "
-User Name, Access Key ID, Secret Access Key
-digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)
-"' ${decrypted_credentials_tfvars_file} > $tmp_cred_csv
+jq -r '"User Name, Access Key ID, Secret Access Key
+digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > $tmp_cred_csv
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=digitalocean-spaces-chillbox
 rm $tmp_cred_csv
@@ -66,9 +64,6 @@ jq \
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
   }' | ./upload-artifacts.sh || (echo "ERROR $0: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
-
-# TODO find and extract .tf files in each artifact and then 'terraform init'
-# before running terraform command.
 
 
 terraform \

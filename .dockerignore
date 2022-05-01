@@ -1,6 +1,30 @@
-*
-!/templates/*
+# Ignore everything
+/*
+
+# Except these specific files and directories
+!/terraform-010-infra/variables.tf
+!/terraform-010-infra/main.tf
+!/terraform-010-infra/private.auto.tfvars
+
+!/terraform-020-chillbox/chillbox.tf
+!/terraform-020-chillbox/variables.tf
+!/terraform-020-chillbox/main.tf
+
+!/dist/*
+!/terraform-020-chillbox/extract-terraform-artifact-modules.sh
+
+!/terraform-020-chillbox/alpine-box-init.sh.tftpl
+!/terraform-020-chillbox/private.auto.tfvars
+
+# Created from the infra container and copied over
+!/terraform-020-chillbox/chillbox-terraform-010-infra.output.json
+
 !/bin/*
-!/nginx.conf
-!/default.nginx.conf
-!/sites/*.site.json
+!/terraform-010-infra/bin/*
+!/terraform-020-chillbox/bin/*
+!/upload-artifacts.sh
+
+# terraform init creates the dependency lock file
+# https://www.terraform.io/language/files/dependency-lock
+!/terraform-010-infra/.terraform.lock.hcl
+!/terraform-020-chillbox/.terraform.lock.hcl
