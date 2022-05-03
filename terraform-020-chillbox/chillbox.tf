@@ -55,10 +55,13 @@ resource "local_sensitive_file" "alpine_box_init" {
 }
 
 resource "digitalocean_record" "chillbox" {
-  count      = var.has_chillbox_artifact ? 1 : 0
-  domain = var.domain
+  for_each = toset(var.site_domains)
+
+  # https://regex101.com/r/pgPLQ5/1
+  domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
+  name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]
+
   type   = "A"
-  name   = trimsuffix(var.sub_domain, ".")
   value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
   ttl    = var.dns_ttl
 }

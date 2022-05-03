@@ -122,6 +122,10 @@ variable "vpc_ip_range" {
   default = "192.168.136.0/24"
 }
 
+variable "site_domains" {
+  type = list(string)
+  description = "List of site domain names that will be pointing to the chillbox ip address."
+}
 variable "domain" {
   default     = "example.com"
   description = "The domain that will be used when creating new DNS records."
