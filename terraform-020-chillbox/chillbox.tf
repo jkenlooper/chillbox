@@ -59,11 +59,9 @@ resource "digitalocean_record" "chillbox" {
 
   # https://regex101.com/r/pgPLQ5/1
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
-  name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]
+  name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "@" : regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]
 
   type   = "A"
   value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
   ttl    = var.dns_ttl
 }
-# TODO create all other digitalocean_record resources for each domain listed in
-# sites.json. Prepend sub_domain with the environment.

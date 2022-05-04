@@ -87,7 +87,7 @@ jq \
 chown dev:dev chillbox_sites.auto.tfvars.json
 SITES_ARTIFACT_CONFIG
 
-COPY terraform-020-chillbox/extract-terraform-artifact-modules.sh .
+COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
 # TODO extract each tar.gz in the dist/ if the site has defined a terraform module.
@@ -105,9 +105,16 @@ su dev -c "jq '{
   | ./extract-terraform-artifact-modules.sh
   "
 # the artifact-modules.tf file is created via the above command.
-
-
 ARTIFACT_MODULES
+
+COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
+RUN <<SITE_DOMAINS
+su dev -c "jq '{
+  sites_artifact: .sites_artifact
+  }' chillbox_sites.auto.tfvars.json \
+  | ./generate-site_domains_auto_tfvars.sh
+  "
+SITE_DOMAINS
 
 COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
 COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
