@@ -7,15 +7,7 @@ working_dir=$(realpath $(dirname $0))
 # Extract and set shell variables from JSON input
 eval "$(jq -r '@sh "
   sites_artifact=\(.sites_artifact)
-  sites_manifest=\(.sites_manifest)
   "')"
-
-# cycle through the sites manifest
-# With each site check if a terraform module has been defined
-# Create the artifact-module.tf at the top level using the template
-# Include any variables that are defined for the module in the site config
-# The outputs should be used as parameters and saved to avoid prompting for
-# inputs again.
 
 tmp_dir=$(mktemp -d)
 tar x -z -f dist/$sites_artifact -C "${tmp_dir}"

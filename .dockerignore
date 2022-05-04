@@ -4,7 +4,6 @@
 # Except these specific files and directories
 !/terraform-010-infra/variables.tf
 !/terraform-010-infra/main.tf
-!/terraform-010-infra/private.auto.tfvars
 
 !/terraform-020-chillbox/chillbox.tf
 !/terraform-020-chillbox/variables.tf
@@ -15,7 +14,7 @@
 !/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
 !/terraform-020-chillbox/alpine-box-init.sh.tftpl
-!/terraform-020-chillbox/private.auto.tfvars
+#!/terraform-020-chillbox/private.auto.tfvars
 
 # Created from the infra container and copied over
 !/terraform-020-chillbox/chillbox-terraform-010-infra.output.json

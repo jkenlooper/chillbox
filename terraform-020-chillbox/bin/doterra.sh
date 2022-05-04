@@ -43,6 +43,25 @@ terraform workspace select $WORKSPACE || \
 
 test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
+
+if [ ! -f "/var/lib/terraform-010-infra/output.json" ]; then
+  echo "Missing file: /var/lib/terraform-010-infra/output.json"
+  exit 1
+fi
+
+jq \
+  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
+  --arg jq_chillbox_artifact "${CHILLBOX_ARTIFACT}" \
+  --arg jq_sites_manifest "${SITES_MANIFEST}" \
+  '{
+  sites_artifact: $jq_sites_artifact,
+  chillbox_artifact: $jq_chillbox_artifact,
+  sites_manifest: $jq_sites_manifest,
+  } + map_values(.value)' \
+  /var/lib/terraform-010-infra/output.json \
+  > chillbox_sites.auto.tfvars.json
+chown dev:dev chillbox_sites.auto.tfvars.json
+
 eval "$(jq -r '@sh "
 endpoint_url=\(.s3_endpoint_url)
 immutable_bucket_name=\(.immutable_bucket_name)

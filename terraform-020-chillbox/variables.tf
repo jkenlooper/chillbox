@@ -125,6 +125,7 @@ variable "vpc_ip_range" {
 variable "site_domains" {
   type = list(string)
   description = "List of site domain names that will be pointing to the chillbox ip address."
+  default = []
 }
 variable "domain" {
   default     = "example.com"

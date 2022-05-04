@@ -30,3 +30,5 @@ test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make
 terraform \
   $terraform_command \
   -var-file="${decrypted_credentials_tfvars_file}"
+
+terraform output -json > /var/lib/terraform-010-infra/output.json

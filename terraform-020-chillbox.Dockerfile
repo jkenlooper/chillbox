@@ -13,6 +13,7 @@ apk update
 /usr/local/src/chillbox-terraform/bin/install-aws-cli.sh
 apk add \
   jq \
+  vim \
   gpg \
   gpg-agent
 
@@ -64,28 +65,28 @@ chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
 SETUP
 
-COPY --chown=dev:dev terraform-020-chillbox/chillbox-terraform-010-infra.output.json .
-RUN <<SITES_ARTIFACT_CONFIG
-if [ ! -f "chillbox-terraform-010-infra.output.json" ]; then
-  echo "Missing file: chillbox-terraform-010-infra.output.json"
-  exit 1
-fi
-
-# Set the immutable_bucket_name and artifact_bucket_name from the infra output.
-# TODO add site domain list
-jq \
-  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
-  --arg jq_chillbox_artifact "${CHILLBOX_ARTIFACT}" \
-  --arg jq_sites_manifest "${SITES_MANIFEST}" \
-  '{
-  sites_artifact: $jq_sites_artifact,
-  chillbox_artifact: $jq_chillbox_artifact,
-  sites_manifest: $jq_sites_manifest,
-  } + map_values(.value)' \
-  chillbox-terraform-010-infra.output.json \
-  > chillbox_sites.auto.tfvars.json
-chown dev:dev chillbox_sites.auto.tfvars.json
-SITES_ARTIFACT_CONFIG
+#COPY --chown=dev:dev terraform-020-chillbox/chillbox-terraform-010-infra.output.json .
+#RUN <<SITES_ARTIFACT_CONFIG
+#if [ ! -f "/var/lib/terraform-010-infra/output.json" ]; then
+#  echo "Missing file: /var/lib/terraform-010-infra/output.json"
+#  exit 1
+#fi
+#
+## Set the immutable_bucket_name and artifact_bucket_name from the infra output.
+## TODO add site domain list
+#jq \
+#  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
+#  --arg jq_chillbox_artifact "${CHILLBOX_ARTIFACT}" \
+#  --arg jq_sites_manifest "${SITES_MANIFEST}" \
+#  '{
+#  sites_artifact: $jq_sites_artifact,
+#  chillbox_artifact: $jq_chillbox_artifact,
+#  sites_manifest: $jq_sites_manifest,
+#  } + map_values(.value)' \
+#  chillbox-terraform-010-infra.output.json \
+#  > chillbox_sites.auto.tfvars.json
+#chown dev:dev chillbox_sites.auto.tfvars.json
+#SITES_ARTIFACT_CONFIG
 
 COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
@@ -98,29 +99,20 @@ mkdir -p artifact-modules
 chown dev:dev artifact-modules
 touch artifact-modules.tf
 chown dev:dev artifact-modules.tf
-su dev -c "jq '{
-  sites_artifact: .sites_artifact,
-  sites_manifest: .sites_manifest,
-  }' chillbox_sites.auto.tfvars.json \
-  | ./extract-terraform-artifact-modules.sh
-  "
+su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./extract-terraform-artifact-modules.sh"
 # the artifact-modules.tf file is created via the above command.
 ARTIFACT_MODULES
 
 COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
 RUN <<SITE_DOMAINS
-su dev -c "jq '{
-  sites_artifact: .sites_artifact
-  }' chillbox_sites.auto.tfvars.json \
-  | ./generate-site_domains_auto_tfvars.sh
-  "
+su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
 SITE_DOMAINS
 
 COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
 COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
 COPY --chown=dev:dev terraform-020-chillbox/main.tf .
 COPY --chown=dev:dev terraform-020-chillbox/alpine-box-init.sh.tftpl .
-COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
+#COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
 COPY --chown=dev:dev terraform-020-chillbox/bin/doterra.sh ./bin/doterra.sh
 COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
 

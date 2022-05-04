@@ -30,6 +30,9 @@ echo "  sites_git_branch=$sites_git_branch" >> $LOG_FILE
 CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
 echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> $LOG_FILE
 
+# TODO Skip creating any changes to the dist directory to prevent unecessary
+# docker build of 020 infra.
+
 tmp_sites_dir=$(mktemp -d)
 # TODO Change to be a zip of the source code files instead of depending on git.
 echo "Cloning $sites_git_repo $sites_git_branch to tmp dir: $tmp_sites_dir" >> $LOG_FILE

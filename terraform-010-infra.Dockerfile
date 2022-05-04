@@ -9,14 +9,13 @@ RUN <<INSTALL
 apk update
 apk add \
   jq \
+  vim \
   gpg \
   gpg-agent
 
 INSTALL
 
 WORKDIR /usr/local/src/chillbox-terraform
-
-COPY . .
 
 # Set WORKSPACE before SETUP to invalidate that layer.
 ARG WORKSPACE=development
@@ -39,11 +38,14 @@ chmod -R 0700 /home/dev/.gnupg
 mkdir -p /var/lib/doterra
 chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
+
+mkdir -p /var/lib/terraform-010-infra
+chown -R dev:dev /var/lib/terraform-010-infra
+chmod -R 0700 /var/lib/terraform-010-infra
 SETUP
 
 COPY terraform-010-infra/variables.tf ./
 COPY terraform-010-infra/main.tf ./
-#COPY terraform-010-infra/private.auto.tfvars ./
 COPY terraform-010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
 # Creates the /home/dev/.terraform.d directory.
