@@ -13,6 +13,7 @@ if [ -n "$1" ]; then
 fi
 
 # No context for the docker build is needed.
+docker image rm chillbox-bats:latest || printf ""
 export DOCKER_BUILDKIT=1
 cat "${tests_dir}/Dockerfile" | docker build -t chillbox-bats:latest -
 

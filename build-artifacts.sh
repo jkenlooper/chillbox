@@ -30,15 +30,13 @@ echo "  sites_git_branch=$sites_git_branch" >> $LOG_FILE
 CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
 echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> $LOG_FILE
 
-# TODO Skip creating any changes to the dist directory to prevent unecessary
-# docker build of 020 infra.
-
 tmp_sites_dir=$(mktemp -d)
 # TODO Change to be a zip of the source code files instead of depending on git.
 echo "Cloning $sites_git_repo $sites_git_branch to tmp dir: $tmp_sites_dir" >> $LOG_FILE
 git clone --depth 1 --single-branch --branch "$sites_git_branch" $sites_git_repo $tmp_sites_dir
 cd $tmp_sites_dir
 
+sites_manifest_json="dist/sites.manifest.json"
 sites_commit_id=$(git rev-parse --short HEAD)
 SITES_ARTIFACT=$(basename ${sites_git_repo%.git})-$sites_git_branch-$sites_commit_id.tar.gz
 echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
@@ -59,74 +57,83 @@ else
 fi
 
 # Create the sites artifact file
+if [ -f "$working_dir/dist/$SITES_ARTIFACT" ]; then
+  echo "Sites artifact file already exists: dist/$SITES_ARTIFACT" >> $LOG_FILE
 
-cd $tmp_sites_dir
-
-sites=$(find sites -type f -name '*.site.json')
-
-echo $sites >> $LOG_FILE
-
-for site_json in $sites; do
+else
   cd $tmp_sites_dir
-  slugname=${site_json%.site.json}
-  slugname=${slugname#sites/}
-  echo $slugname >> $LOG_FILE
 
-  # TODO Validate the site_json file https://github.com/marksparkza/jschon
+  sites=$(find sites -type f -name '*.site.json')
 
-  version="$(jq -r '.version' $site_json)"
+  echo $sites >> $LOG_FILE
 
-  dist_immutable_archive_file="$working_dir/dist/$slugname/$slugname-$version.immutable.tar.gz"
-  dist_artifact_file="$working_dir/dist/$slugname/$slugname-$version.artifact.tar.gz"
-  if [ -f $dist_immutable_archive_file ] && [ -f "$dist_artifact_file" ]; then
-    echo "Skipping the 'make' command for $slugname" >> $LOG_FILE
-    continue
-  fi
+  for site_json in $sites; do
+    cd $tmp_sites_dir
+    slugname=${site_json%.site.json}
+    slugname=${slugname#sites/}
+    echo $slugname >> $LOG_FILE
 
-  tmp_dir=$(mktemp -d)
-  git_repo="$(jq -r '.git_repo' $site_json)"
-  # TODO Change to be a zip of the source code files instead of depending on git.
-  git clone --depth 1 --single-branch --branch "$version" --recurse-submodules $git_repo $tmp_dir >> $LOG_FILE
-  cd $tmp_dir
-  echo "Running the 'make' command for $slugname" >> $LOG_FILE
-  make >> $LOG_FILE
+    # TODO Validate the site_json file https://github.com/marksparkza/jschon
 
-  immutable_archive_file=$tmp_dir/$slugname-$version.immutable.tar.gz
-  test -f $immutable_archive_file || (echo "No file at $immutable_archive_file" >> $LOG_FILE && exit 1)
+    version="$(jq -r '.version' $site_json)"
 
-  artifact_file=$tmp_dir/$slugname-$version.artifact.tar.gz
-  test -f $artifact_file || (echo "No file at $artifact_file" >> $LOG_FILE && exit 1)
+    dist_immutable_archive_file="$working_dir/dist/$slugname/$slugname-$version.immutable.tar.gz"
+    dist_artifact_file="$working_dir/dist/$slugname/$slugname-$version.artifact.tar.gz"
+    if [ -f $dist_immutable_archive_file ] && [ -f "$dist_artifact_file" ]; then
+      echo "Skipping the 'make' command for $slugname" >> $LOG_FILE
+      continue
+    fi
+    find "${working_dir}/dist/${slugname}" -type f -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" -delete \
+      || echo "No existing archive files to delete for ${slugname}" >> $LOG_FILE
 
-  test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"
-  mkdir -p $(dirname "$dist_immutable_archive_file")
-  mv $immutable_archive_file "$dist_immutable_archive_file"
-  test ! -f "$dist_artifact_file" || rm -f "$dist_artifact_file"
-  mkdir -p $(dirname "$dist_artifact_file")
-  mv $artifact_file "$dist_artifact_file"
+    tmp_dir=$(mktemp -d)
+    git_repo="$(jq -r '.git_repo' $site_json)"
+    # TODO Change to be a zip of the source code files instead of depending on git.
+    git clone --depth 1 --single-branch --branch "$version" --recurse-submodules $git_repo $tmp_dir >> $LOG_FILE
+    cd $tmp_dir
+    echo "Running the 'make' command for $slugname" >> $LOG_FILE
+    make >> $LOG_FILE
 
-done
+    immutable_archive_file=$tmp_dir/$slugname-$version.immutable.tar.gz
+    test -f $immutable_archive_file || (echo "No file at $immutable_archive_file" >> $LOG_FILE && exit 1)
+
+    artifact_file=$tmp_dir/$slugname-$version.artifact.tar.gz
+    test -f $artifact_file || (echo "No file at $artifact_file" >> $LOG_FILE && exit 1)
+
+    test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"
+    mkdir -p $(dirname "$dist_immutable_archive_file")
+    mv $immutable_archive_file "$dist_immutable_archive_file"
+    test ! -f "$dist_artifact_file" || rm -f "$dist_artifact_file"
+    mkdir -p $(dirname "$dist_artifact_file")
+    mv $artifact_file "$dist_artifact_file"
+
+  done
 
 
-cd $tmp_sites_dir
-tar -c -z -f "$working_dir/dist/$SITES_ARTIFACT" sites >> $LOG_FILE
-
-echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
-
-# Make a sites manifest json file
-sites_manifest_json="dist/sites.manifest.json"
-cd $tmp_sites_dir
-tmp_file_list=$(mktemp)
-sites=$(find sites -type f -name '*.site.json')
-for site_json in $sites; do
   cd $tmp_sites_dir
-  slugname=${site_json%.site.json}
-  slugname=${slugname#sites/}
-  version="$(jq -r '.version' $site_json)"
-  echo "$slugname/$slugname-$version.immutable.tar.gz" >> $tmp_file_list
-  echo "$slugname/$slugname-$version.artifact.tar.gz" >> $tmp_file_list
-done
-cat $tmp_file_list | xargs jq --null-input --args '$ARGS.positional' > "$working_dir/$sites_manifest_json"
-rm -f $tmp_file_list
+  SITES_ARTIFACT=$(basename ${sites_git_repo%.git})-$sites_git_branch-$sites_commit_id.tar.gz
+  find "${working_dir}/dist" -depth -maxdepth 1 -type f -name "$(basename ${sites_git_repo%.git})-${sites_git_branch}-*.tar.gz" -delete \
+      || echo "No existing site files to delete for $(basename ${sites_git_repo%.git})-${sites_git_branch}-*.tar.gz" >> $LOG_FILE
+  tar -c -z -f "$working_dir/dist/$SITES_ARTIFACT" sites >> $LOG_FILE
+
+  echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> $LOG_FILE
+
+  # Make a sites manifest json file
+  cd $tmp_sites_dir
+  tmp_file_list=$(mktemp)
+  sites=$(find sites -type f -name '*.site.json')
+  for site_json in $sites; do
+    cd $tmp_sites_dir
+    slugname=${site_json%.site.json}
+    slugname=${slugname#sites/}
+    version="$(jq -r '.version' $site_json)"
+    echo "$slugname/$slugname-$version.immutable.tar.gz" >> $tmp_file_list
+    echo "$slugname/$slugname-$version.artifact.tar.gz" >> $tmp_file_list
+  done
+  cat $tmp_file_list | xargs jq --null-input --args '$ARGS.positional' > "$working_dir/$sites_manifest_json"
+  rm -f $tmp_file_list
+
+fi
 
 # Output the json
 jq --null-input \

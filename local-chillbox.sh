@@ -94,6 +94,7 @@ rm_tmp_cred_csv() {
 trap rm_tmp_cred_csv EXIT
 docker stop --time 0 chillbox-local-shared-secrets || printf ""
 docker rm  chillbox-local-shared-secrets || printf ""
+docker image rm chillbox-local-shared-secrets || printf ""
 # Avoid adding docker context by using stdin for the Dockerfile.
 cat local-shared-secrets.Dockerfile | DOCKER_BUILDKIT=1 docker build -t chillbox-local-shared-secrets -
 docker run -d --rm \

@@ -63,6 +63,7 @@ test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is e
 infra_image="chillbox-$(basename $terraform_infra_dir)"
 infra_container="chillbox-$(basename $terraform_infra_dir)"
 docker rm "${infra_container}" || printf ""
+docker image rm "$infra_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
@@ -112,16 +113,6 @@ docker run \
   --entrypoint="" \
   "$infra_image" sh
 
-#docker run \
-#  --rm \
-#  --name "${infra_container}" \
-#  -e WORKSPACE="${WORKSPACE}" \
-#  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
-#  --mount "type=volume,src=chillbox-${infra_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
-#  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
-#  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-#  "$infra_image" output -json > "${terraform_chillbox_dir}/${infra_container}.output.json"
-
 # TODO Create a gpg key and upload the public key to artifacts bucket.
 # TODO Can each app include a terraform variables file for the secrets? Then it
 # could use terraform command to prompt for these if they were not already
@@ -133,6 +124,7 @@ docker run \
 terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
 terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
 docker rm "${terraform_chillbox_container}" || printf ""
+docker image rm "$terraform_chillbox_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
@@ -159,7 +151,6 @@ docker run \
 docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${terraform_chillbox_container}"
 
-# TODO include volume mount of outputs "chillbox-output-parameters"
 docker run \
   -i --tty \
   --rm \
@@ -179,5 +170,3 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
   "$terraform_chillbox_image" sh
-
-# TODO save output from terraform as an auto.tfvars.json
