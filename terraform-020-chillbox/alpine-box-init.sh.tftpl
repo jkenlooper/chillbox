@@ -4,8 +4,10 @@ set -o errexit
 
 ## RUN_SETUP
 apk update
-apk add sed attr grep coreutils
+apk add sed attr grep coreutils jq
+apk add gnupg gnupg-dirmngr
 apk add mandoc man-pages
+apk add vim
 
 
 addgroup dev
@@ -80,26 +82,28 @@ ENVFILE
 chown dev:dev /home/dev/.env
 source /home/dev/.env
 
-mkdir -p /run/secrets
-chown -R dev:dev /run/secrets
-chmod -R 600 /run/secrets
-cat <<'AWSCREDENTIALS' > /run/secrets/awscredentials
-export AWS_ACCESS_KEY_ID="${access_key_id}"
-export AWS_SECRET_ACCESS_KEY="${secret_access_key}"
-AWSCREDENTIALS
-source /run/secrets/awscredentials
-
-# TODO: Get site_secrets and decrypt to the /var/lib/?
-# Where should site_secrets.tar.gz be created and stored?
-
-#apk add --no-cache gnupg gnupg-dirmngr
-
 ## RUN TEMP_AWS_CLI
 # Only need aws s3 to get the chillbox artifact. Will use the
 # bin/install-aws-cli.sh to install latest aws version.
 apk add \
   -q --no-progress \
   aws-cli
+
+# Set the AWS credentials so upload-artifacts.sh can use them.
+tmp_cred_csv=$(mktemp)
+cat <<HERE > $tmp_cred_csv
+User Name, Access Key ID, Secret Access Key
+digitalocean-spaces-chillbox,${access_key_id},${secret_access_key}
+HERE
+aws configure import --csv "file://$tmp_cred_csv"
+export AWS_PROFILE=digitalocean-spaces-chillbox
+rm $tmp_cred_csv
+
+# TODO: Get site_secrets and decrypt to the /var/lib/?
+# Where should site_secrets.tar.gz be created and stored?
+
+#apk add --no-cache gnupg gnupg-dirmngr
+
 
 ## COPY_chillbox_artifact
 tmp_chillbox_artifact=$(mktemp)

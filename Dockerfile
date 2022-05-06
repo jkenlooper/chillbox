@@ -5,6 +5,9 @@
 # docker image ls --digests alpine
 FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5acce2c4f9454
 
+# TODO No longer using this
+RUN echo "No longer supported" && exit 1
+
 ## s6-overlay
 # https://github.com/just-containers/s6-overlay
 # UPKEEP due: "2022-02-01" label: "Alpine Linux just-containers/s6-overlay" interval: "+3 months"

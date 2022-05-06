@@ -50,7 +50,6 @@ resource "local_sensitive_file" "alpine_box_init" {
     # No slash at the end of this s3_endpoint_url
     s3_endpoint_url : var.s3_endpoint_url,
     chillbox_hostname : "${var.sub_domain}${var.domain}",
-    #install_aws_cli_sh : file("${path.root}/bin/install-aws-cli.sh"),
   })
 }
 
