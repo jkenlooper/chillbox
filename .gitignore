@@ -5,15 +5,14 @@
 /terraform-020-chillbox/.terraform/
 /terraform-020-chillbox/terraform.tfstate.d/
 /terraform-020-chillbox/private.auto.tfvars
-/terraform-020-chillbox/chillbox-terraform-010-infra.output.json
+
+/chillbox_doterra__*.gpg
 
 /bin/alpine-box-init.sh
 /build-artifacts.sh.log
 /upload-artifacts.sh.log
 /chillbox.*.tar.gz
 crash.*.log
-/local-secrets/*
-!/local-secrets/.gitkeep
 /.local-env
 /.env
 

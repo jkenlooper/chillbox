@@ -16,9 +16,6 @@
 !/terraform-020-chillbox/alpine-box-init.sh.tftpl
 #!/terraform-020-chillbox/private.auto.tfvars
 
-# Created from the infra container and copied over
-!/terraform-020-chillbox/chillbox-terraform-010-infra.output.json
-
 !/bin/*
 !/terraform-010-infra/bin/*
 !/terraform-020-chillbox/bin/*

@@ -7,18 +7,19 @@ tests_dir="$(dirname $(realpath $0))"
 project_dir="$(dirname $tests_dir)"
 cd "${project_dir}"
 
-# Need to verify that any arg passed in is an actual path.
+# Default to run all tests (any files with '.bats' extension) in tests directory.
+TEST="tests/"
+
+# Need to verify that if an argument is passed in it is an actual path to a bats file.
 if [ -n "$1" ]; then
-  test -e "${tests_dir}"/"$1" || (echo "ERROR $0: The path '${tests_dir}/$1' does not exist." && exit 1)
+  test -e "${tests_dir}/$(basename $1 .bats).bats" || (echo "ERROR $0: The path '${tests_dir}/$(basename $1 .bats).bats' does not exist." && exit 1)
+  TEST="tests/$(basename $1 .bats).bats"
 fi
 
 # No context for the docker build is needed.
 docker image rm chillbox-bats:latest || printf ""
 export DOCKER_BUILDKIT=1
 cat "${tests_dir}/Dockerfile" | docker build -t chillbox-bats:latest -
-
-# Default to run all tests (any files with '.bats' extension) in tests directory.
-TEST="tests/"${1:-""}
 
 # When developing and writing tests it is useful to execute and debug tests directly.
 debug=${DEBUG:-"n"}
