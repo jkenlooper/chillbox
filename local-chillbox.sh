@@ -22,14 +22,6 @@ export local_chillbox_secret_access_key="local-secret-access-key-with-readwrite-
 # https://github.com/bitnami/bitnami-docker-minio
 MINIO_IMAGE="bitnami/minio:2022.3.26-debian-10-r4@sha256:398ea232ada79b41d2d0b0b96d7d01be723c0c13904b58295302cb2908db7022"
 
-# Allow setting defaults for local development
-LOCAL_ENV_CONFIG=${1:-".local-env"}
-test -f "${LOCAL_ENV_CONFIG}" && source "${LOCAL_ENV_CONFIG}"
-
-# The .local-env file (or the file that was the first arg) would typically set these variables.
-SITES_GIT_REPO=${SITES_GIT_REPO:-"git@github.com:jkenlooper/chillbox-sites-example.git"}
-SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
-
 app_port=9081
 working_dir=$PWD
 immutable_bucket_name="chillboximmutable"
@@ -124,6 +116,14 @@ rm_tmp_cred_csv
 # locally.
 exit 0
 
+
+# Allow setting defaults for local development
+LOCAL_ENV_CONFIG=${1:-".local-env"}
+test -f "${LOCAL_ENV_CONFIG}" && source "${LOCAL_ENV_CONFIG}"
+
+# The .local-env file (or the file that was the first arg) would typically set these variables.
+SITES_GIT_REPO=${SITES_GIT_REPO:-"git@github.com:jkenlooper/chillbox-sites-example.git"}
+SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
 
 ## Build the artifacts
 eval "$(jq \

@@ -11,9 +11,11 @@
 /bin/alpine-box-init.sh
 /build-artifacts.sh.log
 /upload-artifacts.sh.log
-/chillbox.*.tar.gz
 crash.*.log
-/.local-env
+
+# TODO no longer supporting local docker builds of chillbox
+#/.local-env
+
 /.env
 
 /dist
