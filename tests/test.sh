@@ -32,11 +32,30 @@ if [ "$debug" = "y" ]; then
 
 # Default to run all tests or the test that was passed in.
 else
+
+  # Run shellcheck on all scripts and fail if there are issues
   docker run -it --rm \
+    --mount "type=bind,src=${project_dir}/local-chillbox.sh,dst=/code/local-chillbox.sh" \
+    --mount "type=bind,src=${project_dir}/build-artifacts.sh,dst=/code/build-artifacts.sh" \
+    --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
+    --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
+    --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
     --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
     --entrypoint="sh" \
-    chillbox-bats:latest -c "find bin -name '*.sh' -exec shellcheck {} \;"
+    chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
+    || \
+      (docker run -it --rm \
+        --mount "type=bind,src=${project_dir}/local-chillbox.sh,dst=/code/local-chillbox.sh" \
+        --mount "type=bind,src=${project_dir}/build-artifacts.sh,dst=/code/build-artifacts.sh" \
+        --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
+        --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
+        --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
+        --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
+        --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+        --entrypoint="sh" \
+        chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck {} +" && exit 1)
+
   docker run -it --rm \
     --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
@@ -50,6 +69,7 @@ Run integration test with a deployment with Terraform? [y/n]
 if [ "${CONFIRM}" = "y" ]; then
   WORKSPACE=test ./terra.sh
 
+  app_port=9081
   echo "
   Sites running on http://chillbox.test:$app_port
   "

@@ -22,11 +22,8 @@ export local_chillbox_secret_access_key="local-secret-access-key-with-readwrite-
 # https://github.com/bitnami/bitnami-docker-minio
 MINIO_IMAGE="bitnami/minio:2022.3.26-debian-10-r4@sha256:398ea232ada79b41d2d0b0b96d7d01be723c0c13904b58295302cb2908db7022"
 
-app_port=9081
-working_dir=$PWD
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
-endpoint_url="http://localhost:9000"
 MINIO_ROOT_USER=${MINIO_ROOT_USER:-'chillbox-admin'}
 test "${#MINIO_ROOT_USER}" -ge 3 || (echo "Minio root user must be greater than 3 characters" && exit 1)
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-'chillllamabox'}
