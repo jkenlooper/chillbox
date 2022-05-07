@@ -114,7 +114,7 @@ aws \
 apk del aws-cli
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
-tar x -z -f $tmp_chillbox_artifact templates
+tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/templates
 
 mkdir -p /etc/chillbox/bin
 tar x -z -f $tmp_chillbox_artifact -C /etc/chillbox/bin --strip-components 1 bin
@@ -134,10 +134,10 @@ cd /usr/local/src/
 
 ## COPY nginx conf and default
 cd /etc/nginx
-tar x -z -f $tmp_chillbox_artifact nginx.conf
+tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/nginx.conf
 
 mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar x -z -f $tmp_chillbox_artifact default.nginx.conf
+tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/default.nginx.conf
 
 ## RUN NGINX_CONF
 /etc/chillbox/bin/init-nginx.sh

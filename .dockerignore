@@ -19,7 +19,7 @@
 !/bin/*
 !/terraform-010-infra/bin/*
 !/terraform-020-chillbox/bin/*
-!/upload-artifacts.sh
+!/terraform-020-chillbox/upload-artifacts.sh
 
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock

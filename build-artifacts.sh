@@ -51,9 +51,9 @@ mkdir -p "$working_dir/dist"
 if [ ! -f "$working_dir/dist/$CHILLBOX_ARTIFACT" ]; then
   cd "$working_dir"
   tar -c -z -f "$working_dir/dist/$CHILLBOX_ARTIFACT" \
-    default.nginx.conf \
-    nginx.conf \
-    templates \
+    terraform-020-chillbox/default.nginx.conf \
+    terraform-020-chillbox/nginx.conf \
+    terraform-020-chillbox/templates \
     bin \
     VERSION
 else

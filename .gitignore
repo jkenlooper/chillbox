@@ -8,9 +8,7 @@
 
 /chillbox_doterra__*.gpg
 
-/bin/alpine-box-init.sh
 /build-artifacts.sh.log
-/upload-artifacts.sh.log
 crash.*.log
 
 # TODO no longer supporting local docker builds of chillbox

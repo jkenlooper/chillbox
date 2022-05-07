@@ -122,6 +122,6 @@ su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
 
-COPY --chown=dev:dev upload-artifacts.sh .
+COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
 
 USER dev
