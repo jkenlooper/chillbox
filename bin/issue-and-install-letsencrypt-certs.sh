@@ -2,7 +2,7 @@
 
 set -o errexit
 
-LETS_ENCRYPT_SERVER=${LETS_ENCRYPT_SERVER}
+LETS_ENCRYPT_SERVER="${LETS_ENCRYPT_SERVER:-''}"
 test -n "${LETS_ENCRYPT_SERVER}" || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable is empty" && exit 1)
 test "${LETS_ENCRYPT_SERVER}" = "letsencrypt" \
   || test "${LETS_ENCRYPT_SERVER}" = "letsencrypt_test" \

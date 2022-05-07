@@ -60,6 +60,9 @@ chown -R "$slugname":"$slugname" "$slugdir"
 # Save the service object for later use when updating or removing the service.
 echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
 
+# The 'freeze' variable is set from the enviroment object if at all. Default to
+# empty string.
+freeze=""
 eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
   | envsubst "$(xargs < /etc/chillbox/env_names)")"
 
@@ -137,7 +140,6 @@ elif [ "${service_lang_template}" = "chill" ]; then
   su -p -s /bin/sh "$slugname" -c 'chill initdb'
   su -p -s /bin/sh "$slugname" -c 'chill load --yaml chill-data.yaml'
 
-  # TODO freeze should be set
   if [ "${freeze}" = "true" ]; then
     echo 'freeze';
     su -p -s /bin/sh "$slugname" -c 'chill freeze'

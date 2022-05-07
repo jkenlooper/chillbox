@@ -6,7 +6,8 @@
 
 set -o errexit
 
-source /home/dev/.env
+# shellcheck disable=SC1091
+. /home/dev/.env
 
 aws configure set default.s3.max_concurrent_requests 1
 

@@ -46,7 +46,7 @@ artifact_exists=$(aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 ls \
   "s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$immutable_archive_file" || printf '')
-if [ ! -n "$artifact_exists" ]; then
+if [ -z "$artifact_exists" ]; then
   echo "ERROR $0: Immutable archive file doesn't exist: s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$immutable_archive_file"
   exit 1
 else
@@ -58,18 +58,18 @@ else
 fi
 
 # Extract the immutable archive file to the immutable bucket.
-immutable_tmp_dir=$(mktemp -d)
-tar x -z -f $tmp_artifact -C $immutable_tmp_dir
+immutable_tmp_dir="$(mktemp -d)"
+tar x -z -f "$tmp_artifact" -C "$immutable_tmp_dir"
 
 # Create a version.txt file in the immutable directory so it can be used for
 # version verification.
-echo "${version}" > $immutable_tmp_dir/$slugname/version.txt
+echo "${version}" > "$immutable_tmp_dir/$slugname/version.txt"
 
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp \
-  $immutable_tmp_dir/$slugname/ \
-  s3://${IMMUTABLE_BUCKET_NAME}/${slugname}/${version} \
+  "$immutable_tmp_dir/$slugname/" \
+  "s3://${IMMUTABLE_BUCKET_NAME}/${slugname}/${version}" \
   --cache-control 'public, max-age:31536000, immutable' \
   --acl 'public-read' \
   --recursive

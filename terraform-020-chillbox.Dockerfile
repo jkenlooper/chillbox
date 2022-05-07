@@ -14,6 +14,7 @@ apk update
 apk add \
   jq \
   vim \
+  mandoc man-pages \
   gpg \
   gpg-agent
 
