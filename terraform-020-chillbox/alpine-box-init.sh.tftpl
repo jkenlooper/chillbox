@@ -18,8 +18,10 @@ adduser -G dev -D dev
 # public keys added. This handles a locally provisioned box.
 if [ ! -e /root/.ssh/authorized_keys ]; then
   mkdir -p /root/.ssh
+  # developer_ssh_key_github_list is set by terraform
+  # shellcheck disable=SC2154
   for github_username in ${developer_ssh_key_github_list}; do
-    wget https://github.com/$github_username.keys -O - | tee -a /root/.ssh/authorized_keys
+    wget "https://github.com/$github_username.keys" -O - | tee -a /root/.ssh/authorized_keys
   done
   chown -R root:root /root/.ssh
   chmod -R 700 /root/.ssh
@@ -80,7 +82,8 @@ export TECH_EMAIL="${tech_email}"
 export LETS_ENCRYPT_SERVER="letsencrypt_test"
 ENVFILE
 chown dev:dev /home/dev/.env
-source /home/dev/.env
+# shellcheck disable=SC1091
+. /home/dev/.env
 
 ## RUN TEMP_AWS_CLI
 # Only need aws s3 to get the chillbox artifact. Will use the
@@ -91,13 +94,15 @@ apk add \
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv=$(mktemp)
-cat <<HERE > $tmp_cred_csv
+# access_key_id, and secret_access_key is set by terraform
+# shellcheck disable=SC2154
+cat <<HERE > "$tmp_cred_csv"
 User Name, Access Key ID, Secret Access Key
 digitalocean-spaces-chillbox,${access_key_id},${secret_access_key}
 HERE
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=digitalocean-spaces-chillbox
-rm $tmp_cred_csv
+rm "$tmp_cred_csv"
 
 # TODO: Get site_secrets and decrypt to the /var/lib/?
 # Where should site_secrets.tar.gz be created and stored?
@@ -109,21 +114,21 @@ rm $tmp_cred_csv
 tmp_chillbox_artifact=$(mktemp)
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT \
-  $tmp_chillbox_artifact
+  s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT" \
+  "$tmp_chillbox_artifact"
 apk del aws-cli
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
-tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/templates
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/templates
 
 mkdir -p /etc/chillbox/bin
-tar x -z -f $tmp_chillbox_artifact -C /etc/chillbox/bin --strip-components 1 bin
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 bin
 
 ## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-aws-cli.sh
-/etc/chillbox/bin/install-chill.sh $PIP_CHILL
+/etc/chillbox/bin/install-chill.sh "$PIP_CHILL"
 /etc/chillbox/bin/install-service-dependencies.sh
-/etc/chillbox/bin/install-acme.sh $LETS_ENCRYPT_SERVER $TECH_EMAIL
+/etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
 ## RUN_CHILLBOX_ENV_NAMES
 /etc/chillbox/bin/create-env_names-file.sh
@@ -134,10 +139,10 @@ cd /usr/local/src/
 
 ## COPY nginx conf and default
 cd /etc/nginx
-tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/nginx.conf
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/nginx.conf
 
 mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/default.nginx.conf
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/default.nginx.conf
 
 ## RUN NGINX_CONF
 /etc/chillbox/bin/init-nginx.sh
@@ -149,7 +154,7 @@ tar x -z -f $tmp_chillbox_artifact --strip-components 1 terraform-020-chillbox/d
 chown dev /etc/chillbox/env_names
 
 ## acme.sh certs
-/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh $LETS_ENCRYPT_SERVER
+/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER"
 
 nginx -t
 rc-update add nginx default
