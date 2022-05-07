@@ -70,7 +70,7 @@ while true; do
     echo "Success: mc admin user list local"
     break
   else
-    printf "$(docker inspect --format '{{.State.Status}}' chillbox-minio) ..."
+    printf "% ..." "$(docker inspect --format '{{.State.Status}}' chillbox-minio)"
   fi
 done
 #wget --quiet --tries=10 --retry-connrefused --show-progress --server-response --waitretry=1 -O /dev/null http://localhost:9001
@@ -81,14 +81,14 @@ docker exec chillbox-minio mc admin policy set local readwrite user="${local_chi
 ## Setup for a local shared secrets container.
 tmp_cred_csv=$(mktemp)
 rm_tmp_cred_csv() {
-  test -f "$tmp_cred_csv" && rm "$tmp_cred_csv"
+  test ! -f "$tmp_cred_csv" || rm "$tmp_cred_csv"
 }
 trap rm_tmp_cred_csv EXIT
 docker stop --time 0 chillbox-local-shared-secrets || printf ""
 docker rm  chillbox-local-shared-secrets || printf ""
 docker image rm chillbox-local-shared-secrets || printf ""
 # Avoid adding docker context by using stdin for the Dockerfile.
-cat local-shared-secrets.Dockerfile | DOCKER_BUILDKIT=1 docker build -t chillbox-local-shared-secrets -
+DOCKER_BUILDKIT=1 docker build -t chillbox-local-shared-secrets - < local-shared-secrets.Dockerfile
 docker run -d --rm \
   --name  chillbox-local-shared-secrets \
   --mount "type=volume,src=chillbox-local-shared-secrets-var-lib,dst=/var/lib/chillbox-shared-secrets,readonly=false" \
@@ -96,7 +96,7 @@ docker run -d --rm \
 # Create a 'local-chillbox' aws profile with the chillbox-minio user. This way
 # local apps can interact with the local chillbox minio s3 object store by
 # setting the AWS_PROFILE to 'local-chillbox'.
-cat <<HERE > $tmp_cred_csv
+cat <<HERE > "${tmp_cred_csv}"
 User Name, Access Key ID, Secret Access Key
 local-chillbox,${local_chillbox_app_key_id},${local_chillbox_secret_access_key}
 HERE
@@ -106,7 +106,7 @@ aws configure import --csv "file://$tmp_cred_csv"
 # may need to interact with the local chillbox minio s3 object store.
 docker exec chillbox-local-shared-secrets mkdir -p /var/lib/chillbox-shared-secrets/chillbox-minio
 docker exec chillbox-local-shared-secrets chmod -R 700 /var/lib/chillbox-shared-secrets/chillbox-minio
-docker cp $tmp_cred_csv chillbox-local-shared-secrets:/var/lib/chillbox-shared-secrets/chillbox-minio/local-chillbox.credentials.csv
+docker cp "${tmp_cred_csv}" chillbox-local-shared-secrets:/var/lib/chillbox-shared-secrets/chillbox-minio/local-chillbox.credentials.csv
 # Export the AWS_PROFILE env var so the rest of the commands in upload-artifacts
 # will use the local-chillbox profile when running the aws commands.
 export AWS_PROFILE="local-chillbox"
@@ -119,6 +119,7 @@ exit 0
 
 # Allow setting defaults for local development
 LOCAL_ENV_CONFIG=${1:-".local-env"}
+# shellcheck source=/dev/null
 test -f "${LOCAL_ENV_CONFIG}" && source "${LOCAL_ENV_CONFIG}"
 
 # The .local-env file (or the file that was the first arg) would typically set these variables.
@@ -161,7 +162,7 @@ jq \
     endpoint_url: $jq_endpoint_url,
 }' | ./upload-artifacts.sh
 
-cd $working_dir
+cd "$working_dir"
 # Use the '--network host' in order to connect to the local s3 (chillbox-minio) when building.
   #--build-arg S3_ARTIFACT_ENDPOINT_URL="http://$(hostname -I | cut -f1 -d ' '):9000"  \
   #--build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
@@ -183,7 +184,7 @@ docker run -d --tty --name chillbox \
   -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
   -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
   -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
-  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  -e SITES_ARTIFACT="$SITES_ARTIFACT" \
   --mount "type=volume,src=chillbox-local-shared-secrets-var-lib,dst=/var/lib/chillbox-shared-secrets,readonly=false" \
   --network chillboxnet \
   -p $app_port:80 chillbox
@@ -194,7 +195,7 @@ while true; do
   if [ "${chillbox_state}" = "true" ]; then
     break
   else
-    printf "$(docker inspect --format '{{.State.Status}}' chillbox) ..."
+    printf "%s ..." "$(docker inspect --format '{{.State.Status}}' chillbox)"
   fi
   sleep 1
 done
@@ -205,7 +206,7 @@ docker exec -i --tty \
   -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
   -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
   -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
-  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  -e SITES_ARTIFACT="${SITES_ARTIFACT}" \
   chillbox /usr/local/bin/chillbox-dev-nginx.sh
 
 # Reload chillbox container to start the services
@@ -222,17 +223,17 @@ for a in {0..3}; do
   break
 done
 tmp_sites_dir=$(mktemp -d)
-docker cp chillbox:/etc/chillbox/sites $tmp_sites_dir/sites
-cd $tmp_sites_dir
+docker cp chillbox:/etc/chillbox/sites "${tmp_sites_dir}/sites"
+cd "${tmp_sites_dir}"
 sites=$(find sites -type f -name '*.site.json')
 for site_json in $sites; do
   echo ""
   slugname=${site_json%.site.json}
   slugname=${slugname#sites/}
-  echo $slugname
+  echo "${slugname}"
   echo "http://chillbox.test:$app_port/$slugname/version.txt"
   printf " Version: "
-  test -z $(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt") && echo "NO VERSION FOUND" && continue
+  test -z "$(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt")" && echo "NO VERSION FOUND" && continue
   curl --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt"
   echo "http://$slugname.test:$app_port"
   curl --fail --show-error --silent --head "http://$slugname.test:$app_port" || continue
@@ -245,7 +246,7 @@ docker exec -i --tty \
   -e CHILLBOX_SERVER_NAME=chillbox.test \
   -e S3_ENDPOINT_URL="http://chillbox-minio:9000" \
   -e S3_ARTIFACT_ENDPOINT_URL="http://chillbox-minio:9000" \
-  -e ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
-  -e IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
-  -e SITES_ARTIFACT=$SITES_ARTIFACT \
+  -e ARTIFACT_BUCKET_NAME="${artifact_bucket_name}" \
+  -e IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}" \
+  -e SITES_ARTIFACT="${SITES_ARTIFACT}" \
   chillbox sh

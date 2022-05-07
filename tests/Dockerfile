@@ -8,6 +8,8 @@ RUN <<DEPENDENCIES
 apk update
 apk add \
   -q --no-progress \
+  shellcheck \
+  mandoc man-pages \
   jq \
   gettext \
   unzip

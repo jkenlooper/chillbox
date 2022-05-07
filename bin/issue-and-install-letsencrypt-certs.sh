@@ -16,25 +16,25 @@ chown -R nginx:nginx /var/lib/acmesh
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 
 for site_json in $sites; do
-  slugname=$${site_json%.site.json}
-  slugname=$${slugname#/etc/chillbox/sites/}
+  slugname=${site_json%.site.json}
+  slugname=${slugname#/etc/chillbox/sites/}
   export slugname
-  domain_list=$(jq -r '.domain_list[]' $site_json)
+  domain_list="$(jq -r '.domain_list[]' "$site_json")"
   # Reset and add the --domain option for each to the $@ variable
   set -- ""
   for domain in $domain_list; do
-    set -- "$@" --domain $domain
+    set -- "$@" --domain "$domain"
   done
 
   acme.sh --issue \
-    --server $LETS_ENCRYPT_SERVER \
+    --server "$LETS_ENCRYPT_SERVER" \
     "$@" \
-    --webroot /srv/$slugname/root/
+    --webroot "/srv/$slugname/root/"
 
   acme.sh --install-cert \
-    --server $LETS_ENCRYPT_SERVER \
+    --server "$LETS_ENCRYPT_SERVER" \
     "$@" \
-    --cert-file /var/lib/acmesh/$slugname.cer \
-    --key-file /var/lib/acmesh/$slugname.key \
+    --cert-file "/var/lib/acmesh/$slugname.cer" \
+    --key-file "/var/lib/acmesh/$slugname.key" \
     --reloadcmd 'nginx -t && nginx -s reload'
 done

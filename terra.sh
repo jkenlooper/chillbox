@@ -11,12 +11,13 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-project_dir="$(dirname $(realpath $0))"
+project_dir="$(dirname "$(realpath "$0")")"
 terraform_infra_dir="$project_dir/terraform-010-infra"
 terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
+# shellcheck source=/dev/null
 test -f "${ENV_CONFIG}" && source "${ENV_CONFIG}"
 
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
@@ -35,7 +36,7 @@ test -n "${SITES_GIT_REPO}" || (echo "ERROR $0: SITES_GIT_REPO variable is empty
 echo "INFO $0: Using SITES_GIT_REPO '${SITES_GIT_REPO}'"
 if [ "${SITES_GIT_REPO}" = "${example_sites_git_repo}" ]; then
   echo "WARNING $0: Using the example sites repo."
-  read -p "Deploy using the example sites repo? [y/n]
+  read -r -p "Deploy using the example sites repo? [y/n]
   " confirm_using_example_sites_repo
   test "${confirm_using_example_sites_repo}" = "y" || (echo "Exiting" && exit 2)
   echo "INFO $0: Continuing to use example sites git repository."
@@ -43,9 +44,6 @@ fi
 SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
 test -n "${SITES_GIT_BRANCH}" || (echo "ERROR $0: SITES_GIT_BRANCH variable is empty" && exit 1)
 echo "INFO $0: Using SITES_GIT_BRANCH '${SITES_GIT_BRANCH}'"
-
-# Should be console, plan, apply, or destroy
-terraform_command=$1
 
 # Build the artifacts
 cd "${project_dir}"
@@ -65,8 +63,8 @@ test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variabl
 test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
 
 
-infra_image="chillbox-$(basename $terraform_infra_dir)"
-infra_container="chillbox-$(basename $terraform_infra_dir)"
+infra_image="chillbox-$(basename "${terraform_infra_dir}")"
+infra_container="chillbox-$(basename "${terraform_infra_dir}")"
 docker rm "${infra_container}" || printf ""
 docker image rm "$infra_image" || printf ""
 export DOCKER_BUILDKIT=1
@@ -126,19 +124,19 @@ docker run \
 
 # Start the chillbox terraform
 
-terraform_chillbox_image="chillbox-$(basename $terraform_chillbox_dir)"
-terraform_chillbox_container="chillbox-$(basename $terraform_chillbox_dir)"
+terraform_chillbox_image="chillbox-$(basename "${terraform_chillbox_dir}")"
+terraform_chillbox_container="chillbox-$(basename "${terraform_chillbox_dir}")"
 docker rm "${terraform_chillbox_container}" || printf ""
 docker image rm "$terraform_chillbox_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg ALPINE_CUSTOM_IMAGE=$ALPINE_CUSTOM_IMAGE \
-  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM=$ALPINE_CUSTOM_IMAGE_CHECKSUM \
-  --build-arg SITES_ARTIFACT=$SITES_ARTIFACT \
-  --build-arg CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT \
-  --build-arg SITES_MANIFEST=$SITES_MANIFEST \
+  --build-arg ALPINE_CUSTOM_IMAGE="${ALPINE_CUSTOM_IMAGE}" \
+  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM="${ALPINE_CUSTOM_IMAGE_CHECKSUM}" \
+  --build-arg SITES_ARTIFACT="${SITES_ARTIFACT}" \
+  --build-arg CHILLBOX_ARTIFACT="${CHILLBOX_ARTIFACT}" \
+  --build-arg SITES_MANIFEST="${SITES_MANIFEST}" \
   --build-arg WORKSPACE="${WORKSPACE}" \
-  -t "$terraform_chillbox_image" \
+  -t "${terraform_chillbox_image}" \
   -f "${project_dir}/terraform-020-chillbox.Dockerfile" \
   .
 

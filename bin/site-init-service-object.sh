@@ -21,7 +21,7 @@ echo "INFO $0: Using slugname '${slugname}'"
 export slugdir=${slugdir}
 test -n "${slugdir}" || (echo "ERROR $0: slugdir variable is empty" && exit 1)
 test -d "${slugdir}" || (echo "ERROR $0: slugdir should be a directory" && exit 1)
-test -d "$(dirname ${slugdir})" || (echo "ERROR $0: parent directory of slugdir should be a directory" && exit 1)
+test -d "$(dirname "${slugdir}")" || (echo "ERROR $0: parent directory of slugdir should be a directory" && exit 1)
 echo "INFO $0: Using slugdir '${slugdir}'"
 
 export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
@@ -40,32 +40,36 @@ export IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $0: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $0: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
-echo "INFO $0: Running site init for service object:\n ${service_obj}"
+echo "INFO $0: Running site init for service object: ${service_obj}"
 
 # Extract and set shell variables from JSON input
-eval "$(echo $service_obj | jq -r '@sh "
+service_name=""
+service_lang_template=""
+service_handler=""
+service_secrets_config=""
+eval "$(echo "$service_obj" | jq -r '@sh "
   service_name=\(.name)
   service_lang_template=\(.lang)
   service_handler=\(.handler)
   service_secrets_config=\(.secrets_config)
   "')"
 # Extract just the new service handler directory from the tmp_artifact
-cd $(dirname $slugdir)
-tar x -z -f $tmp_artifact $slugname/${service_handler}
-chown -R $slugname:$slugname $slugdir
+cd "$(dirname "$slugdir")"
+tar x -z -f "$tmp_artifact" "$slugname/${service_handler}"
+chown -R "$slugname":"$slugname" "$slugdir"
 # Save the service object for later use when updating or removing the service.
-echo $service_obj | jq -c '.' > $slugdir/$service_handler.service_handler.json
+echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
 
-eval $(echo $service_obj | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
-  | envsubst "$(cat /etc/chillbox/env_names | xargs)")
+eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
+  | envsubst "$(xargs < /etc/chillbox/env_names)")"
 
-cd $slugdir/${service_handler}
+cd "$slugdir/${service_handler}"
 if [ "${service_lang_template}" = "flask" ]; then
 
   mkdir -p "/var/lib/${slugname}/${service_handler}"
-  chown -R $slugname:$slugname "/var/lib/${slugname}"
+  chown -R "$slugname":"$slugname" "/var/lib/${slugname}"
   mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
-  chown -R $slugname:$slugname "/var/lib/chillbox-shared-secrets/${slugname}"
+  chown -R "$slugname":"$slugname" "/var/lib/chillbox-shared-secrets/${slugname}"
   chmod -R 755 "/var/lib/chillbox-shared-secrets/${slugname}"
   chmod 744 "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
 
@@ -76,15 +80,15 @@ if [ "${service_lang_template}" = "flask" ]; then
   HOST=localhost \
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
-  S3_ENDPOINT_URL=$S3_ARTIFACT_ENDPOINT_URL \
-  SECRETS_CONFIG=/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config} \
+  S3_ENDPOINT_URL="$S3_ARTIFACT_ENDPOINT_URL" \
+  SECRETS_CONFIG="/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}" \
     ./.venv/bin/flask init-db
 
-  chown -R $slugname:$slugname "/var/lib/${slugname}/"
+  chown -R "$slugname":"$slugname" "/var/lib/${slugname}/"
 
   # Only for openrc
   mkdir -p /etc/init.d
-  cat <<PURR > /etc/init.d/${slugname}-${service_name}
+  cat <<PURR > "/etc/init.d/${slugname}-${service_name}"
 #!/sbin/openrc-run
 name="${slugname}-${service_name}"
 description="${slugname}-${service_name}"
@@ -97,19 +101,19 @@ depend() {
   after firewall
 }
 PURR
-  chmod +x /etc/init.d/${slugname}-${service_name}
+  chmod +x "/etc/init.d/${slugname}-${service_name}"
 
 
-  mkdir -p /etc/services.d/${slugname}-${service_name}
-  cat <<PURR > /etc/services.d/${slugname}-${service_name}/run
+  mkdir -p "/etc/services.d/${slugname}-${service_name}"
+  cat <<PURR > "/etc/services.d/${slugname}-${service_name}/run"
 #!/usr/bin/execlineb -P
 s6-setuidgid $slugname
 cd $slugdir/${service_handler}
 PURR
-  echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
-    | envsubst "$(cat /etc/chillbox/env_names | xargs)" \
-    >> /etc/services.d/${slugname}-${service_name}/run
-  cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
+  echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
+    | envsubst "$(xargs < /etc/chillbox/env_names)" \
+    >> "/etc/services.d/${slugname}-${service_name}/run"
+  cat <<PURR >> "/etc/services.d/${slugname}-${service_name}/run"
 s6-env HOST=localhost \
 s6-env FLASK_ENV=development
 s6-env FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}"
@@ -119,29 +123,30 @@ s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 ./.venv/bin/start
 PURR
-  chmod +x /etc/services.d/${slugname}-${service_name}/run
+  chmod +x "/etc/services.d/${slugname}-${service_name}/run"
   command -v rc-update > /dev/null \
-    && rc-update add ${slugname}-${service_name} default \
+    && rc-update add "${slugname}-${service_name}" default \
     || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
   command -v rc-service > /dev/null \
-    && rc-service ${slugname}-${service_name} start \
+    && rc-service "${slugname}-${service_name}" start \
     || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
 
 elif [ "${service_lang_template}" = "chill" ]; then
 
   # init chill
-  su -p -s /bin/sh $slugname -c 'chill initdb'
-  su -p -s /bin/sh $slugname -c 'chill load --yaml chill-data.yaml'
+  su -p -s /bin/sh "$slugname" -c 'chill initdb'
+  su -p -s /bin/sh "$slugname" -c 'chill load --yaml chill-data.yaml'
 
+  # TODO freeze should be set
   if [ "${freeze}" = "true" ]; then
     echo 'freeze';
-    su -p -s /bin/sh $slugname -c 'chill freeze'
+    su -p -s /bin/sh "$slugname" -c 'chill freeze'
   else
     echo 'dynamic';
 
     # Only for openrc
     mkdir -p /etc/init.d
-    cat <<PURR > /etc/init.d/${slugname}-${service_name}
+    cat <<PURR > "/etc/init.d/${slugname}-${service_name}"
 #!/sbin/openrc-run
 name="${slugname}-${service_name}"
 description="${slugname}-${service_name}"
@@ -154,28 +159,28 @@ depend() {
   after firewall
 }
 PURR
-    chmod +x /etc/init.d/${slugname}-${service_name}
+    chmod +x "/etc/init.d/${slugname}-${service_name}"
 
-    mkdir -p /etc/services.d/${slugname}-${service_name}
+    mkdir -p "/etc/services.d/${slugname}-${service_name}"
 
-    cat <<MEOW > /etc/services.d/${slugname}-${service_name}/run
+    cat <<MEOW > "/etc/services.d/${slugname}-${service_name}/run"
 #!/usr/bin/execlineb -P
-s6-setuidgid $slugname
-cd $slugdir/${service_handler}
+s6-setuidgid "$slugname"
+cd "$slugdir/${service_handler}"
 MEOW
-    echo $service_obj | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
-      | envsubst "$(cat /etc/chillbox/env_names | xargs)" \
-      >> /etc/services.d/${slugname}-${service_name}/run
-    cat <<PURR >> /etc/services.d/${slugname}-${service_name}/run
+    echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=\"" + .value + "\""' \
+      | envsubst "$(xargs < /etc/chillbox/env_names)" \
+      >> "/etc/services.d/${slugname}-${service_name}/run"
+    cat <<PURR >> "/etc/services.d/${slugname}-${service_name}/run"
 chill serve
 PURR
 
-    chmod +x /etc/services.d/${slugname}-${service_name}/run
+    chmod +x "/etc/services.d/${slugname}-${service_name}/run"
     command -v rc-update > /dev/null \
-      && rc-update add ${slugname}-${service_name} default \
+      && rc-update add "${slugname}-${service_name}" default \
       || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
     command -v rc-service > /dev/null \
-      && rc-service ${slugname}-${service_name} start \
+      && rc-service "${slugname}-${service_name}" start \
       || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
 
   fi

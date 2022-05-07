@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -o errexit
 
@@ -35,6 +35,47 @@ else
   docker run -it --rm \
     --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+    --entrypoint="sh" \
+    chillbox-bats:latest -c "find bin -name '*.sh' -exec shellcheck {} \;"
+  docker run -it --rm \
+    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
+    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
     chillbox-bats:latest $TEST
+
+fi
+
+read -n 1 -p "
+Run integration test with a deployment with Terraform? [y/n]
+" CONFIRM
+if [ "${CONFIRM}" = "y" ]; then
+  WORKSPACE=test ./terra.sh
+
+  echo "
+  Sites running on http://chillbox.test:$app_port
+  "
+  for a in {0..3}; do
+    test $a -eq 0 || sleep 1
+    echo "Checking if chillbox is up."
+    curl --retry 3 --retry-connrefused --silent --show-error "http://chillbox.test:$app_port/healthcheck/" || continue
+    break
+  done
+  tmp_sites_dir=$(mktemp -d)
+  docker cp chillbox:/etc/chillbox/sites $tmp_sites_dir/sites
+  cd $tmp_sites_dir
+  sites=$(find sites -type f -name '*.site.json')
+  for site_json in $sites; do
+    echo ""
+    slugname=${site_json%.site.json}
+    slugname=${slugname#sites/}
+    echo $slugname
+    echo "http://chillbox.test:$app_port/$slugname/version.txt"
+    printf " Version: "
+    test -z $(curl --retry 1 --retry-connrefused  --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt") && echo "NO VERSION FOUND" && continue
+    curl --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt"
+    echo "http://$slugname.test:$app_port"
+    curl --fail --show-error --silent --head "http://$slugname.test:$app_port" || continue
+  done
+  cd -
+  rm -rf "$tmp_sites_dir"
 
 fi

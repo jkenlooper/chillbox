@@ -23,11 +23,11 @@ echo "INFO $0: Installing letsencrypt acme.sh version $ACME_SH_VERSION"
 mkdir -p /usr/local/bin/
 cd /usr/local/bin/
 tmp_acme_tar=$(mktemp)
-wget -O $tmp_acme_tar https://github.com/acmesh-official/acme.sh/archive/refs/tags/$ACME_SH_VERSION.tar.gz
+wget -O "$tmp_acme_tar" "https://github.com/acmesh-official/acme.sh/archive/refs/tags/$ACME_SH_VERSION.tar.gz"
 tmp_md5sum=$(mktemp)
-echo "$ACME_SH_CHECKSUM  $tmp_acme_tar" > $tmp_md5sum
-md5sum -c $tmp_md5sum
-tar x -z -f $tmp_acme_tar --strip-components 1 acme.sh-$ACME_SH_VERSION/acme.sh
+echo "$ACME_SH_CHECKSUM  $tmp_acme_tar" > "$tmp_md5sum"
+md5sum -c "$tmp_md5sum"
+tar x -z -f "$tmp_acme_tar" --strip-components 1 "acme.sh-$ACME_SH_VERSION/acme.sh"
 #mkdir -p /etc/acmesh
 #mkdir -p /etc/acmesh/certs
 
@@ -40,8 +40,8 @@ apk add \
   openssl
 
 acme.sh --install \
-  --email $TECH_EMAIL \
-  --server $LETS_ENCRYPT_SERVER \
+  --email "$TECH_EMAIL" \
+  --server "$LETS_ENCRYPT_SERVER" \
   --no-profile
   #--home /etc/acmesh \
   #--accountconf /etc/acmesh/account.conf \
