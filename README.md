@@ -6,24 +6,40 @@ Infrastructure for websites that use Chill and custom Python Flask services.
 
 ## Goals
 
-- Simple
-- Less overhead
-- Support local development
-    - Containers are only used for local development
+- Cost efficient by using less resources
+- Minimal software is used on the system
+- Docker containers are only used on the local host machine
+- No remote build pipeline, all builds happen on the local host machine
 - Share resources for multiple web sites and their services on a single server
-- Efficient serving of static files which are backed by S3 object storage
-- Artifacts and configurations are immutable and are used for deployments
-- Applications run in an recent Alpine Linux image
+- Use S3 object storage for any static resources; proxied with the NGINX web server
+- Applications run on Alpine Linux and don't use systemd
 
 ## Non-goals
 
 - Scaling out to multiple servers
-- No containers in Production
 - High availability
-- Relational Databases shared between applications
+- Dependency on any specific solutions provided by a single cloud host (vendor
+    lock-in)
 
+## Overview
 
 TODO Add chillbox overview graphic
+
+## Contributing
+
+Please contact me or create an issue.
+
+## Testing and Development
+
+Tests and shellcheck can be performed via the tests/test.sh shell script. This
+uses bats-core for running the shell testing where that works. Most of the
+shell scripts are also checked for any issues with shellcheck. An optional
+integration test is done at the end of the test which will deploy to
+DigitalOcean a temporary Test workspace using Terraform.
+
+```bash
+./tests/test.sh
+```
 
 ## Maintenance
 
