@@ -2,11 +2,12 @@
 
 set -o errexit
 
-working_dir="$(realpath "$(dirname "$0")")"
+working_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
+script_name="$(basename "$0")"
 
 # Need to use a log file for stdout since the stdout could be parsed as JSON by
 # terraform external data source.
-LOG_FILE="$working_dir/$0.log"
+LOG_FILE="${working_dir}/${script_name}.log"
 date > "$LOG_FILE"
 
 showlog () {

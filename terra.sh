@@ -53,7 +53,7 @@ eval "$(jq \
   --null-input '{
     sites_git_repo: $jq_sites_git_repo,
     sites_git_branch: $jq_sites_git_branch,
-}' | ./build-artifacts.sh | jq -r '@sh "
+}' | "${project_dir}/local-bin/build-artifacts.sh" | jq -r '@sh "
     SITES_ARTIFACT=\(.sites_artifact)
     CHILLBOX_ARTIFACT=\(.chillbox_artifact)
     SITES_MANIFEST=\(.sites_manifest)
