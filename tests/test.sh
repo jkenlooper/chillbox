@@ -35,7 +35,6 @@ else
 
   # Run shellcheck on all scripts and fail if there are issues
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/local-chillbox.sh,dst=/code/local-chillbox.sh" \
     --mount "type=bind,src=${project_dir}/build-artifacts.sh,dst=/code/build-artifacts.sh" \
     --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
     --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
@@ -46,7 +45,6 @@ else
     chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
     || \
       (docker run -it --rm \
-        --mount "type=bind,src=${project_dir}/local-chillbox.sh,dst=/code/local-chillbox.sh" \
         --mount "type=bind,src=${project_dir}/build-artifacts.sh,dst=/code/build-artifacts.sh" \
         --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
         --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \

@@ -25,6 +25,13 @@ Infrastructure for websites that use Chill and custom Python Flask services.
 
 TODO Add chillbox overview graphic
 
+## Quickstart
+
+
+```bash
+./terra.sh
+```
+
 ## Contributing
 
 Please contact me or create an issue.
