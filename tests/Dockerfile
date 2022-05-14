@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.3.0-labs
 
+# UPKEEP due: "2022-08-12" label: "bats/bats base image" interval: "+4 months"
 # docker pull bats/bats:1.6.0
 # docker image ls --digests bats/bats
 FROM bats/bats:1.6.0@sha256:129acefb6d37565d9a459f716c9cfea7409d76521bb576eebda5174521e831f9
@@ -12,6 +13,7 @@ apk add \
   mandoc man-pages \
   jq \
   gettext \
+  gnupg gnupg-dirmngr \
   unzip
 DEPENDENCIES
 

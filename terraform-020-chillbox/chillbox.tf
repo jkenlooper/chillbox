@@ -42,6 +42,7 @@ resource "local_sensitive_file" "alpine_box_init" {
     developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
     access_key_id : var.do_spaces_access_key_id,
     secret_access_key : var.do_spaces_secret_access_key,
+    chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
     tech_email : var.tech_email,
     immutable_bucket_name : var.immutable_bucket_name,
     artifact_bucket_name : var.artifact_bucket_name,
