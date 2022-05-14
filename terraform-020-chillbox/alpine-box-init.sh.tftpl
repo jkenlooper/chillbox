@@ -163,3 +163,7 @@ chown dev /etc/chillbox/env_names
 nginx -t
 rc-update add nginx default
 rc-service nginx start
+
+## CLEANUP
+echo "Destroying cloud-init userdata script..."
+/etc/chillbox/bin/destroy-alpine-box-init-script.sh &
