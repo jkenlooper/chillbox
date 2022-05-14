@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # This script prompts for the DigitalOcean access keys and encrypts them to
 # a tfvars file.  The encrypted
@@ -37,13 +37,13 @@ trap cleanup EXIT
 
 echo "Enter DigitalOcean credentials to encrypt to the '${encrypted_credentials_tfvars_file}' file."
 echo "Characters entered are not shown."
-read -s -p "DigitalOcean API Access Token:
+read -r -s -p "DigitalOcean API Access Token:
 " do_token
 
-read -s -p "DigitalOcean Spaces access key ID:
+read -r -s -p "DigitalOcean Spaces access key ID:
 " do_spaces_access_key_id
 
-read -s -p "DigitalOcean Spaces secret access key:
+read -r -s -p "DigitalOcean Spaces secret access key:
 " do_spaces_secret_access_key
 
 # Create the tf vars file that will be encrypted.

@@ -13,8 +13,8 @@ test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && e
 qgk_err_code=0
 gpg --quick-generate-key "${gpg_key_name}" default encrypt never || qgk_err_code=$?
 
-if [ $qgk_err_code -eq 2 -o $qgk_err_code -eq 1 -o $qgk_err_code -eq 0 ]; then
-  if [ $qgk_err_code -eq 2 -o $qgk_err_code -eq 1 ]; then
+if [ $qgk_err_code -eq 2 ] || [ $qgk_err_code -eq 1 ] || [ $qgk_err_code -eq 0 ]; then
+  if [ $qgk_err_code -eq 2 ] || [ $qgk_err_code -eq 1 ]; then
     echo "INFO $0: Using existing key: ${gpg_key_name}"
   elif [ $qgk_err_code -eq 0 ]; then
     echo "INFO $0: Using new key: ${gpg_key_name}"

@@ -22,13 +22,13 @@ fi
 
 cd /usr/local/src/chillbox-terraform
 
-terraform workspace select $WORKSPACE || \
-  terraform workspace new $WORKSPACE
+terraform workspace select "$WORKSPACE" || \
+  terraform workspace new "$WORKSPACE"
 
 test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
 terraform \
-  $terraform_command \
+  "$terraform_command" \
   -var-file="${decrypted_credentials_tfvars_file}"
 
 terraform output -json > /var/lib/terraform-010-infra/output.json

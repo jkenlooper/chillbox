@@ -28,18 +28,18 @@ echo "INFO $0: aws-cli version: $(aws --version)"
 echo "INFO $0: jq version: $(jq --version)"
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
-tmp_cred_csv=$(mktemp)
+tmp_cred_csv="$(mktemp)"
 jq -r '"User Name, Access Key ID, Secret Access Key
-digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > $tmp_cred_csv
+digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > "$tmp_cred_csv"
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=digitalocean-spaces-chillbox
-rm $tmp_cred_csv
+rm "$tmp_cred_csv"
 
 cd /usr/local/src/chillbox-terraform
 
 
-terraform workspace select $WORKSPACE || \
-  terraform workspace new $WORKSPACE
+terraform workspace select "$WORKSPACE" || \
+  terraform workspace new "$WORKSPACE"
 
 test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
@@ -62,6 +62,9 @@ jq \
   > chillbox_sites.auto.tfvars.json
 chown dev:dev chillbox_sites.auto.tfvars.json
 
+endpoint_url=""
+immutable_bucket_name=""
+artifact_bucket_name=""
 eval "$(jq -r '@sh "
 endpoint_url=\(.s3_endpoint_url)
 immutable_bucket_name=\(.immutable_bucket_name)
@@ -86,6 +89,6 @@ jq \
 
 
 terraform \
-  $terraform_command \
+  "$terraform_command" \
   -var-file="${decrypted_credentials_tfvars_file}"
 

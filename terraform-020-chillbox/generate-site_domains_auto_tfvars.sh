@@ -2,14 +2,16 @@
 
 set -o errexit
 
-working_dir=$(realpath $(dirname $0))
+working_dir="$(realpath "$(dirname "$0")")"
 
 # Extract and set shell variables from JSON input
+sites_artifact=""
 eval "$(jq -r '@sh "
   sites_artifact=\(.sites_artifact)
   "')"
 
 tmp_dir=$(mktemp -d)
-tar x -z -f dist/$sites_artifact -C "${tmp_dir}"
+tar x -z -f "$working_dir/dist/$sites_artifact" -C "${tmp_dir}"
 
-jq -s '[.[].domain_list] | flatten | {site_domains: .}' $(find "${tmp_dir}/sites" -type f -name '*.site.json') > site_domains.auto.tfvars.json
+find "${tmp_dir}/sites" -type f -name '*.site.json' -exec \
+  jq -s '[.[].domain_list] | flatten | {site_domains: .}' {} + > "$working_dir/site_domains.auto.tfvars.json"
