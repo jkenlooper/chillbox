@@ -46,15 +46,20 @@ read -r -s -p "DigitalOcean Spaces access key ID:
 read -r -s -p "DigitalOcean Spaces secret access key:
 " do_spaces_secret_access_key
 
+read -r -s -p "Passphrase for new gpg key on chillbox server:
+" chillbox_gpg_passphrase
+
 # Create the tf vars file that will be encrypted.
 jq --null-input \
   --arg jq_do_token "$do_token" \
   --arg jq_do_spaces_access_key_id "$do_spaces_access_key_id" \
   --arg jq_do_spaces_secret_access_key "$do_spaces_secret_access_key" \
+  --arg jq_chillbox_gpg_passphrase "$chillbox_gpg_passphrase" \
   '{
   do_token: $jq_do_token,
   do_spaces_access_key_id: $jq_do_spaces_access_key_id,
   do_spaces_secret_access_key: $jq_do_spaces_secret_access_key,
+  chillbox_gpg_passphrase: $jq_chillbox_gpg_passphrase,
   }' > "${secure_tmp_secrets_dir}/credentials.tfvars.json"
 
 gpg --encrypt --recipient "${gpg_key_name}" --armor --output "${encrypted_credentials_tfvars_file}" \

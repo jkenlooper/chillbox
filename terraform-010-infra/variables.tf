@@ -14,6 +14,12 @@ variable "do_spaces_secret_access_key" {
   sensitive   = true
 }
 
+variable "chillbox_gpg_passphrase" {
+  type        = string
+  description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+
 variable "bucket_region" {
   type        = string
   description = "Bucket region."

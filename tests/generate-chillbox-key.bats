@@ -11,13 +11,26 @@ setup_file() {
 setup() {
   load '/opt/bats-support/load'
   load '/opt/bats-assert/load'
+  load '/opt/bats-mock/load'
+
+  mock_aws="$(mock_create)"
+  mock_set_output "${mock_aws}" "something" 0
+  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+
+  PATH="$BATS_RUN_TMPDIR:$PATH"
 
   # Use an ephemeral directory for gpg home for testing
   tmp_gpg_home="$(mktemp -d)"
   export GNUPGHOME="$tmp_gpg_home"
+  export S3_ARTIFACT_ENDPOINT_URL="test"
+  export ARTIFACT_BUCKET_NAME="test"
+  export AWS_PROFILE="test"
 }
 teardown() {
   rm -rf "$tmp_gpg_home"
+
+  test -L $BATS_RUN_TMPDIR/aws \
+    && rm -f $BATS_RUN_TMPDIR/aws
 }
 
 main() {
@@ -26,6 +39,7 @@ main() {
 
 @test "pass when chillbox gpg key is generated" {
   run main
-  gpg --list-keys chillbox
   assert_success
+
+  test "$(mock_get_call_num "${mock_aws}")" -eq 1
 }

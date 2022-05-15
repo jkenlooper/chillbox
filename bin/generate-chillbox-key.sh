@@ -8,6 +8,14 @@ key_name="chillbox"
 user="$(id -un)"
 hostname="$(hostname)"
 
+test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $0: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
+
+test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $0: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
+echo "INFO $0: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
+
+test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." && exit 1)
+
 chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
 if [ -z "$chillbox_gpg_passphrase" ]; then
   read -r -s -p "
@@ -16,7 +24,9 @@ No CHILLBOX_GPG_PASSPHRASE variable set. Please enter passphrase to use for the 
 fi
 test -n "$chillbox_gpg_passphrase" || (echo "ERROR $0: CHILLBOX_GPG_PASSPHRASE variable is empty" && exit 1)
 
-# TODO Remove any existing gpg key first before creating new one.
+# Remove any existing gpg key first before creating new one.
+fingerprint="$(gpg --with-colons --keyid-format=none --list-keys chillbox 2>/dev/null | awk -F: '/^fpr:/ { print $10 }' || echo '')"
+test -z "$fingerprint" || gpg --yes --batch --delete-secret-and-public-key "$fingerprint"
 
 # Use gpg batch generate key option so the passphrase for the gpg key can be set
 # without interaction.
@@ -37,10 +47,15 @@ Name-Comment: $0
 Name-Email: ${user}@${hostname}
 
 Passphrase: $chillbox_gpg_passphrase
-" | gpg --batch --generate-key
+" | gpg --yes --batch --generate-key
 
-
-echo "test file" > testfile.txt
-gpg --encrypt --recipient "$key_name" --armor --output "testfile.txt.asc" \
-  --comment "test" \
-  testfile.txt
+# Export and upload the public key so other services can encrypt secret files
+# using the public key.
+tmp_pub_key="$(mktemp)"
+gpg --yes --armor --output "$tmp_pub_key" --export "${key_name}"
+aws \
+  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+  s3 cp \
+  "$tmp_pub_key" \
+  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/$key_name.gpg"
+rm -f "$tmp_pub_key"

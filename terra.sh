@@ -95,8 +95,11 @@ docker run \
   --entrypoint="" \
   "$infra_image" doterra-init.sh
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
-test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
-docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
+# TODO No longer need to copy the gpg key from this container. The private key
+# to decrypt site secrets only lives on the chillbox server. The public key for
+# that is shared on the artifacts bucket.
+#test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
+#docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
 docker rm "${infra_container}"
 
 docker run \

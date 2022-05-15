@@ -27,7 +27,9 @@ else
   exit 1
 fi
 
-# Export the public gpg key for this workspace so the site secrets can be
-# encrypted and uploaded to the s3 artifact bucket.
-gpg --list-keys
-gpg --armor --output "${gpg_key_name}.gpg" --export "${gpg_key_name}"
+# TODO No longer doing this since the gpg key to decrypt site secrets will only
+# live on the chillbox server.
+## Export the public gpg key for this workspace so the site secrets can be
+## encrypted and uploaded to the s3 artifact bucket.
+#gpg --list-keys
+#gpg --armor --output "${gpg_key_name}.gpg" --export "${gpg_key_name}"
