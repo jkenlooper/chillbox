@@ -60,7 +60,7 @@ chown -R "$slugname":"$slugname" "$slugdir"
 # Save the service object for later use when updating or removing the service.
 echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
 
-# The 'freeze' variable is set from the enviroment object if at all. Default to
+# The 'freeze' variable is set from the environment object if at all. Default to
 # empty string.
 freeze=""
 eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .name + "=\"" + .value + "\""' \
@@ -73,13 +73,11 @@ if [ "${service_lang_template}" = "flask" ]; then
   chown -R "$slugname":"$slugname" "/var/lib/${slugname}"
   mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
   chown -R "$slugname":"$slugname" "/var/lib/chillbox-shared-secrets/${slugname}"
-  chmod -R 755 "/var/lib/chillbox-shared-secrets/${slugname}"
-  chmod 744 "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
+  chmod -R 700 "/var/lib/chillbox-shared-secrets/${slugname}"
 
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
-  # TODO: init_db only when first installing?
   HOST=localhost \
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
@@ -127,12 +125,16 @@ s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 ./.venv/bin/start
 PURR
   chmod +x "/etc/services.d/${slugname}-${service_name}/run"
-  command -v rc-update > /dev/null \
-    && rc-update add "${slugname}-${service_name}" default \
-    || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
-  command -v rc-service > /dev/null \
-    && rc-service "${slugname}-${service_name}" start \
-    || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
+  rc-update add "${slugname}-${service_name}" default
+
+  # The service should only start if a service secrets config file has been made.
+  # An error isn't thrown here because the service can start later when the
+  # secrets config file has been decrypted at a later time.
+  if [ -e "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}" ]; then
+    rc-service "${slugname}-${service_name}" start
+  else
+    echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start' since no file found at: /var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
+  fi
 
 elif [ "${service_lang_template}" = "chill" ]; then
 

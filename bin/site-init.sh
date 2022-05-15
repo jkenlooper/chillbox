@@ -109,7 +109,11 @@ for site_json in $sites; do
 
       done
 
-  # TODO Handle errors if any service failed to start and rollback to the backup.
+  # TODO Show errors if any service failed to start and output which services
+  # have not started. Each service should not be dependant on other services
+  # also being up, so no rollback of the deployment should happen. It is normal
+  # for services that have a defined secrets config file to not fully start at
+  # this point.
 
   echo "INFO $0: Finished setting up services for $site_json"
 

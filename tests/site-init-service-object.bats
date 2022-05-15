@@ -52,6 +52,12 @@ setup() {
   # Allow any user to write to the call_num file
   chmod a+w ${mock_chill}.call_num
 
+  mock_rc_update="$(mock_create)"
+  ln -s "${mock_rc_update}" $BATS_RUN_TMPDIR/rc-update
+
+  mock_rc_service="$(mock_create)"
+  ln -s "${mock_rc_service}" $BATS_RUN_TMPDIR/rc-service
+
   test "${LOGGING_LEVEL}" -le $DEBUG \
     && echo "# Creates a mock chill symbolic link: /usr/local/bin/chill to $(readlink /usr/local/bin/chill)" >&3
   #chmod +x $mock_chill $BATS_RUN_TMPDIR/chill
@@ -77,6 +83,12 @@ teardown() {
 
   rm -f $BATS_RUN_TMPDIR/python
   rm -f /usr/local/bin/chill
+
+  test -L $BATS_RUN_TMPDIR/rc-update \
+    && rm -f $BATS_RUN_TMPDIR/rc-update
+
+  test -L $BATS_RUN_TMPDIR/rc-service \
+    && rm -f $BATS_RUN_TMPDIR/rc-service
 }
 
 main() {

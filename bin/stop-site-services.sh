@@ -44,15 +44,18 @@ find "$slugname" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler
 
     rm -rf "$slugdir/${service_handler}.bak.tar.gz"
     rm -rf "$slugdir/${service_handler}.service_handler.json.bak"
-    rm -rf "/var/lib/${slugname}/secrets/${service_secrets_config}.bak"
     mv "$slugdir/${service_handler}.service_handler.json" "$slugdir/${service_handler}.service_handler.json.bak"
     test -e "$slugdir/${service_handler}" \
       && tar c -f "$slugdir/${service_handler}.bak.tar.gz" "$slugname/${service_handler}" \
       || echo "INFO $0: No existing $slugdir/${service_handler} directory to backup"
 
-    test -n "$service_secrets_config" -a -e "/var/lib/${slugname}/secrets/${service_secrets_config}" \
-      && mv "/var/lib/${slugname}/secrets/${service_secrets_config}" "/var/lib/${slugname}/secrets/${service_secrets_config}.bak" \
-      || echo "INFO $0: No existing /var/lib/${slugname}/secrets/${service_secrets_config} file to backup"
+    # Stopping the service will require removing any secrets config file as
+    # well. A new one should be downloaded from s3 and decrypted to start the
+    # service back up.
+    if [ -e "/var/lib/${slugname}/secrets/${service_secrets_config}" ]; then
+      echo "INFO $0: Shredding /var/lib/${slugname}/secrets/${service_secrets_config} file"
+      shred -fu "/var/lib/${slugname}/secrets/${service_secrets_config}"
+    fi
 done
 
 # TODO Set nginx server for this $slugname to maintenance
