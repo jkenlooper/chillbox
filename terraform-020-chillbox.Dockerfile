@@ -15,7 +15,6 @@ apk add \
   jq \
   vim \
   mandoc man-pages \
-  bash \
   coreutils \
   gnupg \
   gnupg-dirmngr

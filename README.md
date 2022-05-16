@@ -20,6 +20,7 @@ of website deployments.
 - Use S3 object storage for any static resources; proxied with the NGINX web server
 - Applications run on Alpine Linux and don't use systemd
 - No dependency on version control software for deployments
+- Shell scripts are POSIX compliant
 
 ## Non-goals
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Helper script for isolating use of terraform in a container.
 
@@ -18,7 +18,7 @@ terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
 # shellcheck source=/dev/null
-test -f "${ENV_CONFIG}" && source "${ENV_CONFIG}"
+test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
 
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
@@ -36,8 +36,8 @@ test -n "${SITES_GIT_REPO}" || (echo "ERROR $0: SITES_GIT_REPO variable is empty
 echo "INFO $0: Using SITES_GIT_REPO '${SITES_GIT_REPO}'"
 if [ "${SITES_GIT_REPO}" = "${example_sites_git_repo}" ]; then
   echo "WARNING $0: Using the example sites repo."
-  read -r -p "Deploy using the example sites repo? [y/n]
-  " confirm_using_example_sites_repo
+  printf '%s\n' "Deploy using the example sites repo? [y/n]"
+  read -r confirm_using_example_sites_repo
   test "${confirm_using_example_sites_repo}" = "y" || (echo "Exiting" && exit 2)
   echo "INFO $0: Continuing to use example sites git repository."
 fi
@@ -118,12 +118,6 @@ docker run \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --entrypoint="" \
   "$infra_image" sh
-
-# TODO Create a gpg key and upload the public key to artifacts bucket.
-# TODO Can each app include a terraform variables file for the secrets? Then it
-# could use terraform command to prompt for these if they were not already
-# defined?
-# Prompt to continue so any secret files can be manually encrypted and uploaded to the artifacts bucket.
 
 # Start the chillbox terraform
 

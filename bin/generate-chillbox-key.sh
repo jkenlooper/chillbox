@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -o errexit
 
@@ -18,9 +18,10 @@ test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." && exit 1)
 
 chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
 if [ -z "$chillbox_gpg_passphrase" ]; then
-  read -r -s -p "
-No CHILLBOX_GPG_PASSPHRASE variable set. Please enter passphrase to use for the $key_name gpg key:
-" chillbox_gpg_passphrase
+  printf '\n%s\n' "No CHILLBOX_GPG_PASSPHRASE variable set. Please enter passphrase to use for the $key_name gpg key:"
+  stty -echo
+  read -r chillbox_gpg_passphrase
+  stty echo
 fi
 test -n "$chillbox_gpg_passphrase" || (echo "ERROR $0: CHILLBOX_GPG_PASSPHRASE variable is empty" && exit 1)
 

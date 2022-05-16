@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -o errexit
 
@@ -14,9 +14,8 @@ showlog () {
   # Terraform external data will need to echo to stderr to show the message to
   # the user.
   >&2 echo "See log file: $LOG_FILE for further details."
-  cat "$LOG_FILE"
 }
-trap showlog err
+trap showlog EXIT
 
 # Extract and set shell variables from JSON input
 sites_git_repo=""

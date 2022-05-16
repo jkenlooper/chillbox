@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # This script prompts for the DigitalOcean access keys and encrypts them to
 # a tfvars file.  The encrypted
@@ -37,17 +37,25 @@ trap cleanup EXIT
 
 echo "Enter DigitalOcean credentials to encrypt to the '${encrypted_credentials_tfvars_file}' file."
 echo "Characters entered are not shown."
-read -r -s -p "DigitalOcean API Access Token:
-" do_token
+printf '\n%s\n' "DigitalOcean API Access Token:"
+stty -echo
+read -r do_token
+stty echo
 
-read -r -s -p "DigitalOcean Spaces access key ID:
-" do_spaces_access_key_id
+printf '\n%s\n' "DigitalOcean Spaces access key ID:"
+stty -echo
+read -r do_spaces_access_key_id
+stty echo
 
-read -r -s -p "DigitalOcean Spaces secret access key:
-" do_spaces_secret_access_key
+printf '\n%s\n' "DigitalOcean Spaces secret access key:"
+stty -echo
+read -r do_spaces_secret_access_key
+stty echo
 
-read -r -s -p "Passphrase for new gpg key on chillbox server:
-" chillbox_gpg_passphrase
+printf '\n%s\n' "Passphrase for new gpg key on chillbox server:"
+stty -echo
+read -r chillbox_gpg_passphrase
+stty echo
 
 # Create the tf vars file that will be encrypted.
 jq --null-input \
