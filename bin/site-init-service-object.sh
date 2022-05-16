@@ -47,11 +47,11 @@ service_name=""
 service_lang_template=""
 service_handler=""
 service_secrets_config=""
-eval "$(echo "$service_obj" | jq -r '@sh "
+eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$slugname" '@sh "
   service_name=\(.name)
   service_lang_template=\(.lang)
   service_handler=\(.handler)
-  service_secrets_config=\(.secrets_config)
+  service_secrets_config=\( if .secrets_config then "/var/lib/chillbox-shared-secrets/\( $jq_slugname )/\( .secrets_config )" else "" end )
   "')"
 # Extract just the new service handler directory from the tmp_artifact
 cd "$(dirname "$slugdir")"
@@ -82,7 +82,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
   S3_ENDPOINT_URL="$S3_ARTIFACT_ENDPOINT_URL" \
-  SECRETS_CONFIG="/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}" \
+  SECRETS_CONFIG="${service_secrets_config}" \
     ./.venv/bin/flask init-db
 
   chown -R "$slugname":"$slugname" "/var/lib/${slugname}/"
@@ -118,7 +118,7 @@ PURR
 s6-env HOST=localhost \
 s6-env FLASK_ENV=development
 s6-env FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}"
-s6-env SECRETS_CONFIG=/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}
+s6-env SECRETS_CONFIG=${service_secrets_config}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
@@ -127,13 +127,14 @@ PURR
   chmod +x "/etc/services.d/${slugname}-${service_name}/run"
   rc-update add "${slugname}-${service_name}" default
 
-  # The service should only start if a service secrets config file has been made.
+  # The service should only start if no service secrets config file has been
+  # defined or if there is one; it should exist.
   # An error isn't thrown here because the service can start later when the
   # secrets config file has been decrypted at a later time.
-  if [ -e "/var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}" ]; then
+  if [ -z "${service_secrets_config}" ] || [ -e "${service_secrets_config}" ]; then
     rc-service "${slugname}-${service_name}" start
   else
-    echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start' since no file found at: /var/lib/chillbox-shared-secrets/${slugname}/${service_secrets_config}"
+    echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start' since no file found at: ${service_secrets_config}"
   fi
 
 elif [ "${service_lang_template}" = "chill" ]; then
