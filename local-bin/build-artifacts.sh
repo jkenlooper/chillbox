@@ -18,31 +18,23 @@ showlog () {
 trap showlog EXIT
 
 # Extract and set shell variables from JSON input
-sites_git_repo=""
-sites_git_branch=""
+sites_artifact_url=""
 eval "$(jq -r '@sh "
-  sites_git_repo=\(.sites_git_repo)
-  sites_git_branch=\(.sites_git_branch)
+  sites_artifact_url=\(.sites_artifact_url)
   "')"
 
 {
   echo "set shell variables from JSON stdin"
-  echo "  sites_git_repo=$sites_git_repo"
-  echo "  sites_git_branch=$sites_git_branch"
+  echo "  sites_artifact_url=$sites_artifact_url"
 } >> "$LOG_FILE"
 
-CHILLBOX_ARTIFACT=chillbox.$(cat VERSION).tar.gz
+chillbox_artifact_version="$(cat VERSION)"
+CHILLBOX_ARTIFACT="chillbox.$chillbox_artifact_version.tar.gz"
 echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 
-tmp_sites_dir="$(mktemp -d)"
-# TODO Change to be a zip of the source code files instead of depending on git.
-echo "Cloning $sites_git_repo $sites_git_branch to tmp dir: $tmp_sites_dir" >> "$LOG_FILE"
-git clone --depth 1 --single-branch --branch "$sites_git_branch" "$sites_git_repo" "$tmp_sites_dir"
-cd "$tmp_sites_dir"
-
 sites_manifest_json="dist/sites.manifest.json"
-sites_commit_id="$(git rev-parse --short HEAD)"
-SITES_ARTIFACT="$(basename "${sites_git_repo%.git}")-$sites_git_branch-$sites_commit_id.tar.gz"
+
+SITES_ARTIFACT="$(basename "${sites_artifact_url}")"
 echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
 
 mkdir -p "$working_dir/dist"
@@ -60,12 +52,38 @@ else
   echo "No changes to existing chillbox artifact: $CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 fi
 
-# Create the sites artifact file
+# Download or copy over the sites artifact file
 if [ -f "$working_dir/dist/$SITES_ARTIFACT" ]; then
   echo "Sites artifact file already exists: dist/$SITES_ARTIFACT" >> "$LOG_FILE"
 
 else
+
+  first_char_of_sites_artifact_url="$(printf '%.1s' "$sites_artifact_url")"
+  is_downloadable="$(printf '%.4s' "$sites_artifact_url")"
+  if [ "$first_char_of_sites_artifact_url" = "/" ]; then
+    cp -v "$sites_artifact_url" "$working_dir/dist/$SITES_ARTIFACT" >> "$LOG_FILE"
+  elif [ "$is_downloadable" = "http" ]; then
+    has_wget="$(command -v wget || echo "")"
+    has_curl="$(command -v curl || echo "")"
+    if [ -n "$has_wget" ]; then
+      wget -a "$LOG_FILE" -O "$working_dir/dist/$SITES_ARTIFACT" "$sites_artifact_url"
+    elif [ -n "$has_curl" ]; then
+      curl --location --output "$working_dir/dist/$SITES_ARTIFACT" --silent --show-error "$sites_artifact_url" >> "$LOG_FILE"
+    else
+      echo "ERROR $0: No wget or curl commands found." >> "$LOG_FILE"
+      exit 1
+    fi
+
+  else
+    echo "ERROR $0: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
+    exit 1
+  fi
+
+
+  tmp_sites_dir="$(mktemp -d)"
+  trap 'rm -r -i "$tmp_sites_dir"' EXIT
   cd "$tmp_sites_dir"
+  tar x -f "$working_dir/dist/$SITES_ARTIFACT" sites
 
   sites="$(find sites -type f -name '*.site.json')"
 
@@ -81,6 +99,7 @@ else
 
     version="$(jq -r '.version' "$site_json")"
 
+    mkdir -p "${working_dir}/dist/${slugname}"
     dist_immutable_archive_file="$working_dir/dist/$slugname/$slugname-$version.immutable.tar.gz"
     dist_artifact_file="$working_dir/dist/$slugname/$slugname-$version.artifact.tar.gz"
     if [ -f "$dist_immutable_archive_file" ] && [ -f "$dist_artifact_file" ]; then
@@ -112,13 +131,6 @@ else
     mv "$artifact_file" "$dist_artifact_file"
 
   done
-
-
-  cd "$tmp_sites_dir"
-  SITES_ARTIFACT="$(basename "${sites_git_repo%.git}")-$sites_git_branch-$sites_commit_id.tar.gz"
-  find "${working_dir}/dist" -depth -maxdepth 1 -type f -name "$(basename "${sites_git_repo%.git}")-${sites_git_branch}-*.tar.gz" -delete \
-      || printf "No existing site files to delete for %-${sites_git_branch}-*.tar.gz" "$(basename "${sites_git_repo%.git}")" >> "$LOG_FILE"
-  tar -c -z -f "$working_dir/dist/$SITES_ARTIFACT" sites >> "$LOG_FILE"
 
   echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
 

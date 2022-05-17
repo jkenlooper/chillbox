@@ -30,29 +30,32 @@ test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $0: ALPINE_CUSTOM_IMAG
 echo "INFO $0: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
 
 
-example_sites_git_repo="git@github.com:jkenlooper/chillbox-sites-example.git"
-SITES_GIT_REPO=${SITES_GIT_REPO:-"$example_sites_git_repo"}
-test -n "${SITES_GIT_REPO}" || (echo "ERROR $0: SITES_GIT_REPO variable is empty" && exit 1)
-echo "INFO $0: Using SITES_GIT_REPO '${SITES_GIT_REPO}'"
-if [ "${SITES_GIT_REPO}" = "${example_sites_git_repo}" ]; then
-  echo "WARNING $0: Using the example sites repo."
-  printf '%s\n' "Deploy using the example sites repo? [y/n]"
-  read -r confirm_using_example_sites_repo
-  test "${confirm_using_example_sites_repo}" = "y" || (echo "Exiting" && exit 2)
-  echo "INFO $0: Continuing to use example sites git repository."
+SITES_ARTIFACT_URL=""
+SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
+test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $0: SITES_ARTIFACT_URL variable is empty" && exit 1)
+echo "INFO $0: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
+if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
+  echo "WARNING $0: Using the example sites artifact."
+  printf '%s\n' "Deploy using the example sites artifact? [y/n]"
+  read -r confirm_using_example_sites_artifact
+  test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
+  echo "INFO $0: Continuing to use example sites artifact."
+  tmp_example_sites_dir="$(mktemp -d)"
+  trap 'rm -r -i "$tmp_example_sites_dir"' EXIT
+  example_sites_version="$(cat VERSION)"
+  SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
+  tar c -z -f "$SITES_ARTIFACT_URL" -C tests/fixtures sites
 fi
-SITES_GIT_BRANCH=${SITES_GIT_BRANCH:-"main"}
-test -n "${SITES_GIT_BRANCH}" || (echo "ERROR $0: SITES_GIT_BRANCH variable is empty" && exit 1)
-echo "INFO $0: Using SITES_GIT_BRANCH '${SITES_GIT_BRANCH}'"
 
 # Build the artifacts
 cd "${project_dir}"
+SITES_ARTIFACT=""
+CHILLBOX_ARTIFACT=""
+SITES_MANIFEST=""
 eval "$(jq \
-  --arg jq_sites_git_repo "$SITES_GIT_REPO" \
-  --arg jq_sites_git_branch "$SITES_GIT_BRANCH" \
+  --arg jq_sites_artifact_url "$SITES_ARTIFACT_URL" \
   --null-input '{
-    sites_git_repo: $jq_sites_git_repo,
-    sites_git_branch: $jq_sites_git_branch,
+    sites_artifact_url: $jq_sites_artifact_url,
 }' | "${project_dir}/local-bin/build-artifacts.sh" | jq -r '@sh "
     SITES_ARTIFACT=\(.sites_artifact)
     CHILLBOX_ARTIFACT=\(.chillbox_artifact)

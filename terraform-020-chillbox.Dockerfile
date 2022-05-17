@@ -67,29 +67,6 @@ chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
 SETUP
 
-#COPY --chown=dev:dev terraform-020-chillbox/chillbox-terraform-010-infra.output.json .
-#RUN <<SITES_ARTIFACT_CONFIG
-#if [ ! -f "/var/lib/terraform-010-infra/output.json" ]; then
-#  echo "Missing file: /var/lib/terraform-010-infra/output.json"
-#  exit 1
-#fi
-#
-## Set the immutable_bucket_name and artifact_bucket_name from the infra output.
-## TODO add site domain list
-#jq \
-#  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
-#  --arg jq_chillbox_artifact "${CHILLBOX_ARTIFACT}" \
-#  --arg jq_sites_manifest "${SITES_MANIFEST}" \
-#  '{
-#  sites_artifact: $jq_sites_artifact,
-#  chillbox_artifact: $jq_chillbox_artifact,
-#  sites_manifest: $jq_sites_manifest,
-#  } + map_values(.value)' \
-#  chillbox-terraform-010-infra.output.json \
-#  > chillbox_sites.auto.tfvars.json
-#chown dev:dev chillbox_sites.auto.tfvars.json
-#SITES_ARTIFACT_CONFIG
-
 COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
