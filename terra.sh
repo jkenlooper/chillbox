@@ -4,11 +4,19 @@
 
 set -o errexit
 
-WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  echo "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
-  exit 1
+for required_command in \
+  docker \
+  jq \
+  make \
+  tar \
+  ; do
+  command -v "$required_command" > /dev/null || (echo "ERROR $0: Requires '$required_command' command." && exit 1)
+done
+
+has_wget="$(command -v wget || echo "")"
+has_curl="$(command -v curl || echo "")"
+if [ -z "$has_wget" -a -z "$has_curl" ]; then
+  echo "WARNING $0: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
 fi
 
 project_dir="$(dirname "$(realpath "$0")")"
@@ -20,6 +28,13 @@ ENV_CONFIG=${1:-"$project_dir/.env"}
 # shellcheck source=/dev/null
 test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
 
+WORKSPACE="${WORKSPACE:-development}"
+test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
+if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
+  echo "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
+  exit 1
+fi
+
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
 ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
@@ -30,7 +45,6 @@ test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $0: ALPINE_CUSTOM_IMAG
 echo "INFO $0: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
 
 
-SITES_ARTIFACT_URL=""
 SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
 test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $0: SITES_ARTIFACT_URL variable is empty" && exit 1)
 echo "INFO $0: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
@@ -41,7 +55,7 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
   echo "INFO $0: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
-  trap 'rm -r -i "$tmp_example_sites_dir"' EXIT
+  trap 'rm -r "$tmp_example_sites_dir"' EXIT
   example_sites_version="$(cat VERSION)"
   SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
@@ -55,6 +69,11 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
     > "$tmp_example_sites_dir/sites/site1.site.json"
   tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
   tar c -z -f "$tmp_example_sites_dir/site1-$site1_version.tar.gz" -C "$project_dir/tests/fixtures" site1
+fi
+
+if [ "$(basename "$SITES_ARTIFACT_URL" ".tar.gz")" = "$(basename "$SITES_ARTIFACT_URL")" ]; then
+  echo "ERROR $0: The SITES_ARTIFACT_URL must end with a '.tar.gz' extension."
+  exit 1
 fi
 
 # Build the artifacts

@@ -123,7 +123,7 @@ else
     # Fallback on version already set if no VERSION file was found and default
     # to today's date if no version field was set initially.
     today="$(date -I)"
-    version="$(tar x -f "$tmp_sites_dir/$release_filename" -O VERSION || jq -r --arg jq_date "$today" '.version // $jq_date' "$site_json")"
+    version="$(tar x -f "$tmp_sites_dir/$release_filename" -O "$slugname/VERSION" || jq -r --arg jq_date "$today" '.version // $jq_date' "$site_json")"
     cp "$site_json" "$site_json.original"
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
     rm "$site_json.original"

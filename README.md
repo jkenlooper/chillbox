@@ -44,6 +44,12 @@ TODO Add chillbox overview graphic
 
 ## Quickstart
 
+Dependencies:
+
+  * docker
+  * jq
+  * make
+  * tar
 
 ```bash
 ./terra.sh
@@ -75,5 +81,6 @@ commands like grep to find these comments.
 
 ```bash
 # Search for upkeep comments.
-grep --fixed-strings --recursive 'UPKEEP'
+find . \( -name '*.sh' -o -name '*Dockerfile' \) -exec \
+  grep --line-number --fixed-strings 'UPKEEP' '{}' +
 ```
