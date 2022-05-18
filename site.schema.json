@@ -4,8 +4,7 @@
   "type": "object",
   "required": [
     "name",
-    "version",
-    "git_repo",
+    "release",
     "contact",
     "domain_list"
   ],
@@ -18,8 +17,8 @@
     },
     "version": {
       "type": "string",
-      "title": "The version schema",
-      "description": "Name of site."
+      "title": "Version of the site",
+      "description": "The value is replaced here with the contents of the VERSION file if it exists otherwise will default to today's date if this field is not set."
     },
     "contact": {
       "type": "object",
@@ -43,10 +42,10 @@
       },
       "additionalProperties": false
     },
-    "git_repo": {
+    "release": {
       "type": "string",
-      "title": "The git_repo schema",
-      "description": "Name of site."
+      "title": "Release tar.gz file",
+      "description": "The URL or absolute file path of the release in a tar.gz format."
     },
     "domain_list": {
       "type": "array",

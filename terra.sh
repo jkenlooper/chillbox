@@ -44,7 +44,17 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   trap 'rm -r -i "$tmp_example_sites_dir"' EXIT
   example_sites_version="$(cat VERSION)"
   SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
-  tar c -z -f "$SITES_ARTIFACT_URL" -C tests/fixtures sites
+  # Copy and modify the site json release field for this example site so it can
+  # be a file path instead of the https://example.test/ URL.
+  cp -R tests/fixtures/sites "$tmp_example_sites_dir/"
+  site1_version="$(cat tests/fixtures/site1/VERSION)"
+  jq \
+    --arg jq_release_file_path "$tmp_example_sites_dir/site1-$site1_version.tar.gz" \
+    '.release |= $jq_release_file_path' \
+    < "$project_dir/tests/fixtures/sites/site1.site.json" \
+    > "$tmp_example_sites_dir/sites/site1.site.json"
+  tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
+  tar c -z -f "$tmp_example_sites_dir/site1-$site1_version.tar.gz" -C "$project_dir/tests/fixtures" site1
 fi
 
 # Build the artifacts

@@ -17,6 +17,9 @@ showlog () {
 }
 trap showlog EXIT
 
+has_wget="$(command -v wget || echo "")"
+has_curl="$(command -v curl || echo "")"
+
 # Extract and set shell variables from JSON input
 sites_artifact_url=""
 eval "$(jq -r '@sh "
@@ -63,8 +66,6 @@ else
   if [ "$first_char_of_sites_artifact_url" = "/" ]; then
     cp -v "$sites_artifact_url" "$working_dir/dist/$SITES_ARTIFACT" >> "$LOG_FILE"
   elif [ "$is_downloadable" = "http" ]; then
-    has_wget="$(command -v wget || echo "")"
-    has_curl="$(command -v curl || echo "")"
     if [ -n "$has_wget" ]; then
       wget -a "$LOG_FILE" -O "$working_dir/dist/$SITES_ARTIFACT" "$sites_artifact_url"
     elif [ -n "$has_curl" ]; then
@@ -73,7 +74,6 @@ else
       echo "ERROR $0: No wget or curl commands found." >> "$LOG_FILE"
       exit 1
     fi
-
   else
     echo "ERROR $0: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
     exit 1
@@ -97,7 +97,36 @@ else
 
     # TODO Validate the site_json file https://github.com/marksparkza/jschon
 
-    version="$(jq -r '.version' "$site_json")"
+    release="$(jq -r '.release' "$site_json")"
+
+    first_char_of_release_url="$(printf '%.1s' "$release")"
+    is_downloadable="$(printf '%.4s' "$release")"
+    release_filename="$(basename "$release")"
+    if [ "$first_char_of_release_url" = "/" ]; then
+      cp -v "$release" "$tmp_sites_dir/" >> "$LOG_FILE"
+    elif [ "$is_downloadable" = "http" ]; then
+      if [ -n "$has_wget" ]; then
+        wget -a "$LOG_FILE" -O "$tmp_sites_dir/$release_filename" "$release"
+      elif [ -n "$has_curl" ]; then
+        curl --location --output "$tmp_sites_dir/$release_filename" --silent --show-error "$release" >> "$LOG_FILE"
+      else
+        echo "ERROR $0: No wget or curl commands found." >> "$LOG_FILE"
+        exit 1
+      fi
+    else
+      echo "ERROR $0: not supported release url: '$release'" >> "$LOG_FILE"
+      exit 1
+    fi
+
+    # Add the version field to the site json to make it easier for scripts to
+    # use that value instead of needing to grab it from the VERSION file.
+    # Fallback on version already set if no VERSION file was found and default
+    # to today's date if no version field was set initially.
+    today="$(date -I)"
+    version="$(tar x -f "$tmp_sites_dir/$release_filename" -O VERSION || jq -r --arg jq_date "$today" '.version // $jq_date' "$site_json")"
+    cp "$site_json" "$site_json.original"
+    jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
+    rm "$site_json.original"
 
     mkdir -p "${working_dir}/dist/${slugname}"
     dist_immutable_archive_file="$working_dir/dist/$slugname/$slugname-$version.immutable.tar.gz"
@@ -110,9 +139,8 @@ else
       || echo "No existing archive files to delete for ${slugname}" >> "$LOG_FILE"
 
     tmp_dir="$(mktemp -d)"
-    git_repo="$(jq -r '.git_repo' "$site_json")"
-    # TODO Change to be a zip of the source code files instead of depending on git.
-    git clone --depth 1 --single-branch --branch "$version" --recurse-submodules "$git_repo" "$tmp_dir" >> "$LOG_FILE"
+    tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir" --strip-components=1 "${slugname}"
+
     cd "$tmp_dir"
     echo "Running the 'make' command for $slugname" >> "$LOG_FILE"
     make >> "$LOG_FILE"
