@@ -67,6 +67,9 @@ read -r CONFIRM
 if [ "${CONFIRM}" = "y" ]; then
   WORKSPACE="test" ./terra.sh
 
+  # TODO Automated checking of deployed test site is not implemented.
+  exit
+
   app_port=9081
   echo "
   Sites running on http://chillbox.test:$app_port
@@ -85,6 +88,7 @@ if [ "${CONFIRM}" = "y" ]; then
     echo ""
     slugname=${site_json%.site.json}
     slugname=${slugname#sites/}
+    server_name="$(jq -r '.server_name' "$site_json")"
     echo "$slugname"
     echo "http://chillbox.test:$app_port/$slugname/version.txt"
     printf " Version: "
@@ -92,7 +96,7 @@ if [ "${CONFIRM}" = "y" ]; then
     test -z "$deployed_version" && echo "NO VERSION FOUND" && continue
     curl --fail --show-error --no-progress-meter "http://chillbox.test:$app_port/$slugname/version.txt"
     echo "http://$slugname.test:$app_port"
-    curl --fail --show-error --silent --head "http://$slugname.test:$app_port" || continue
+    curl --fail --show-error --silent --head "http://$server_name:$app_port" || continue
   done
   cd -
   rm -rf "$tmp_sites_dir"

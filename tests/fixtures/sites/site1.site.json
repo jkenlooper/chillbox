@@ -5,6 +5,7 @@
     "owner": "site1@example.test",
     "technical": "site1@example.test"
   },
+  "server_name": "site1.example.test",
   "domain_list": [
     "site1.example.test"
   ],

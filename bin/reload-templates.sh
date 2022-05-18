@@ -16,7 +16,8 @@ for site_json in $sites; do
   slugname=${site_json%.site.json}
   slugname=${slugname#/etc/chillbox/sites/}
   export slugname
-  export server_name="$slugname.test"
+  server_name="$(jq -r '.server_name' "$site_json")"
+  export server_name
   version="$(jq -r '.version' "$site_json")"
   export version
 

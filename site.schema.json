@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "name",
+    "server_name",
     "release",
     "contact",
     "domain_list"
@@ -14,6 +15,11 @@
       "type": "string",
       "title": "The name schema",
       "description": "Name of site."
+    },
+    "server_name": {
+      "type": "string",
+      "title": "Canonical server name",
+      "description": "Set to a FQDN"
     },
     "version": {
       "type": "string",
