@@ -3,6 +3,11 @@
 set -o errexit
 
 working_dir="$(realpath "$(dirname "$0")")"
+script_name="$(basename "$0")"
+
+# Need to use a log file for stdout since the stdout is parsed as JSON.
+LOG_FILE="${working_dir}/${script_name}.log"
+date > "$LOG_FILE"
 
 # Extract and set shell variables from JSON input
 sites_artifact=""
@@ -13,10 +18,11 @@ eval "$(jq -r '@sh "
   "')"
 
 tmp_dir="$(mktemp -d)"
-tar x -z -f "dist/$sites_artifact" -C "${tmp_dir}"
+tar x -f "dist/$sites_artifact" -C "${tmp_dir}"
 find "$tmp_dir/sites" -type f -name '*.site.json' | \
   while read -r site_json; do
-    echo "$site_json"
+    echo "$site_json" >> "$LOG_FILE"
+    jq '.' "$site_json" >> "$LOG_FILE"
     slugname=${site_json%.site.json}
     slugname="$(basename "${slugname}")"
     version="$(jq -r '.version' "$site_json")"

@@ -81,9 +81,10 @@ else
 
 
   tmp_sites_dir="$(mktemp -d)"
-  trap 'rm -r -i "$tmp_sites_dir"' EXIT
+  trap 'rm -rf "$tmp_sites_dir"' EXIT
   cd "$tmp_sites_dir"
   tar x -f "$working_dir/dist/$SITES_ARTIFACT" sites
+  chmod --recursive u+rw "$tmp_sites_dir"
 
   sites="$(find sites -type f -name '*.site.json')"
 
@@ -119,11 +120,19 @@ else
     fi
 
     # Add the version field to the site json to make it easier for scripts to
-    # use that value instead of needing to grab it from the VERSION file.
-    # Fallback on version already set if no VERSION file was found and default
-    # to today's date if no version field was set initially.
-    today="$(date -I)"
-    version="$(tar x -f "$tmp_sites_dir/$release_filename" -O "$slugname/VERSION" || jq -r --arg jq_date "$today" '.version // $jq_date' "$site_json")"
+    # use that value.
+    # Fallback on version already set if error from 'make inspect.VERSION' command.
+    tmp_dir_for_version="$(mktemp -d)"
+    mkdir -p "$tmp_dir_for_version/$slugname"
+    tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir_for_version/$slugname" --strip-components=1
+    chmod --recursive u+rw "$tmp_dir_for_version"
+    cd "$tmp_dir_for_version/$slugname"
+    echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$LOG_FILE"
+    version="$(make inspect.VERSION || jq -r -e '.version' "$site_json")"
+    echo "$slugname version: $version" >> "$LOG_FILE"
+    cd "$tmp_sites_dir"
+    rm -rf "$tmp_dir_for_version"
+
     cp "$site_json" "$site_json.original"
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
     rm "$site_json.original"
@@ -139,16 +148,18 @@ else
       || echo "No existing archive files to delete for ${slugname}" >> "$LOG_FILE"
 
     tmp_dir="$(mktemp -d)"
-    tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir" --strip-components=1 "${slugname}"
+    mkdir -p "$tmp_dir/$slugname"
+    tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir/$slugname" --strip-components=1
+    chmod --recursive u+rw "$tmp_dir"
 
-    cd "$tmp_dir"
+    cd "$tmp_dir/$slugname"
     echo "Running the 'make' command for $slugname" >> "$LOG_FILE"
     make >> "$LOG_FILE"
 
-    immutable_archive_file=$tmp_dir/$slugname-$version.immutable.tar.gz
+    immutable_archive_file=$tmp_dir/$slugname/$slugname-$version.immutable.tar.gz
     test -f "$immutable_archive_file" || (echo "No file at $immutable_archive_file" >> "$LOG_FILE" && exit 1)
 
-    artifact_file="$tmp_dir/$slugname-$version.artifact.tar.gz"
+    artifact_file="$tmp_dir/$slugname/$slugname-$version.artifact.tar.gz"
     test -f "$artifact_file" || (echo "No file at $artifact_file" >> "$LOG_FILE" && exit 1)
 
     test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"

@@ -80,7 +80,10 @@ chown dev:dev artifact-modules
 artifact_module_tf_file=artifact-modules.tf.not_implemented
 touch "$artifact_module_tf_file"
 chown dev:dev "$artifact_module_tf_file"
+echo "$SITES_ARTIFACT"
+
 su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' --arg jq_artifact_module_tf_file '${artifact_module_tf_file}' '{ sites_artifact: \$jq_sites_artifact, artifact_module_tf_file: \$jq_artifact_module_tf_file }' | ./extract-terraform-artifact-modules.sh"
+cat extract-terraform-artifact-modules.sh.log
 ARTIFACT_MODULES
 
 COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .

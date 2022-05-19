@@ -15,7 +15,7 @@ done
 
 has_wget="$(command -v wget || echo "")"
 has_curl="$(command -v curl || echo "")"
-if [ -z "$has_wget" -a -z "$has_curl" ]; then
+if [ -z "$has_wget" ] && [ -z "$has_curl" ]; then
   echo "WARNING $0: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
 fi
 
@@ -55,7 +55,7 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
   echo "INFO $0: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
-  trap 'rm -r "$tmp_example_sites_dir"' EXIT
+  trap 'rm -rf "$tmp_example_sites_dir"' EXIT
   example_sites_version="$(cat VERSION)"
   SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
@@ -76,6 +76,7 @@ if [ "$(basename "$SITES_ARTIFACT_URL" ".tar.gz")" = "$(basename "$SITES_ARTIFAC
   exit 1
 fi
 
+echo "INFO $0: Build the artifacts"
 # Build the artifacts
 cd "${project_dir}"
 SITES_ARTIFACT=""

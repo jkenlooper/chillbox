@@ -23,7 +23,7 @@ echo "INFO $0: Using slugdir '${slugdir}'"
 # Extract just the nginx directory from the tmp_artifact
 rm -rf "$slugname/nginx.bak.tar.gz"
 test -e "$slugname/nginx" \
-  && tar c -f "$slugname/nginx.bak.tar.gz" "$slugname/nginx"
+  && tar c -z -f "$slugname/nginx.bak.tar.gz" "$slugname/nginx"
 rm -rf "$slugname/nginx"
 tar x -z -f "$tmp_artifact" "$slugname/nginx"
 chown -R "$slugname":"$slugname" "$slugdir"
