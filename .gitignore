@@ -1,18 +1,10 @@
-/terraform-010-infra/.terraform/
-/terraform-010-infra/terraform.tfstate.d/
-/terraform-010-infra/private.auto.tfvars
-
-/terraform-020-chillbox/.terraform/
-/terraform-020-chillbox/terraform.tfstate.d/
-/terraform-020-chillbox/private.auto.tfvars
+# Prevent including any Terraform var files like private.auto.tfvars and such.
+*.tfvars
 
 /chillbox_doterra__*.gpg
 
 /build-artifacts.sh.log
 crash.*.log
-
-# TODO no longer supporting local docker builds of chillbox
-#/.local-env
 
 /.env
 

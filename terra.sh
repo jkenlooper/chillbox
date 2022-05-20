@@ -35,6 +35,13 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
+test -n "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
+  || echo "WARNING $0: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
+test -n "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
+  || echo "WARNING $0: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
+terraform_infra_private_auto_tfvars_file="${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars}"
+terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars}"
+
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
 ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
@@ -149,6 +156,7 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+  --mount "type=bind,src=${terraform_infra_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
   "$infra_image" sh
 
@@ -179,7 +187,7 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   "$terraform_chillbox_image" init
 docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${terraform_chillbox_container}"
@@ -200,6 +208,6 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/alpine-box-init.sh.tftpl,dst=/usr/local/src/chillbox-terraform/alpine-box-init.sh.tftpl" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/private.auto.tfvars,dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
   "$terraform_chillbox_image" sh

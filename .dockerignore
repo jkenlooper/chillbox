@@ -14,7 +14,6 @@
 !/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
 !/terraform-020-chillbox/alpine-box-init.sh.tftpl
-#!/terraform-020-chillbox/private.auto.tfvars
 
 !/bin/*
 !/terraform-010-infra/bin/*
