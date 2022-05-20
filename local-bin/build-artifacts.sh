@@ -126,11 +126,11 @@ else
     mkdir -p "$tmp_dir_for_version/$slugname"
     tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir_for_version/$slugname" --strip-components=1
     chmod --recursive u+rw "$tmp_dir_for_version"
-    cd "$tmp_dir_for_version/$slugname"
+    #cd "$tmp_dir_for_version/$slugname"
     echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$LOG_FILE"
-    version="$(make inspect.VERSION || jq -r -e '.version' "$site_json")"
+    version="$(make --silent -C "$tmp_dir_for_version/$slugname" inspect.VERSION || jq -r -e '.version' "$site_json")"
     echo "$slugname version: $version" >> "$LOG_FILE"
-    cd "$tmp_sites_dir"
+    #cd "$tmp_sites_dir"
     rm -rf "$tmp_dir_for_version"
 
     cp "$site_json" "$site_json.original"

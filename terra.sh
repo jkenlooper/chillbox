@@ -68,7 +68,7 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
   cp -R tests/fixtures/sites "$tmp_example_sites_dir/"
-  site1_version="$(cat tests/fixtures/site1/VERSION)"
+  site1_version="$(make --silent -C tests/fixtures/site1 inspect.VERSION)"
   jq \
     --arg jq_release_file_path "$tmp_example_sites_dir/site1-$site1_version.tar.gz" \
     '.release |= $jq_release_file_path' \

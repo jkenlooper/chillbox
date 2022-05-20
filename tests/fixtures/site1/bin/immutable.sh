@@ -14,14 +14,12 @@ TMPDIR=$(mktemp -d)
 mkdir -p $TMPDIR/$slugname
 tmpname="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1 || printf '')"
 
-cd $projectdir/example
-touch file1.txt
-touch file2.txt
 mkdir -p $TMPDIR/$slugname/example
-cp file*.txt $TMPDIR/$slugname/example/
+touch $TMPDIR/$slugname/example/file1.txt
+touch $TMPDIR/$slugname/example/file2.txt
 
-cd "$TMPDIR"
 tar c \
+  -C "$TMPDIR" \
   -h \
   -z \
   -f "${ARCHIVE}" \
