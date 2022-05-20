@@ -36,9 +36,9 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-test -n "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
+test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
   || echo "WARNING $0: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
-test -n "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
+test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
   || echo "WARNING $0: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
 terraform_infra_private_auto_tfvars_file="${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars}"
 terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars}"
