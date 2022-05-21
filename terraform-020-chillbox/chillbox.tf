@@ -39,18 +39,18 @@ resource "local_sensitive_file" "alpine_box_init" {
   filename        = "${lower(var.environment)}/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
-    developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
-    access_key_id : var.do_spaces_access_key_id,
-    secret_access_key : var.do_spaces_secret_access_key,
-    chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
-    tech_email : var.tech_email,
-    immutable_bucket_name : var.immutable_bucket_name,
-    artifact_bucket_name : var.artifact_bucket_name,
-    sites_artifact : var.sites_artifact,
-    chillbox_artifact : var.chillbox_artifact
+    tf_developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
+    tf_access_key_id : var.do_spaces_access_key_id,
+    tf_secret_access_key : var.do_spaces_secret_access_key,
+    tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
+    tf_tech_email : var.tech_email,
+    tf_immutable_bucket_name : var.immutable_bucket_name,
+    tf_artifact_bucket_name : var.artifact_bucket_name,
+    tf_sites_artifact : var.sites_artifact,
+    tf_chillbox_artifact : var.chillbox_artifact
     # No slash at the end of this s3_endpoint_url
-    s3_endpoint_url : var.s3_endpoint_url,
-    chillbox_hostname : "${var.sub_domain}${var.domain}",
+    tf_s3_endpoint_url : var.s3_endpoint_url,
+    tf_chillbox_hostname : "${var.sub_domain}${var.domain}",
   })
 }
 
