@@ -37,6 +37,7 @@ if [ -s "$state_infra_json" ]; then
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-${infra_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
     --mount "type=bind,src=${state_infra_json},dst=/usr/local/src/chillbox-terraform/${infra_container}.json" \
+    --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
     "$infra_image" state push "/usr/local/src/chillbox-terraform/${infra_container}.json"
   printf '\n%s\n' "Pushed $state_infra_json"
 else
@@ -54,6 +55,7 @@ if [ -s "$state_chillbox_json" ]; then
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
     --mount "type=bind,src=${state_chillbox_json},dst=/usr/local/src/chillbox-terraform/${terraform_chillbox_container}.json" \
+    --mount "type=volume,src=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
     "$terraform_chillbox_image" state push "/usr/local/src/chillbox-terraform/${terraform_chillbox_container}.json"
   printf '\n%s\n' "Pushed $state_chillbox_json"
 else

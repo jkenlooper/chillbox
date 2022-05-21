@@ -65,6 +65,10 @@ chmod -R 0700 /home/dev/.gnupg
 mkdir -p /var/lib/doterra
 chown -R dev:dev /var/lib/doterra
 chmod -R 0700 /var/lib/doterra
+
+mkdir -p /var/lib/terraform-020-chillbox
+chown -R dev:dev /var/lib/terraform-020-chillbox
+chmod -R 0700 /var/lib/terraform-020-chillbox
 SETUP
 
 COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .

@@ -3,7 +3,7 @@
 [![Keep a Changelog v1.1.0 badge][changelog-badge]][changelog]
 [![AGPL-3.0 license][license-badge]][license]
 
-_Work in Progress_. This is under active development and is not complete.
+**_Work in Progress_. This is under active development and is not complete.**
 
 Infrastructure for websites that use
 [Chill](https://github.com/jkenlooper/chill)

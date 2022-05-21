@@ -7,6 +7,12 @@ terraform {
   }
 }
 
+provider "digitalocean" {
+  token = var.do_token
+  spaces_access_id = var.do_spaces_access_key_id
+  spaces_secret_key = var.do_spaces_secret_access_key
+}
+
 resource "digitalocean_project" "chillbox-infra" {
   name        = "ChillBox Infrastructure - ${var.environment} ${var.project_version}"
   description = var.project_description

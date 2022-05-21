@@ -36,6 +36,7 @@ docker run \
   -e WORKSPACE="${WORKSPACE}" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
+  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
   "$infra_image" state pull > "$state_infra_json"
 printf '\n%s\n' "Created $state_infra_json"
 
@@ -49,5 +50,6 @@ docker run \
   --name "${terraform_chillbox_container}" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
+  --mount "type=volume,src=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
   "$terraform_chillbox_image" state pull > "$state_chillbox_json"
 printf '\n%s\n' "Created $state_chillbox_json"

@@ -109,7 +109,7 @@ variable "project_description" {
 
 variable "project_version" {
   type        = string
-  default     = ""
+  default     = "0"
   description = "Appended to the end of the DigitialOcean project name."
 }
 
@@ -162,9 +162,9 @@ variable "dns_ttl" {
   }
 }
 
-variable "has_chillbox_artifact" {
+variable "create_chillbox" {
   default = true
-  description = "Has the chillbox artifact been created."
+  description = "Create the chillbox droplet."
   type = bool
 }
 variable "sites_artifact" {

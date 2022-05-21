@@ -53,6 +53,6 @@ variable "project_description" {
 
 variable "project_version" {
   type        = string
-  default     = ""
+  default     = "0"
   description = "Appended to the end of the DigitialOcean project name."
 }

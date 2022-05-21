@@ -7,6 +7,12 @@ terraform {
   }
 }
 
+provider "digitalocean" {
+  token = var.do_token
+  spaces_access_id = var.do_spaces_access_key_id
+  spaces_secret_key = var.do_spaces_secret_access_key
+}
+
 resource "digitalocean_project" "chillbox" {
   name        = "ChillBox - ${var.environment} ${var.project_version}"
   description = var.project_version
@@ -85,7 +91,7 @@ resource "digitalocean_firewall" "web" {
 }
 
 resource "local_file" "host_inventory" {
-  filename        = "${lower(var.environment)}/host_inventory.ansible.cfg"
+  filename        = "/var/lib/terraform-020-chillbox/${lower(var.environment)}/host_inventory.ansible.cfg"
   file_permission = "0400"
   content         = <<-HOST_INVENTORY
   [all:vars]

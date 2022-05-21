@@ -27,10 +27,10 @@ fi
 printf '\n%s\n' "The $0 script will delete the docker volumes in workspace '$WORKSPACE' that chillbox uses for the Terraform deployments."
 printf '\n%s\n' "WARNING: Removing the Terraform tfstate volume should only be done if the deployed environment has already been destroyed or these files have otherwise been backed up somewhere else."
 volume_list="$(docker volume list \
-  --filter "name=chillbox-terraform-run-tmp-secrets--${WORKSPACE}" \
   --filter "name=chillbox-${infra_container}-tfstate--${WORKSPACE}" \
   --filter "name=chillbox-${infra_container}-var-lib--${WORKSPACE}" \
   --filter "name=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE}" \
+  --filter "name=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-dotgnupg--${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-terraformdotd--${WORKSPACE}" \
   --filter "name=chillbox-terraform-run-tmp-secrets--${WORKSPACE}" \

@@ -15,7 +15,7 @@ resource "digitalocean_custom_image" "alpine" {
 }
 
 resource "digitalocean_droplet" "chillbox" {
-  count      = var.has_chillbox_artifact ? 1 : 0
+  count      = var.create_chillbox ? 1 : 0
   name       = lower("chillbox-${var.environment}")
   size       = var.chillbox_droplet_size
   image      = digitalocean_custom_image.alpine.id
@@ -35,8 +35,8 @@ resource "digitalocean_droplet" "chillbox" {
 }
 
 resource "local_sensitive_file" "alpine_box_init" {
-  count      = var.has_chillbox_artifact ? 1 : 0
-  filename        = "${lower(var.environment)}/user_data_chillbox.sh"
+  count      = 1
+  filename        = "/var/lib/terraform-020-chillbox/${lower(var.environment)}/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
     tf_developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
@@ -55,7 +55,7 @@ resource "local_sensitive_file" "alpine_box_init" {
 }
 
 resource "digitalocean_record" "chillbox" {
-  count      = var.has_chillbox_artifact ? 1 : 0
+  count      = var.create_chillbox ? 1 : 0
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "@" : trimsuffix(var.sub_domain, ".")
   type   = "A"
@@ -64,7 +64,7 @@ resource "digitalocean_record" "chillbox" {
 }
 
 resource "digitalocean_record" "site_domains" {
-  for_each = toset(var.site_domains)
+  for_each = var.create_chillbox ? toset(var.site_domains) : []
 
   # https://regex101.com/r/pgPLQ5/1
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
