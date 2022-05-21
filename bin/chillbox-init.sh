@@ -2,29 +2,100 @@
 
 set -o errexit
 
-# Set by terraform
-# shellcheck disable=SC2154
-developer_ssh_key_github_list="${tf_developer_ssh_key_github_list}"
-# shellcheck disable=SC2154
-access_key_id="${tf_access_key_id}"
-# shellcheck disable=SC2154
-secret_access_key="${tf_secret_access_key}"
-# shellcheck disable=SC2154
-chillbox_gpg_passphrase="${tf_chillbox_gpg_passphrase}"
-# shellcheck disable=SC2154
-tech_email="${tf_tech_email}"
-# shellcheck disable=SC2154
-immutable_bucket_name="${tf_immutable_bucket_name}"
-# shellcheck disable=SC2154
-artifact_bucket_name="${tf_artifact_bucket_name}"
-# shellcheck disable=SC2154
-sites_artifact="${tf_sites_artifact}"
-# shellcheck disable=SC2154
-chillbox_artifact="${tf_chillbox_artifact}"
-# shellcheck disable=SC2154
-s3_endpoint_url="${tf_s3_endpoint_url}"
-# shellcheck disable=SC2154
-chillbox_hostname="${tf_chillbox_hostname}"
+developer_ssh_key_github_list="${DEVELOPER_SSH_KEY_GITHUB_LIST:-}"
+access_key_id="${ACCESS_KEY_ID:-}"
+secret_access_key="${SECRET_ACCESS_KEY:-}"
+chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
+tech_email="${TECH_EMAIL:-}"
+immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
+artifact_bucket_name="${ARTIFACT_BUCKET_NAME:-}"
+sites_artifact="${SITES_ARTIFACT:-}"
+chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
+s3_endpoint_url="${S3_ENDPOINT_URL:-}"
+chillbox_hostname="${CHILLBOX_HOSTNAME:-}"
+
+if [ -z "$developer_ssh_key_github_list" ]; then
+  printf '\n%s\n' "No DEVELOPER_SSH_KEY_GITHUB_LIST variable set."
+  printf '\n%s\n' "Enter the GitHub usernames that should have access separated by spaces."
+  read -r developer_ssh_key_github_list
+  test -n "$developer_ssh_key_github_list" || (echo "No usernames set. Exiting" && exit 1)
+fi
+
+if [ -z "$access_key_id" ]; then
+  printf '\n%s\n' "No ACCESS_KEY_ID variable set."
+  printf '\n%s\n' "Enter the access key id for the S3 object storage being used. Characters entered are hidden."
+  stty -echo
+  read -r access_key_id
+  stty echo
+  test -n "$access_key_id" || (echo "No access key id set. Exiting" && exit 1)
+fi
+if [ -z "$secret_access_key" ]; then
+  printf '\n%s\n' "No SECRET_ACCESS_KEY variable set."
+  printf '\n%s\n' "Enter the secret access key for the S3 object storage being used. Characters entered are hidden."
+  stty -echo
+  read -r secret_access_key
+  stty echo
+  test -n "$secret_access_key" || (echo "No secret access key set. Exiting" && exit 1)
+fi
+
+if [ -z "$chillbox_gpg_passphrase" ]; then
+  printf '\n%s\n' "No CHILLBOX_GPG_PASSPHRASE variable set."
+  printf '\n%s\n' "GPG key is created on the chillbox server; set the passphrase for it here."
+  printf '\n%s\n' "Characters entered are hidden."
+  stty -echo
+  read -r chillbox_gpg_passphrase
+  stty echo
+  test -n "$chillbox_gpg_passphrase" || (echo "No chillbox gpg passphrase set. Exiting" && exit 1)
+fi
+
+if [ -z "$tech_email" ]; then
+  printf '\n%s\n' "No TECH_EMAIL variable set."
+  printf '\n%s\n' "Enter the contact email address to use for notifications."
+  read -r tech_email
+  test -n "$tech_email" || (echo "No tech email set. Exiting" && exit 1)
+fi
+
+if [ -z "$immutable_bucket_name" ]; then
+  printf '\n%s\n' "No IMMUTABLE_BUCKET_NAME variable set."
+  printf '\n%s\n' "Enter the immutable bucket name to use."
+  read -r immutable_bucket_name
+  test -n "$immutable_bucket_name" || (echo "No immutable bucket name set. Exiting" && exit 1)
+fi
+
+if [ -z "$artifact_bucket_name" ]; then
+  printf '\n%s\n' "No ARTIFACT_BUCKET_NAME variable set."
+  printf '\n%s\n' "Enter the artifact bucket name to use."
+  read -r artifact_bucket_name
+  test -n "$artifact_bucket_name" || (echo "No artifact bucket name set. Exiting" && exit 1)
+fi
+
+if [ -z "$sites_artifact" ]; then
+  printf '\n%s\n' "No SITES_ARTIFACT variable set."
+  printf '\n%s\n' "Enter the sites artifact file to use."
+  read -r sites_artifact
+  test -n "$sites_artifact" || (echo "No sites artifact file set. Exiting" && exit 1)
+fi
+
+if [ -z "$chillbox_artifact" ]; then
+  printf '\n%s\n' "No CHILLBOX_ARTIFACT variable set."
+  printf '\n%s\n' "Enter the chillbox artifact file to use."
+  read -r chillbox_artifact
+  test -n "$chillbox_artifact" || (echo "No chillbox artifact file set. Exiting" && exit 1)
+fi
+
+if [ -z "$s3_endpoint_url" ]; then
+  printf '\n%s\n' "No S3_ENDPOINT_URL variable set."
+  printf '\n%s\n' "Enter the s3 endpoint URL to use."
+  read -r s3_endpoint_url
+  test -n "$s3_endpoint_url" || (echo "No s3 endpoint URL set. Exiting" && exit 1)
+fi
+
+if [ -z "$chillbox_hostname" ]; then
+  printf '\n%s\n' "No CHILLBOX_HOSTNAME variable set."
+  printf '\n%s\n' "Enter the chillbox hostname to use."
+  read -r chillbox_hostname
+  test -n "$chillbox_hostname" || (echo "No chillbox hostname set. Exiting" && exit 1)
+fi
 
 ## RUN_SETUP
 apk update
@@ -121,27 +192,22 @@ chown dev:dev /home/dev/.env
 ## RUN TEMP_AWS_CLI
 # Only need aws s3 to get the chillbox artifact. Will use the
 # bin/install-aws-cli.sh to install latest aws version.
-apk add \
-  -q --no-progress \
-  aws-cli
+has_aws="$(command -v aws || printf '')"
+if [ -z "$has_aws" ]; then
+  apk add \
+    -q --no-progress \
+    aws-cli
+fi
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv=$(mktemp)
-# access_key_id, and secret_access_key is set by terraform
-# shellcheck disable=SC2154
 cat <<HERE > "$tmp_cred_csv"
 User Name, Access Key ID, Secret Access Key
 chillbox_object_storage,${access_key_id},${secret_access_key}
 HERE
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=chillbox_object_storage
-rm "$tmp_cred_csv"
-
-# TODO: Get site_secrets and decrypt to the /var/lib/?
-# Where should site_secrets.tar.gz be created and stored?
-
-#apk add --no-cache gnupg gnupg-dirmngr
-
+shred -fu "$tmp_cred_csv"
 
 ## COPY_chillbox_artifact
 tmp_chillbox_artifact=$(mktemp)
@@ -149,7 +215,7 @@ aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT" \
   "$tmp_chillbox_artifact"
-apk del aws-cli
+apk del aws-cli || printf '\n%s\n' "...Ignoring error with 'apk del aws-cli'"
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
 tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/templates
@@ -163,8 +229,6 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
-# chillbox_gpg_passphrase is set by terraform
-# shellcheck disable=SC2154
 CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" /etc/chillbox/bin/generate-chillbox-key.sh
 
 ## RUN_CHILLBOX_ENV_NAMES
@@ -196,7 +260,3 @@ chown dev /etc/chillbox/env_names
 nginx -t
 rc-update add nginx default
 rc-service nginx start
-
-## CLEANUP
-echo "Destroying cloud-init userdata script..."
-/etc/chillbox/bin/destroy-user_data_chillbox-script.sh &

@@ -1,0 +1,75 @@
+#!/usr/bin/env sh
+
+set -o errexit
+
+cleanup() {
+  echo "Shredding /var/lib/cloud/instance/user-data.txt"
+  shred -fu /var/lib/cloud/instance/user-data.txt
+}
+trap cleanup EXIT
+
+# Set by terraform
+# shellcheck disable=SC2154
+developer_ssh_key_github_list="${tf_developer_ssh_key_github_list}"
+# shellcheck disable=SC2154
+access_key_id="${tf_access_key_id}"
+# shellcheck disable=SC2154
+secret_access_key="${tf_secret_access_key}"
+# shellcheck disable=SC2154
+chillbox_gpg_passphrase="${tf_chillbox_gpg_passphrase}"
+# shellcheck disable=SC2154
+tech_email="${tf_tech_email}"
+# shellcheck disable=SC2154
+immutable_bucket_name="${tf_immutable_bucket_name}"
+# shellcheck disable=SC2154
+artifact_bucket_name="${tf_artifact_bucket_name}"
+# shellcheck disable=SC2154
+sites_artifact="${tf_sites_artifact}"
+# shellcheck disable=SC2154
+chillbox_artifact="${tf_chillbox_artifact}"
+# shellcheck disable=SC2154
+s3_endpoint_url="${tf_s3_endpoint_url}"
+# shellcheck disable=SC2154
+chillbox_hostname="${tf_chillbox_hostname}"
+
+apk update
+
+# Only need aws s3 to get the chillbox artifact. Will use the
+# bin/install-aws-cli.sh to install latest aws version.
+apk add \
+  -q --no-progress \
+  aws-cli
+
+tmp_cred_csv=$(mktemp)
+cat <<HERE > "$tmp_cred_csv"
+User Name, Access Key ID, Secret Access Key
+chillbox_object_storage,${access_key_id},${secret_access_key}
+HERE
+aws configure import --csv "file://$tmp_cred_csv"
+export AWS_PROFILE=chillbox_object_storage
+shred -fu "$tmp_cred_csv"
+
+tmp_chillbox_artifact=$(mktemp)
+aws \
+  --endpoint-url "${s3_endpoint_url}" \
+  s3 cp "s3://${artifact_bucket_name}/chillbox/${chillbox_artifact}" \
+  "$tmp_chillbox_artifact"
+
+tmp_bootstrap_dir="$(mktemp -d)"
+tar x -f "$tmp_chillbox_artifact" -C "$tmp_bootstrap_dir" bin/chillbox-init.sh
+rm -f "$tmp_chillbox_artifact"
+
+DEVELOPER_SSH_KEY_GITHUB_LIST="${developer_ssh_key_github_list}" \
+ACCESS_KEY_ID="${access_key_id}" \
+SECRET_ACCESS_KEY="${secret_access_key}" \
+CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" \
+TECH_EMAIL="${tech_email}" \
+IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}" \
+ARTIFACT_BUCKET_NAME="${artifact_bucket_name}" \
+SITES_ARTIFACT="${sites_artifact}" \
+CHILLBOX_ARTIFACT="${chillbox_artifact}" \
+S3_ENDPOINT_URL="${s3_endpoint_url}" \
+CHILLBOX_HOSTNAME="${chillbox_hostname}" \
+  "$tmp_bootstrap_dir/bin/chillbox-init.sh"
+
+rm -rf "$tmp_bootstrap_dir"
