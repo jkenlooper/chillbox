@@ -1,5 +1,7 @@
 # Chillbox
 
+[![Keep a Changelog v1.1.0 badge][changelog-badge]][changelog]
+
 _Work in Progress_. This is under active development and is not complete.
 
 Infrastructure for websites that use
@@ -42,7 +44,7 @@ probably [kubernetes](https://kubernetes.io/),
 
 TODO Add chillbox overview graphic
 
-## Quickstart
+## Quickstart Deployment to DigitalOcean with Terraform
 
 Dependencies:
 
@@ -53,6 +55,16 @@ Dependencies:
 
 ```bash
 ./terra.sh
+```
+
+## Manual Deployment on Alpine Linux Server
+
+Download the bin/chillbox-init.sh script and run it on an existing Alpine Linux
+Server version 3.15. It will prompt for any variables that it needs in order to
+deploy.
+
+```bash
+./bin/chillbox-init.sh
 ```
 
 ## Contributing
@@ -84,3 +96,7 @@ commands like grep to find these comments.
 find . \( -name '*.sh' -o -name '*Dockerfile' \) -exec \
   grep --line-number --fixed-strings 'UPKEEP' '{}' +
 ```
+
+
+[changelog]: ./CHANGELOG.md
+[changelog-badge]: https://img.shields.io/badge/changelog-Keep%20a%20Changelog%20v1.1.0-%23E05735
