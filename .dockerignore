@@ -13,7 +13,7 @@
 !/terraform-020-chillbox/extract-terraform-artifact-modules.sh
 !/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
-!/terraform-020-chillbox/alpine-box-init.sh.tftpl
+!/terraform-020-chillbox/user_data_chillbox.sh.tftpl
 
 !/bin/*
 !/terraform-010-infra/bin/*

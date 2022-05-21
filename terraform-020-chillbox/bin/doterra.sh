@@ -30,9 +30,9 @@ echo "INFO $0: jq version: $(jq --version)"
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv="$(mktemp)"
 jq -r '"User Name, Access Key ID, Secret Access Key
-digitalocean-spaces-chillbox,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > "$tmp_cred_csv"
+chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > "$tmp_cred_csv"
 aws configure import --csv "file://$tmp_cred_csv"
-export AWS_PROFILE=digitalocean-spaces-chillbox
+export AWS_PROFILE=chillbox_object_storage
 rm "$tmp_cred_csv"
 
 cd /usr/local/src/chillbox-terraform

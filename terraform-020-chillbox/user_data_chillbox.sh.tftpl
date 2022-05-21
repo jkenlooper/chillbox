@@ -98,10 +98,10 @@ tmp_cred_csv=$(mktemp)
 # shellcheck disable=SC2154
 cat <<HERE > "$tmp_cred_csv"
 User Name, Access Key ID, Secret Access Key
-digitalocean-spaces-chillbox,${access_key_id},${secret_access_key}
+chillbox_object_storage,${access_key_id},${secret_access_key}
 HERE
 aws configure import --csv "file://$tmp_cred_csv"
-export AWS_PROFILE=digitalocean-spaces-chillbox
+export AWS_PROFILE=chillbox_object_storage
 rm "$tmp_cred_csv"
 
 # TODO: Get site_secrets and decrypt to the /var/lib/?
@@ -119,7 +119,7 @@ aws \
 apk del aws-cli
 
 mkdir -p /etc/chillbox && cd /etc/chillbox
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/templates
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/templates
 
 mkdir -p /etc/chillbox/bin
 tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 bin
@@ -143,10 +143,10 @@ cd /usr/local/src/
 
 ## COPY nginx conf and default
 cd /etc/nginx
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/nginx.conf
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/nginx.conf
 
 mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 terraform-020-chillbox/default.nginx.conf
+tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/default.nginx.conf
 
 ## RUN NGINX_CONF
 /etc/chillbox/bin/init-nginx.sh
@@ -166,4 +166,4 @@ rc-service nginx start
 
 ## CLEANUP
 echo "Destroying cloud-init userdata script..."
-/etc/chillbox/bin/destroy-alpine-box-init-script.sh &
+/etc/chillbox/bin/destroy-user_data_chillbox-script.sh &

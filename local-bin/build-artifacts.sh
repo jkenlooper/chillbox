@@ -44,11 +44,11 @@ mkdir -p "$working_dir/dist"
 
 # Create the chillbox artifact file
 if [ ! -f "$working_dir/dist/$CHILLBOX_ARTIFACT" ]; then
-  cd "$working_dir"
-  tar -c -z -f "$working_dir/dist/$CHILLBOX_ARTIFACT" \
-    terraform-020-chillbox/default.nginx.conf \
-    terraform-020-chillbox/nginx.conf \
-    terraform-020-chillbox/templates \
+  tar c -z -f "$working_dir/dist/$CHILLBOX_ARTIFACT" \
+    -C "$working_dir" \
+    nginx/default.nginx.conf \
+    nginx/nginx.conf \
+    nginx/templates \
     bin \
     VERSION
 else

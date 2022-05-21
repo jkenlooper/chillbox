@@ -36,9 +36,9 @@ resource "digitalocean_droplet" "chillbox" {
 
 resource "local_sensitive_file" "alpine_box_init" {
   count      = var.has_chillbox_artifact ? 1 : 0
-  filename        = "${lower(var.environment)}/alpine-box-init.sh"
+  filename        = "${lower(var.environment)}/user_data_chillbox.sh"
   file_permission = "0500"
-  content = templatefile("alpine-box-init.sh.tftpl", {
+  content = templatefile("user_data_chillbox.sh.tftpl", {
     developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
     access_key_id : var.do_spaces_access_key_id,
     secret_access_key : var.do_spaces_secret_access_key,

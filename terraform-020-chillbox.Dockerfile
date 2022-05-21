@@ -94,7 +94,7 @@ SITE_DOMAINS
 COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
 COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
 COPY --chown=dev:dev terraform-020-chillbox/main.tf .
-COPY --chown=dev:dev terraform-020-chillbox/alpine-box-init.sh.tftpl .
+COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
 #COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
 COPY --chown=dev:dev terraform-020-chillbox/bin/doterra.sh ./bin/doterra.sh
 COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
