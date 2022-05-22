@@ -189,6 +189,11 @@ else
   < "$tmp_file_list" xargs jq --null-input --args '$ARGS.positional' > "$working_dir/$sites_manifest_json"
   rm -f "$tmp_file_list"
 
+  # Need to repackage the sites artifact since the version fields have been
+  # updated.
+  rm -f "$working_dir/dist/$SITES_ARTIFACT"
+  tar c -z -f "$working_dir/dist/$SITES_ARTIFACT" -C "$tmp_sites_dir" sites
+
 fi
 
 # Output the json

@@ -34,11 +34,22 @@ chillbox_hostname="${tf_chillbox_hostname}"
 
 apk update
 
-# Only need aws s3 to get the chillbox artifact. Will use the
-# bin/install-aws-cli.sh to install latest aws version.
-apk add \
-  -q --no-progress \
-  aws-cli
+
+# UPKEEP due: "2022-07-12" label: "Update aws-cli-install gist" interval: "+3 months"
+# https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
+# Need to use aws-cli version 2 and not version 1 that is currently available
+# with apk.
+apk add -q --no-progress zip
+tmp_aws_cli_install_zip="$(mktemp)"
+tmp_aws_install_dir="$(mktemp -d)"
+wget -O "$tmp_aws_cli_install_zip" \
+  https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/6fc68ea9f4cbbb815141feccf6266ca91f6f5e9f.zip
+cd "$tmp_aws_install_dir"
+unzip -j "$tmp_aws_cli_install_zip"
+chmod +x install-aws-cli.sh
+./install-aws-cli.sh
+cd -
+rm -rf "$tmp_aws_install_dir"
 
 tmp_cred_csv=$(mktemp)
 cat <<HERE > "$tmp_cred_csv"
