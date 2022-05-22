@@ -95,9 +95,9 @@
       ]
     },
     {
-      "name": "chilldynamic",
+      "name": "chillllama",
       "lang": "chill",
-      "handler": "chill",
+      "handler": "llama",
       "environment": [
         {
           "name": "freeze",

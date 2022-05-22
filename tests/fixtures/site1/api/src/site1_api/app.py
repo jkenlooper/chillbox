@@ -1,6 +1,8 @@
 import os
 
 from flask import Flask
+import click
+from flask.cli import with_appcontext
 
 
 def create_app(test_config=None):
@@ -12,17 +14,20 @@ def create_app(test_config=None):
         SERVER_NAME="site1.test"
     )
 
+    has_secrets_config_file = os.environ.get("SECRETS_CONFIG") and os.path.exists(os.environ.get("SECRETS_CONFIG"))
+
     if test_config is None:
         # Override the defaults with the instance config when not testing
         app.config.from_pyfile('config.py', silent=False)
 
-        # Follow OpenFaaS philosophy and don't set secrets in environment
-        # variables. Read secrets from the file system.
-        # The SECRETS_CONFIG is usually
-        # /var/lib/site1/secrets/api.cfg
-        app.config.from_envvar('SECRETS_CONFIG', silent=False)
-        if not app.config.get('SALT'):
-            raise ValueError(f"No SALT set in {os.environ.get('SECRETS_CONFIG')}.")
+        if has_secrets_config_file:
+            # Follow OpenFaaS philosophy and don't set secrets in environment
+            # variables. Read secrets from the file system.
+            # The SECRETS_CONFIG is usually
+            # /var/lib/site1/secrets/api.cfg
+            app.config.from_envvar('SECRETS_CONFIG', silent=False)
+            if not app.config.get('SALT'):
+                raise ValueError(f"No SALT set in {os.environ.get('SECRETS_CONFIG')}.")
 
     else:
         # load the test config if passed in
@@ -40,5 +45,13 @@ def create_app(test_config=None):
     def healthcheck():
         return 'Okay'
 
+    app.cli.add_command(init_db_command)
+
     app.logger.debug("Create app done")
     return app
+
+
+@click.command('init-db')
+@with_appcontext
+def init_db_command():
+    click.echo('fake init-db command')

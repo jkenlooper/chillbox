@@ -83,7 +83,8 @@ if [ "${service_lang_template}" = "flask" ]; then
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
   S3_ENDPOINT_URL="$S3_ARTIFACT_ENDPOINT_URL" \
   SECRETS_CONFIG="${service_secrets_config}" \
-    ./.venv/bin/flask init-db
+    ./.venv/bin/flask init-db \
+    || echo "ERROR $0: Failed to run './.venv/bin/flask init-db' for ${slugname} ${service_handler}."
 
   chown -R "$slugname":"$slugname" "/var/lib/${slugname}/"
 

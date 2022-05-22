@@ -152,7 +152,7 @@ for site_json in $sites; do
   chown -R nginx "/var/log/nginx/$slugname/"
   # Install nginx templates that start with slugname
   mkdir -p /etc/chillbox/templates/
-  mv "$slugdir/nginx/templates/$slugname*.nginx.conf.template" /etc/chillbox/templates/
+  find "$slugdir/nginx/templates/" -name "$slugname*.nginx.conf.template" -exec mv {} /etc/chillbox/templates/ \;
   rm -rf "$slugdir/nginx"
   # Set version
   mkdir -p "/srv/chillbox/$slugname"

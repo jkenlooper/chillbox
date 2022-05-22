@@ -211,7 +211,7 @@ main() {
   export service_obj="$(jq -c '.services[2]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
   export service_handler=chill
-  export service_name=chilldynamic
+  export service_name=chillllama
 
   # Act
   run main "${service_obj}" "${tmp_artifact}"

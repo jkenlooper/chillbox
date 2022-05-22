@@ -105,8 +105,8 @@ apk add mandoc man-pages
 apk add vim
 
 
-addgroup dev
-adduser -G dev -D dev
+addgroup dev || printf "ignore addgroup dev error"
+adduser -G dev -D dev || printf "ignore adduser dev error"
 # TODO: Set password as expired to force user to reset when logging in
 
 # A box that has been provisioned via the cloud provider should already have
@@ -255,7 +255,7 @@ tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/default.nginx.co
 chown dev /etc/chillbox/env_names
 
 ## acme.sh certs
-/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER"
+/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER" || echo "ERROR: Failed to run issue-and-install-letsencrypt-certs.sh"
 
 nginx -t
 rc-update add nginx default

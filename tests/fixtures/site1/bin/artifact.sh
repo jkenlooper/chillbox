@@ -17,6 +17,10 @@ cd $projectdir/chill
 mkdir -p $TMPDIR/$slugname/chill
 cp -R documents queries templates chill-data.yaml site.cfg VERSION $TMPDIR/$slugname/chill/
 
+cd $projectdir/llama
+mkdir -p $TMPDIR/$slugname/llama
+cp -R documents queries templates chill-data.yaml site.cfg VERSION $TMPDIR/$slugname/llama/
+
 cd $projectdir/api
 mkdir -p $TMPDIR/$slugname/api
 cp -R pyproject.toml README.md MANIFEST.in requirements.txt setup.cfg setup.py src $TMPDIR/$slugname/api/
