@@ -27,6 +27,14 @@ backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${project_dir}/terrafo
 mkdir -p "$backup_terraform_state_dir/$WORKSPACE"
 
 state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${infra_container}.json"
+
+if [ -e "$state_infra_json.bak" ]; then
+  printf '\n%s\n' "Remove old $state_infra_json.bak file first? [y/n]"
+  read -r confirm
+  if [ "$confirm" = "y" ]; then
+    rm -f "$state_infra_json.bak"
+  fi
+fi
 printf '\n%s\n' "Executing 'terraform state pull' on ${infra_container}"
 test \! -e "$state_infra_json" || mv --backup=numbered "$state_infra_json" "$state_infra_json.bak"
 docker run \
@@ -42,6 +50,13 @@ printf '\n%s\n' "Created $state_infra_json"
 
 
 state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${terraform_chillbox_container}.json"
+if [ -e "$state_chillbox_json.bak" ]; then
+  printf '\n%s\n' "Remove old $state_chillbox_json.bak file first? [y/n]"
+  read -r confirm
+  if [ "$confirm" = "y" ]; then
+    rm -f "$state_chillbox_json.bak"
+  fi
+fi
 printf '\n%s\n' "Executing 'terraform state pull' on ${terraform_chillbox_container}"
 test \! -e "$state_chillbox_json" || mv --backup=numbered "$state_chillbox_json" "$state_chillbox_json.bak"
 docker run \
@@ -53,3 +68,9 @@ docker run \
   --mount "type=volume,src=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
   "$terraform_chillbox_image" state pull > "$state_chillbox_json"
 printf '\n%s\n' "Created $state_chillbox_json"
+
+printf '\n*********\n%s\n*********\n' "
+WARNING:
+The pulled json files contain sensitive data like the access secret key!
+It is recommended to encrypt these files and/or store them somewhere secure.
+"

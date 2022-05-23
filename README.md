@@ -49,14 +49,15 @@ TODO Add chillbox overview graphic
 
 Dependencies:
 
-  * docker
-  * jq
-  * make
-  * tar
+* docker
+* jq
+* make
+* tar
+* A DigitalOcean account
 
-      ```bash
-      ./terra.sh
-      ```
+```bash
+./terra.sh
+```
 
 ## Manual Deployment on Alpine Linux Server
 

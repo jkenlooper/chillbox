@@ -71,6 +71,7 @@ immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
 
+if [ "$terraform_command" != "destroy" ]; then
 jq \
   --arg jq_immutable_bucket_name "$immutable_bucket_name" \
   --arg jq_artifact_bucket_name "$artifact_bucket_name" \
@@ -86,6 +87,7 @@ jq \
     artifact_bucket_name: $jq_artifact_bucket_name,
     endpoint_url: $jq_endpoint_url,
   }' | ./upload-artifacts.sh || (echo "ERROR $0: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
+fi
 
 
 terraform \
