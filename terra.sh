@@ -56,6 +56,8 @@ echo "INFO $0: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSU
 SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
 test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $0: SITES_ARTIFACT_URL variable is empty" && exit 1)
 echo "INFO $0: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
+
+# Allow for quickly testing things by using an example site to deploy.
 if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   echo "WARNING $0: Using the example sites artifact."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
@@ -84,9 +86,8 @@ if [ "$(basename "$SITES_ARTIFACT_URL" ".tar.gz")" = "$(basename "$SITES_ARTIFAC
   exit 1
 fi
 
+# The artifacts are built locally by executing the local-bin/build-artifacts.sh.
 echo "INFO $0: Build the artifacts"
-# Build the artifacts
-cd "${project_dir}"
 SITES_ARTIFACT=""
 CHILLBOX_ARTIFACT=""
 SITES_MANIFEST=""
@@ -113,14 +114,14 @@ docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$infra_image" \
   -f "${project_dir}/terraform-010-infra.Dockerfile" \
-  .
+  "${project_dir}"
 
 cleanup_run_tmp_secrets() {
   docker stop "${infra_container}" 2> /dev/null || printf ""
   docker rm "${infra_container}" 2> /dev/null || printf ""
   docker stop "${terraform_chillbox_container}" 2> /dev/null || printf ""
   docker rm "${terraform_chillbox_container}" 2> /dev/null || printf ""
-  docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
+  #docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
 }
 trap cleanup_run_tmp_secrets EXIT
 
@@ -128,7 +129,7 @@ docker run \
   -i --tty \
   --name "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
@@ -149,7 +150,7 @@ docker run \
   --name "${infra_container}" \
   --hostname "${infra_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
@@ -177,10 +178,11 @@ docker build \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "${terraform_chillbox_image}" \
   -f "${project_dir}/terraform-020-chillbox.Dockerfile" \
-  .
+  "${project_dir}"
 
 docker run \
   --name "${terraform_chillbox_container}" \
+  --user dev \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
@@ -200,7 +202,8 @@ docker run \
   --name "${terraform_chillbox_container}" \
   --hostname "${terraform_chillbox_container}" \
   -e WORKSPACE="${WORKSPACE}" \
-  --mount "type=volume,src=chillbox-terraform-run-tmp-secrets--${WORKSPACE},dst=/run/tmp/secrets" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+  --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE},dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,readonly=false" \

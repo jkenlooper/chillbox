@@ -61,6 +61,8 @@ if [ -f "$working_dir/dist/$SITES_ARTIFACT" ]; then
 
 else
 
+  # Support using a local sites artifact if the first character is a '/';
+  # otherwise it should be a downloadable URL.
   first_char_of_sites_artifact_url="$(printf '%.1s' "$sites_artifact_url")"
   is_downloadable="$(printf '%.4s' "$sites_artifact_url")"
   if [ "$first_char_of_sites_artifact_url" = "/" ]; then
@@ -78,7 +80,6 @@ else
     echo "ERROR $0: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
     exit 1
   fi
-
 
   tmp_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_sites_dir"' EXIT
@@ -126,13 +127,11 @@ else
     mkdir -p "$tmp_dir_for_version/$slugname"
     tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir_for_version/$slugname" --strip-components=1
     chmod --recursive u+rw "$tmp_dir_for_version"
-    #cd "$tmp_dir_for_version/$slugname"
     echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$LOG_FILE"
+    # Fails if no version can be determined for the site.
     version="$(make --silent -C "$tmp_dir_for_version/$slugname" inspect.VERSION || jq -r -e '.version' "$site_json")"
     echo "$slugname version: $version" >> "$LOG_FILE"
-    #cd "$tmp_sites_dir"
     rm -rf "$tmp_dir_for_version"
-
     cp "$site_json" "$site_json.original"
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
     rm "$site_json.original"

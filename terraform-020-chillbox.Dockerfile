@@ -100,7 +100,7 @@ COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
 COPY --chown=dev:dev terraform-020-chillbox/main.tf .
 COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
 #COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
-COPY --chown=dev:dev terraform-020-chillbox/bin/doterra.sh ./bin/doterra.sh
+COPY --chown=dev:dev terraform-020-chillbox/bin ./bin
 COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
@@ -109,5 +109,3 @@ su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
-
-USER dev

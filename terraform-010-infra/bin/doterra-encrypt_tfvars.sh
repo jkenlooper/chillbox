@@ -12,10 +12,11 @@ test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 gpg_key_name="$1"
 test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && exit 1)
 
-test -d "/run/tmp/secrets" || (echo "ERROR $0: The path '/run/tmp/secrets' is not a directory" && exit 1)
-secure_tmp_secrets_dir=/run/tmp/secrets/doterra
-mkdir -p "${secure_tmp_secrets_dir}"
-chmod -R 0700 "${secure_tmp_secrets_dir}"
+# Sanity check that these were set.
+test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
+test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variable is empty." && exit 1)
+ls -al "$secure_tmp_secrets_dir"
+test -d "$secure_tmp_secrets_dir" || (echo "ERROR $0: The path '$secure_tmp_secrets_dir' is not a directory" && exit 1)
 
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 

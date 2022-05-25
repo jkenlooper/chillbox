@@ -49,7 +49,7 @@ TODO Add chillbox overview graphic
 
 Dependencies:
 
-* docker
+* docker container runtime that support tmpfs (Linux only)
 * jq
 * make
 * tar
