@@ -70,7 +70,8 @@ immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
 
-if [ "$terraform_command" != "destroy" ]; then
+skip_upload="y"
+if [ "$terraform_command" != "destroy" ] && [ "$skip_upload" != "y" ]; then
   jq \
     --arg jq_immutable_bucket_name "$immutable_bucket_name" \
     --arg jq_artifact_bucket_name "$artifact_bucket_name" \

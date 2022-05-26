@@ -2,11 +2,8 @@
 
 set -o errexit
 
-terraform_command=$1
-if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
-  echo "This command is not supported when using $0 script."
-  exit 1
-fi
+output_file="$1"
+test -n "$output_file" || (echo "ERROR $0: output file path is blank." && exit 1)
 
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"
@@ -23,20 +20,17 @@ mkdir -p "$data_volume_terraform_010_infra"
 chown -R dev:dev "$data_volume_terraform_010_infra"
 chmod -R 0700 "$data_volume_terraform_010_infra"
 
-decrypted_tfstate="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
+output_file_name="$(basename "$output_file")"
+tmp_output_file="/run/tmp/secrets/chillbox-terraform-state-tmp-output/$output_file_name"
+mkdir -p "$(dirname "$tmp_output_file")"
+chown -R dev:dev "$(dirname "$tmp_output_file")"
+chmod -R 0700 "$(dirname "$tmp_output_file")"
 
-push_pull_tfstate() {
-  chown dev "$(tty)"
-  su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-    WORKSPACE=$WORKSPACE \
-    _doterra_state_pull_as_dev_user.sh '$decrypted_tfstate'"
-  chown root "$(tty)"
-}
-push_pull_tfstate
-trap push_pull_tfstate EXIT
 
 chown dev "$(tty)"
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
-  _doterra_as_dev_user.sh '$terraform_command'"
+  _doterra_state_pull_as_dev_user.sh '$tmp_output_file'"
 chown root "$(tty)"
+
+cp "$tmp_output_file" "$output_file"

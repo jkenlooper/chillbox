@@ -14,9 +14,20 @@ mkdir -p "$secure_tmp_secrets_dir"
 chown -R dev:dev "$(dirname "$secure_tmp_secrets_dir")"
 chmod -R 0700 "$(dirname "$secure_tmp_secrets_dir")"
 
-mkdir -p "/home/dev/.aws"
-chown -R dev:dev "$(dirname "/home/dev/.aws")"
-chmod -R 0700 "$(dirname "/home/dev/.aws")"
+secure_tmp_home_aws_dir=/home/dev/.aws
+mkdir -p "$secure_tmp_home_aws_dir"
+chown -R dev:dev "$secure_tmp_home_aws_dir"
+chmod -R 0700 "$secure_tmp_home_aws_dir"
+
+secure_tmp_tfstate_dir=/usr/local/src/chillbox-terraform/terraform.tfstate.d
+mkdir -p "$secure_tmp_tfstate_dir"
+chown -R dev:dev "$secure_tmp_tfstate_dir"
+chmod -R 0700 "$secure_tmp_tfstate_dir"
+
+data_volume_terraform_020_chillbox=/var/lib/terraform-020-chillbox
+mkdir -p "$data_volume_terraform_020_chillbox"
+chown -R dev:dev "$data_volume_terraform_020_chillbox"
+chmod -R 0700 "$data_volume_terraform_020_chillbox"
 
 chown dev "$(tty)"
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \

@@ -36,7 +36,7 @@ resource "digitalocean_droplet" "chillbox" {
 
 resource "local_sensitive_file" "alpine_box_init" {
   count      = 1
-  filename        = "/var/lib/terraform-020-chillbox/${lower(var.environment)}/user_data_chillbox.sh"
+  filename        = "/run/tmp/secrets/terraform-020-chillbox/${lower(var.environment)}/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
     tf_developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
