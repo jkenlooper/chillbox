@@ -8,7 +8,7 @@ tmp_output_file=$1
 test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 
 gpg_key_name="chillbox_doterra__${WORKSPACE}"
-encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
+encrypted_tfstate="/var/lib/terraform-020-chillbox/$WORKSPACE-terraform.tfstate.json.asc"
 
 rm -f "$tmp_output_file"
 

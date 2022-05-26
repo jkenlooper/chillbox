@@ -26,8 +26,11 @@ terraform workspace select "$WORKSPACE" || \
 
 test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
+create_output_json() {
+  terraform output -json > /var/lib/terraform-010-infra/output.json
+}
+trap create_output_json EXIT
+
 terraform \
   "$terraform_command" \
   -var-file="${decrypted_credentials_tfvars_file}"
-
-terraform output -json > /var/lib/terraform-010-infra/output.json
