@@ -14,6 +14,17 @@ variable "do_spaces_secret_access_key" {
   sensitive   = true
 }
 
+variable "do_chillbox_spaces_access_key_id" {
+  type        = string
+  description = "DigitalOcean Spaces access key ID to use on the chillbox server. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+variable "do_chillbox_spaces_secret_access_key" {
+  type        = string
+  description = "DigitalOcean Spaces secret access key to use on the chillbox server. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+
 variable "chillbox_gpg_passphrase" {
   type        = string
   description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."

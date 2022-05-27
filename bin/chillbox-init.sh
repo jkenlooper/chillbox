@@ -255,7 +255,7 @@ tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/default.nginx.co
 chown dev /etc/chillbox/env_names
 
 ## acme.sh certs
-/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER" || echo "ERROR: Failed to run issue-and-install-letsencrypt-certs.sh"
+/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER" || echo "ERROR (ignored): Failed to run issue-and-install-letsencrypt-certs.sh"
 
 nginx -t
 rc-update add nginx default

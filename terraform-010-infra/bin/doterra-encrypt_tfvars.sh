@@ -41,22 +41,32 @@ trap cleanup EXIT
 
 echo "Enter DigitalOcean credentials to encrypt to the '${encrypted_credentials_tfvars_file}' file."
 echo "Characters entered are not shown."
-printf '\n%s\n' "DigitalOcean API Access Token:"
+printf '\n%s\n' "DigitalOcean API Access Token for Terraform to use:"
 stty -echo
 read -r do_token
 stty echo
 
-printf '\n%s\n' "DigitalOcean Spaces access key ID:"
+printf '\n%s\n' "DigitalOcean Spaces access key ID for Terraform to use:"
 stty -echo
 read -r do_spaces_access_key_id
 stty echo
 
-printf '\n%s\n' "DigitalOcean Spaces secret access key:"
+printf '\n%s\n' "DigitalOcean Spaces secret access key for Terraform to use:"
 stty -echo
 read -r do_spaces_secret_access_key
 stty echo
 
-printf '\n%s\n' "Passphrase for new gpg key on chillbox server:"
+printf '\n%s\n' "DigitalOcean Spaces access key ID for chillbox server to use:"
+stty -echo
+read -r do_chillbox_spaces_access_key_id
+stty echo
+
+printf '\n%s\n' "DigitalOcean Spaces secret access key for chillbox server to use:"
+stty -echo
+read -r do_chillbox_spaces_secret_access_key
+stty echo
+
+printf '\n%s\n' "Passphrase for new gpg key for chillbox server to use:"
 stty -echo
 read -r chillbox_gpg_passphrase
 stty echo
@@ -66,11 +76,15 @@ jq --null-input \
   --arg jq_do_token "$do_token" \
   --arg jq_do_spaces_access_key_id "$do_spaces_access_key_id" \
   --arg jq_do_spaces_secret_access_key "$do_spaces_secret_access_key" \
+  --arg jq_do_chillbox_spaces_access_key_id "$do_chillbox_spaces_access_key_id" \
+  --arg jq_do_chillbox_spaces_secret_access_key "$do_chillbox_spaces_secret_access_key" \
   --arg jq_chillbox_gpg_passphrase "$chillbox_gpg_passphrase" \
   '{
   do_token: $jq_do_token,
   do_spaces_access_key_id: $jq_do_spaces_access_key_id,
   do_spaces_secret_access_key: $jq_do_spaces_secret_access_key,
+  do_chillbox_spaces_access_key_id: $jq_do_chillbox_spaces_access_key_id,
+  do_chillbox_spaces_secret_access_key: $jq_do_chillbox_spaces_secret_access_key,
   chillbox_gpg_passphrase: $jq_chillbox_gpg_passphrase,
   }' > "${secure_tmp_secrets_dir}/credentials.tfvars.json"
 

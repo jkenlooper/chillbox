@@ -31,13 +31,10 @@ environment has already been destroyed or the terraform state files have already
 been pulled. The pull-terraform-tfstate.sh script can be used to accomplish this.
 "
 volume_list="$(docker volume list \
-  --filter "name=chillbox-${infra_container}-tfstate--${WORKSPACE}" \
   --filter "name=chillbox-${infra_container}-var-lib--${WORKSPACE}" \
-  --filter "name=chillbox-${terraform_chillbox_container}-tfstate--${WORKSPACE}" \
   --filter "name=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-dotgnupg--${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-terraformdotd--${WORKSPACE}" \
-  --filter "name=chillbox-terraform-run-tmp-secrets--${WORKSPACE}" \
   --filter "name=chillbox-terraform-var-lib--${WORKSPACE}" \
   --quiet)"
   test -n "$volume_list" || (printf '\n%s\n' "No docker volumes found to delete in workspace '$WORKSPACE'." && exit 1)

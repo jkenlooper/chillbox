@@ -5,12 +5,23 @@ variable "do_token" {
 }
 variable "do_spaces_access_key_id" {
   type        = string
-  description = "DigitalOcean Spaces access key ID. Keep this secure and use best practices when using these."
+  description = "DigitalOcean Spaces access key ID for Terraform to use. Keep this secure and use best practices when using these."
   sensitive   = true
 }
 variable "do_spaces_secret_access_key" {
   type        = string
-  description = "DigitalOcean Spaces secret access key. Keep this secure and use best practices when using these."
+  description = "DigitalOcean Spaces secret access key for Terraform to use. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+
+variable "do_chillbox_spaces_access_key_id" {
+  type        = string
+  description = "DigitalOcean Spaces access key ID to use on the chillbox server. Keep this secure and use best practices when using these."
+  sensitive   = true
+}
+variable "do_chillbox_spaces_secret_access_key" {
+  type        = string
+  description = "DigitalOcean Spaces secret access key to use on the chillbox server. Keep this secure and use best practices when using these."
   sensitive   = true
 }
 

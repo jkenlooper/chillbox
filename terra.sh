@@ -121,6 +121,10 @@ cleanup_run_tmp_secrets() {
   docker rm "${infra_container}" 2> /dev/null || printf ""
   docker stop "${terraform_chillbox_container}" 2> /dev/null || printf ""
   docker rm "${terraform_chillbox_container}" 2> /dev/null || printf ""
+
+  # TODO support systems other then Linux that can't use a tmpfs mount. Will
+  # need to always run a volume rm command each time the container stops to
+  # simulate how tmpfs works on Linux.
   #docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
 }
 trap cleanup_run_tmp_secrets EXIT
@@ -136,11 +140,13 @@ docker run \
   --entrypoint="" \
   "$infra_image" doterra-init.sh
 docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
-# TODO No longer need to copy the gpg key from this container. The private key
-# to decrypt site secrets only lives on the chillbox server. The public key for
-# that is shared on the artifacts bucket.
+
+# TODO It may be useful to only allow secret files to be passed in if they were
+# encrypted with this public key first. This way the tfstate backup file stored
+# on the local machine could be encrypted first before it was sent back.
 #test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
 #docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
+
 docker rm "${infra_container}"
 
 docker run \
