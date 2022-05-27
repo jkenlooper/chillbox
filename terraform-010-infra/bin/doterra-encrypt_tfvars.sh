@@ -6,6 +6,9 @@
 
 set -o errexit
 
+WORKSPACE="${WORKSPACE:-}"
+secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
+
 # Sanity check for the terraform workspace being set.
 test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 

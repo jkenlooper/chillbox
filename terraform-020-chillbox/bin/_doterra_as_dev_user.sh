@@ -2,6 +2,10 @@
 
 set -o errexit
 
+WORKSPACE="${WORKSPACE:-}"
+secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
+skip_upload="${skip_upload:-n}"
+
 terraform_command=$1
 if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
   echo "This command is not supported when using $0 script."
@@ -29,7 +33,7 @@ echo "INFO $0: jq version: $(jq --version)"
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv="/run/tmp/secrets/tmp_cred.csv"
 jq -r '"User Name, Access Key ID, Secret Access Key
-chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' ${decrypted_credentials_tfvars_file} > "$tmp_cred_csv"
+chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' "${decrypted_credentials_tfvars_file}" > "$tmp_cred_csv"
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=chillbox_object_storage
 rm "$tmp_cred_csv"
@@ -70,7 +74,6 @@ immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
 
-skip_upload="y"
 if [ "$terraform_command" != "destroy" ] && [ "$skip_upload" != "y" ]; then
   jq \
     --arg jq_immutable_bucket_name "$immutable_bucket_name" \

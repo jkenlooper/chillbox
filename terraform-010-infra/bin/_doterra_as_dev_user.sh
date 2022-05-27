@@ -2,6 +2,9 @@
 
 set -o errexit
 
+WORKSPACE="${WORKSPACE:-}"
+secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
+
 terraform_command=$1
 if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
   echo "This command is not supported when using $0 script."
