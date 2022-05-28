@@ -39,6 +39,10 @@
       "value": "http://localhost:8084"
     },
     {
+     "name": "SITE1_IMMUTABLE__DESIGN_TOKENS",
+     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/design-tokens/"
+    },
+    {
      "name": "SITE1_IMMUTABLE__EXAMPLE",
      "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/"
     }
