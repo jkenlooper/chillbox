@@ -31,6 +31,8 @@ chmod -R 0700 "$data_volume_terraform_020_chillbox"
 
 decrypted_tfstate="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
 
+# TODO rm encrypted file first to avoid serial conflicts?
+
 push_pull_tfstate() {
   chown dev "$(tty)"
   su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \

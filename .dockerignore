@@ -8,6 +8,7 @@
 !/terraform-020-chillbox/chillbox.tf
 !/terraform-020-chillbox/variables.tf
 !/terraform-020-chillbox/main.tf
+!/terraform-020-chillbox/outputs.tf
 
 !/dist/*
 !/terraform-020-chillbox/extract-terraform-artifact-modules.sh

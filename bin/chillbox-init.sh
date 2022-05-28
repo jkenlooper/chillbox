@@ -6,6 +6,7 @@ developer_ssh_key_github_list="${DEVELOPER_SSH_KEY_GITHUB_LIST:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"
 chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
+dev_user_passphrase="${DEV_USER_PASSPHRASE:-}"
 tech_email="${TECH_EMAIL:-}"
 immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
 artifact_bucket_name="${ARTIFACT_BUCKET_NAME:-}"
@@ -46,6 +47,16 @@ if [ -z "$chillbox_gpg_passphrase" ]; then
   read -r chillbox_gpg_passphrase
   stty echo
   test -n "$chillbox_gpg_passphrase" || (echo "No chillbox gpg passphrase set. Exiting" && exit 1)
+fi
+
+if [ -z "$dev_user_passphrase" ]; then
+  printf '\n%s\n' "No DEV_USER_PASSPHRASE variable set."
+  printf '\n%s\n' "Enter the initial passphrase for the new 'dev' user. The dev user will be prompted to change it on the first login."
+  printf '\n%s\n' "Characters entered are hidden."
+  stty -echo
+  read -r dev_user_passphrase
+  stty echo
+  test -n "$dev_user_passphrase" || (echo "No initial dev user passphrase set. Exiting" && exit 1)
 fi
 
 if [ -z "$tech_email" ]; then
@@ -110,13 +121,25 @@ trap cleanup EXIT
 
 apk update
 apk add sed attr grep coreutils jq
+
+# Need to use passwd command from the shadow-utils so the password can be set to
+# expire.
+apk add shadow
+
 apk add gnupg gnupg-dirmngr
+
+# Add other tools that are helpful when troubleshooting.
 apk add mandoc man-pages docs
 apk add vim
 
 addgroup dev || printf "  ...ignoring addgroup dev error"
+# No password is assigned (-D) initially.
 adduser -G dev -D dev || printf "  ...ignoring adduser dev error"
-# TODO: Set password as expired to force user to reset when logging in
+# Assign a password via chpasswd since this is a non-interactive script.
+# By default, the chpasswd will encrypt the supplied password.
+printf '%s' "dev:$dev_user_passphrase" | chpasswd
+# Set password as expired to force user to reset when logging in
+passwd --expire dev
 
 # A box that has been provisioned via the cloud provider should already have
 # public keys added. This handles a locally provisioned box.

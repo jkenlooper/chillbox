@@ -1,3 +1,14 @@
+resource "random_string" "initial_dev_user_password" {
+  length      = 16
+  special     = false
+  lower       = true
+  upper       = true
+  number      = true
+  min_lower   = 3
+  min_upper   = 3
+  min_numeric = 3
+}
+
 resource "digitalocean_spaces_bucket_object" "alpine_custom_image" {
   region = var.bucket_region
   bucket = var.artifact_bucket_name
@@ -43,6 +54,7 @@ resource "local_sensitive_file" "alpine_box_init" {
     tf_access_key_id : var.do_chillbox_spaces_access_key_id,
     tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
     tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
+    tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
     tf_tech_email : var.tech_email,
     tf_immutable_bucket_name : var.immutable_bucket_name,
     tf_artifact_bucket_name : var.artifact_bucket_name,
