@@ -7,6 +7,14 @@ set -o errexit
 # Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 AWS_CLI_VERSION="2.5.4"
 
+# Prevent reinstalling aws-cli by checking the version.
+current_aws_version="$(command -v aws > /dev/null && aws --version | cut -f1 -d ' ' || printf "")"
+if [ "$current_aws_version" = "aws-cli/$AWS_CLI_VERSION" ]; then
+  # Output the version here in case other scripts depend on this output.
+  aws --version
+  exit
+fi
+
 apk add gnupg gnupg-dirmngr
 
 tmp_aws_cli_install_dir=$(mktemp -d)

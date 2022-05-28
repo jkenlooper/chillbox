@@ -97,16 +97,25 @@ if [ -z "$chillbox_hostname" ]; then
   test -n "$chillbox_hostname" || (echo "No chillbox hostname set. Exiting" && exit 1)
 fi
 
-## RUN_SETUP
+tmp_cred_csv=$(mktemp)
+tmp_chillbox_artifact=$(mktemp)
+
+cleanup() {
+  echo ""
+  rm -f "$tmp_chillbox_artifact"
+  # Double tap
+  shred -fu "$tmp_cred_csv" 2> /dev/null || rm -f "$tmp_cred_csv"
+}
+trap cleanup EXIT
+
 apk update
 apk add sed attr grep coreutils jq
 apk add gnupg gnupg-dirmngr
-apk add mandoc man-pages
+apk add mandoc man-pages docs
 apk add vim
 
-
-addgroup dev || printf "ignore addgroup dev error"
-adduser -G dev -D dev || printf "ignore adduser dev error"
+addgroup dev || printf "  ...ignoring addgroup dev error"
+adduser -G dev -D dev || printf "  ...ignoring adduser dev error"
 # TODO: Set password as expired to force user to reset when logging in
 
 # A box that has been provisioned via the cloud provider should already have
@@ -133,6 +142,7 @@ apk add doas
 cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
 permit persist dev as root
 DOAS_CONFIG
+doas -C /etc/doas.conf && echo "doas config ok"
 
 # Configure sshd to only allow users with authorized_keys to ssh in. The root
 # user is blocked from logging in. PAM needs to be added and enabled for it to
@@ -186,6 +196,7 @@ export TECH_EMAIL="${tech_email}"
 export LETS_ENCRYPT_SERVER="letsencrypt_test"
 ENVFILE
 chown dev:dev /home/dev/.env
+chmod 600 /home/dev/.env
 # shellcheck disable=SC1091
 . /home/dev/.env
 
@@ -200,17 +211,16 @@ if [ -z "$has_aws" ]; then
 fi
 
 # Set the AWS credentials so upload-artifacts.sh can use them.
-tmp_cred_csv=$(mktemp)
 cat <<HERE > "$tmp_cred_csv"
 User Name, Access Key ID, Secret Access Key
 chillbox_object_storage,${access_key_id},${secret_access_key}
 HERE
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=chillbox_object_storage
-shred -fu "$tmp_cred_csv"
+# Don't need this temporary file anymore after the import.
+shred -fu "$tmp_cred_csv" 2> /dev/null
 
 ## COPY_chillbox_artifact
-tmp_chillbox_artifact=$(mktemp)
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT" \
