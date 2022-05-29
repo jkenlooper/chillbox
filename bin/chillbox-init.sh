@@ -250,9 +250,11 @@ aws \
   "$tmp_chillbox_artifact"
 apk del aws-cli || printf '\n%s\n' "...Ignoring error with 'apk del aws-cli'"
 
-mkdir -p /etc/chillbox && cd /etc/chillbox
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/templates
+# nginx/templates/ -> /etc/chillbox/templates/
+mkdir -p /etc/chillbox
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox --strip-components 1 nginx/templates
 
+# bin/ -> /etc/chillbox/bin/
 mkdir -p /etc/chillbox/bin
 tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 bin
 
@@ -269,14 +271,14 @@ CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" /etc/chillbox/bin/generate-
 
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
-cd /usr/local/src/
 
-## COPY nginx conf and default
-cd /etc/nginx
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/nginx.conf
+# nginx/nginx.conf -> /etc/nginx/nginx.conf
+mkdir -p /etc/nginx
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx --strip-components 1 nginx/nginx.conf
 
-mkdir -p /etc/nginx/conf.d && cd /etc/nginx/conf.d
-tar x -z -f "$tmp_chillbox_artifact" --strip-components 1 nginx/default.nginx.conf
+# nginx/default.nginx.conf -> /etc/nginx/conf.d/default.nginx.conf
+mkdir -p /etc/nginx/conf.d
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 nginx/default.nginx.conf
 
 ## RUN NGINX_CONF
 /etc/chillbox/bin/init-nginx.sh

@@ -25,6 +25,14 @@ echo "INFO $0: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
 echo "INFO $0: Running site init"
 
 
+tmp_sites_artifact="$(mktemp)"
+
+cleanup() {
+  echo ""
+  rm -f "$tmp_sites_artifact"
+}
+trap cleanup EXIT
+
 # TODO: make a backup directory of previous sites and then compare new sites to
 # find any sites that should be deleted. This would only be applicable to server
 # version; not docker version.
@@ -37,7 +45,7 @@ if [ -z "${sites_artifact_file}" ]; then
 else
   test -f "${sites_artifact_file}" || (echo "ERROR $0: No file found at ${sites_artifact_file}" && exit 1)
   echo "INFO $0: Using sites artifact file $sites_artifact_file"
-  tmp_sites_artifact="$sites_artifact_file"
+  cp "$sites_artifact_file" "$tmp_sites_artifact"
 fi
 mkdir -p /etc/chillbox/sites/
 tar x -z -f "$tmp_sites_artifact" -C /etc/chillbox/sites --strip-components 1 sites
@@ -109,6 +117,7 @@ for site_json in $sites; do
         "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}"
 
       done
+  rm -f "$tmp_artifact"
 
   # TODO Show errors if any service failed to start and output which services
   # have not started. Each service should not be dependant on other services

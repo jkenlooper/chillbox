@@ -5,9 +5,9 @@ set -o errexit
 echo "INFO $0: Running init nginx"
 
 
-mkdir -p /srv/chillbox
+mkdir -p /srv/chillbox/
 chown -R nginx /srv/chillbox/
-mkdir -p /var/cache/nginx
+mkdir -p /var/cache/nginx/
 chown -R nginx /var/cache/nginx
 mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/chillbox/
