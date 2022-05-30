@@ -65,8 +65,7 @@ current_working_dir=/usr/local/src
 bin_dir="$(dirname "$0")"
 sites="$(find /etc/chillbox/sites -type f -name '*.site.json')"
 for site_json in $sites; do
-  slugname="${site_json%.site.json}"
-  slugname="${slugname#/etc/chillbox/sites/}"
+  slugname="$(basename "$site_json" .site.json)"
   export slugname
   server_name="$(jq -r '.server_name' "$site_json")"
   export server_name
@@ -114,7 +113,7 @@ for site_json in $sites; do
 
         cd "$current_working_dir"
 
-        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}"
+        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
 
       done
   rm -f "$tmp_artifact"

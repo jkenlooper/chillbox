@@ -23,8 +23,7 @@ find "$tmp_dir/sites" -type f -name '*.site.json' | \
   while read -r site_json; do
     echo "$site_json" >> "$LOG_FILE"
     jq '.' "$site_json" >> "$LOG_FILE"
-    slugname=${site_json%.site.json}
-    slugname="$(basename "${slugname}")"
+    slugname="$(basename "$site_json" .site.json)"
     version="$(jq -r '.version' "$site_json")"
     if [ -z "$(jq -r -c '.terraform // [] | .[] // {} | .module // ""' "${site_json}")" ]; then
       # No terraform module defined; skip.

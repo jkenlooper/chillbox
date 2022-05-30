@@ -9,8 +9,6 @@ set -o errexit
 # shellcheck disable=SC1091
 . /home/dev/.env
 
-aws configure set default.s3.max_concurrent_requests 1
-
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
 cd /usr/local/src/
@@ -20,3 +18,7 @@ cd /usr/local/src/
 /etc/chillbox/bin/site-init.sh
 
 # TODO RUN NGINX_CONF ?
+/etc/chillbox/bin/reload-templates.sh
+nginx -t
+# TODO reload nginx service?
+rc-service nginx reload

@@ -24,6 +24,8 @@ of website deployments.
 - Applications run on Alpine Linux and don't use systemd
 - No dependency on version control software for deployments
 - Shell scripts are POSIX compliant
+- Deployed services are stateless; any persistent storage is kept elsewhere (s3
+    object storage, database not on chillbox server)
 
 ## Non-goals
 

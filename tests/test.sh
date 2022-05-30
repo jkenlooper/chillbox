@@ -86,8 +86,7 @@ if [ "${CONFIRM}" = "y" ]; then
   sites=$(find sites -type f -name '*.site.json')
   for site_json in $sites; do
     echo ""
-    slugname=${site_json%.site.json}
-    slugname=${slugname#sites/}
+    slugname="$(basename "$site_json" .site.json)"
     server_name="$(jq -r '.server_name' "$site_json")"
     echo "$slugname"
     echo "http://chillbox.test:$app_port/$slugname/version.txt"

@@ -202,6 +202,7 @@ PIP_CHILL=""
 TECH_EMAIL=""
 LETS_ENCRYPT_SERVER=""
 cat <<ENVFILE > /home/dev/.env
+export AWS_PROFILE=chillbox_object_storage
 export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
 export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"

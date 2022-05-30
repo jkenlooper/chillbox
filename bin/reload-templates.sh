@@ -13,8 +13,7 @@ echo "INFO $0: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
 export server_port=$CHILLBOX_SERVER_PORT
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
-  slugname=${site_json%.site.json}
-  slugname=${slugname#/etc/chillbox/sites/}
+  slugname="$(basename "$site_json" .site.json)"
   export slugname
   server_name="$(jq -r '.server_name' "$site_json")"
   export server_name

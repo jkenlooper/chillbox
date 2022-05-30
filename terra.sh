@@ -4,6 +4,8 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 for required_command in \
   realpath \
   docker \
@@ -11,13 +13,13 @@ for required_command in \
   make \
   tar \
   ; do
-  command -v "$required_command" > /dev/null || (echo "ERROR $0: Requires '$required_command' command." && exit 1)
+  command -v "$required_command" > /dev/null || (echo "ERROR $script_name: Requires '$required_command' command." && exit 1)
 done
 
 has_wget="$(command -v wget || echo "")"
 has_curl="$(command -v curl || echo "")"
 if [ -z "$has_wget" ] && [ -z "$has_curl" ]; then
-  echo "WARNING $0: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
+  echo "WARNING $script_name: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
 fi
 
 project_dir="$(dirname "$(realpath "$0")")"
@@ -30,40 +32,40 @@ ENV_CONFIG=${1:-"$project_dir/.env"}
 test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
 
 WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  echo "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
+  echo "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
 
 test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
-  || echo "WARNING $0: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
+  || echo "WARNING $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
 test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
-  || echo "WARNING $0: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
+  || echo "WARNING $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
 terraform_infra_private_auto_tfvars_file="${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars}"
 terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars}"
 
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
 ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
-test -n "${ALPINE_CUSTOM_IMAGE}" || (echo "ERROR $0: ALPINE_CUSTOM_IMAGE variable is empty" && exit 1)
-echo "INFO $0: Using ALPINE_CUSTOM_IMAGE '${ALPINE_CUSTOM_IMAGE}'"
+test -n "${ALPINE_CUSTOM_IMAGE}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE variable is empty" && exit 1)
+echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE '${ALPINE_CUSTOM_IMAGE}'"
 ALPINE_CUSTOM_IMAGE_CHECKSUM=${ALPINE_CUSTOM_IMAGE_CHECKSUM:-"f8aa090e27509cc9e9cb57f6ad16d7b3"}
-test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $0: ALPINE_CUSTOM_IMAGE_CHECKSUM variable is empty" && exit 1)
-echo "INFO $0: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
+test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE_CHECKSUM variable is empty" && exit 1)
+echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
 
 
 SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
-test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $0: SITES_ARTIFACT_URL variable is empty" && exit 1)
-echo "INFO $0: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
+test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
+echo "INFO $script_name: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
 
 # Allow for quickly testing things by using an example site to deploy.
 if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
-  echo "WARNING $0: Using the example sites artifact."
+  echo "WARNING $script_name: Using the example sites artifact."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
   test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
-  echo "INFO $0: Continuing to use example sites artifact."
+  echo "INFO $script_name: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_example_sites_dir"' EXIT
   example_sites_version="$(cat VERSION)"
@@ -82,12 +84,12 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
 fi
 
 if [ "$(basename "$SITES_ARTIFACT_URL" ".tar.gz")" = "$(basename "$SITES_ARTIFACT_URL")" ]; then
-  echo "ERROR $0: The SITES_ARTIFACT_URL must end with a '.tar.gz' extension."
+  echo "ERROR $script_name: The SITES_ARTIFACT_URL must end with a '.tar.gz' extension."
   exit 1
 fi
 
 # The artifacts are built locally by executing the local-bin/build-artifacts.sh.
-echo "INFO $0: Build the artifacts"
+echo "INFO $script_name: Build the artifacts"
 SITES_ARTIFACT=""
 CHILLBOX_ARTIFACT=""
 SITES_MANIFEST=""
@@ -100,9 +102,9 @@ eval "$(jq \
     CHILLBOX_ARTIFACT=\(.chillbox_artifact)
     SITES_MANIFEST=\(.sites_manifest)
     "')"
-test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: The SITES_ARTIFACT variable is empty." && exit 1)
-test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $0: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
-test -n "${SITES_MANIFEST}" || (echo "ERROR $0: The SITES_MANIFEST variable is empty." && exit 1)
+test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
+test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $script_name: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
+test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 
 
 infra_image="chillbox-$(basename "${terraform_infra_dir}")"
@@ -125,7 +127,7 @@ cleanup_run_tmp_secrets() {
   # TODO support systems other then Linux that can't use a tmpfs mount. Will
   # need to always run a volume rm command each time the container stops to
   # simulate how tmpfs works on Linux.
-  #docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
+  #docker volume rm "chillbox-terraform-run-tmp-secrets--${WORKSPACE}" || echo "ERROR $script_name: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--${WORKSPACE}'. Does it exist?"
 }
 trap cleanup_run_tmp_secrets EXIT
 

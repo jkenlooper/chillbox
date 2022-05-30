@@ -141,14 +141,19 @@ PURR
 elif [ "${service_lang_template}" = "chill" ]; then
 
   # init chill
+  # No support for managing tables that are outside of chill for this service.
+  # That would be outside of the chillbox contract when using the chill service.
+  # Any data that the chill service relies on should be part of the
+  # chill-data.yaml that was included when the site artifact was created.
+  su -p -s /bin/sh "$slugname" -c 'chill dropdb'
   su -p -s /bin/sh "$slugname" -c 'chill initdb'
   su -p -s /bin/sh "$slugname" -c 'chill load --yaml chill-data.yaml'
 
   if [ "${freeze}" = "true" ]; then
-    echo 'freeze';
+    echo "INFO $0: freeze - $slugname $service_name $service_handler"
     su -p -s /bin/sh "$slugname" -c 'chill freeze'
   else
-    echo 'dynamic';
+    echo "INFO $0: dynamic - $slugname $service_name $service_handler"
 
     # Only for openrc
     mkdir -p /etc/init.d
@@ -184,14 +189,14 @@ PURR
     chmod +x "/etc/services.d/${slugname}-${service_name}/run"
     command -v rc-update > /dev/null \
       && rc-update add "${slugname}-${service_name}" default \
-      || echo "Skipping call to 'rc-update add ${slugname}-${service_name} default'"
+      || echo "INFO $0: Skipping call to 'rc-update add ${slugname}-${service_name} default'"
     command -v rc-service > /dev/null \
       && rc-service "${slugname}-${service_name}" start \
-      || echo "Skipping call to 'rc-service ${slugname}-${service_name} start'"
+      || echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start'"
 
   fi
 
 else
-  echo "ERROR: The service 'lang' template: '${service_lang_template}' is not supported!"
+  echo "ERROR $0: The service 'lang' template: '${service_lang_template}' is not supported!"
   exit 12
 fi

@@ -16,8 +16,7 @@ chown -R nginx:nginx /var/lib/acmesh
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 
 for site_json in $sites; do
-  slugname=${site_json%.site.json}
-  slugname=${slugname#/etc/chillbox/sites/}
+  slugname="$(basename "$site_json" .site.json)"
   export slugname
   domain_list="$(jq -r '.domain_list[]' "$site_json")"
   # Reset and add the --domain option for each to the $@ variable

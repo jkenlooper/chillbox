@@ -73,28 +73,27 @@ else
     elif [ -n "$has_curl" ]; then
       curl --location --output "$working_dir/dist/$SITES_ARTIFACT" --silent --show-error "$sites_artifact_url" >> "$LOG_FILE"
     else
-      echo "ERROR $0: No wget or curl commands found." >> "$LOG_FILE"
+      echo "ERROR $script_name: No wget or curl commands found." >> "$LOG_FILE"
       exit 1
     fi
   else
-    echo "ERROR $0: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
+    echo "ERROR $script_name: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
     exit 1
   fi
 
   tmp_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_sites_dir"' EXIT
-  cd "$tmp_sites_dir"
-  tar x -f "$working_dir/dist/$SITES_ARTIFACT" sites
+  #cd "$tmp_sites_dir"
+  tar x -f "$working_dir/dist/$SITES_ARTIFACT" -C "$tmp_sites_dir" sites
   chmod --recursive u+rw "$tmp_sites_dir"
 
-  sites="$(find sites -type f -name '*.site.json')"
+  sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 
   echo "$sites" >> "$LOG_FILE"
 
   for site_json in $sites; do
     cd "$tmp_sites_dir"
-    slugname="${site_json%.site.json}"
-    slugname="${slugname#sites/}"
+    slugname="$(basename "$site_json" .site.json)"
     echo "$slugname" >> "$LOG_FILE"
 
     # TODO Validate the site_json file https://github.com/marksparkza/jschon
@@ -112,11 +111,11 @@ else
       elif [ -n "$has_curl" ]; then
         curl --location --output "$tmp_sites_dir/$release_filename" --silent --show-error "$release" >> "$LOG_FILE"
       else
-        echo "ERROR $0: No wget or curl commands found." >> "$LOG_FILE"
+        echo "ERROR $script_name: No wget or curl commands found." >> "$LOG_FILE"
         exit 1
       fi
     else
-      echo "ERROR $0: not supported release url: '$release'" >> "$LOG_FILE"
+      echo "ERROR $script_name: not supported release url: '$release'" >> "$LOG_FILE"
       exit 1
     fi
 
@@ -178,14 +177,13 @@ else
   sites=$(find sites -type f -name '*.site.json')
   for site_json in $sites; do
     cd "$tmp_sites_dir"
-    slugname=${site_json%.site.json}
-    slugname=${slugname#sites/}
+    slugname="$(basename "$site_json" .site.json)"
     version="$(jq -r '.version' "$site_json")"
     echo "$slugname/$slugname-$version.immutable.tar.gz" >> "$tmp_file_list"
     echo "$slugname/$slugname-$version.artifact.tar.gz" >> "$tmp_file_list"
   done
   # shellcheck disable=SC2016
-  < "$tmp_file_list" xargs jq --null-input --args '$ARGS.positional' > "$working_dir/$sites_manifest_json"
+  < "$tmp_file_list" xargs jq --null-input --args '$ARGS.positional' > "$working_dir/dist/$sites_manifest_json"
   rm -f "$tmp_file_list"
 
   # Need to repackage the sites artifact since the version fields have been
