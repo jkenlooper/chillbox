@@ -35,7 +35,7 @@ chillbox_artifact_version="$(cat VERSION)"
 CHILLBOX_ARTIFACT="chillbox.$chillbox_artifact_version.tar.gz"
 echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 
-sites_manifest_json="dist/sites.manifest.json"
+sites_manifest_json="sites.manifest.json"
 
 SITES_ARTIFACT="$(basename "${sites_artifact_url}")"
 echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
@@ -60,6 +60,9 @@ if [ -f "$working_dir/dist/$SITES_ARTIFACT" ]; then
   echo "Sites artifact file already exists: dist/$SITES_ARTIFACT" >> "$LOG_FILE"
 
 else
+  # Reset the verified sites marker file since the sites artifact file doesn't
+  # exist.
+  rm -f "$working_dir/dist/.verified_sites_artifact"
 
   # Support using a local sites artifact if the first character is a '/';
   # otherwise it should be a downloadable URL.
@@ -95,8 +98,6 @@ else
     cd "$tmp_sites_dir"
     slugname="$(basename "$site_json" .site.json)"
     echo "$slugname" >> "$LOG_FILE"
-
-    # TODO Validate the site_json file https://github.com/marksparkza/jschon
 
     release="$(jq -r '.release' "$site_json")"
 
@@ -198,7 +199,7 @@ jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
   --arg jq_sites_manifest "$sites_manifest_json" \
-  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$working_dir/$sites_manifest_json")" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$working_dir/dist/$sites_manifest_json")" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$chillbox_artifact,

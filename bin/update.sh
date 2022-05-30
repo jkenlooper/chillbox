@@ -1,9 +1,5 @@
 #!/usr/bin/env sh
 
-# TODO Add an endpoint to chillbox nginx that will trigger the update.sh script.
-# Create a webhook on the site.json repo that triggers the chillbox endpoint to
-# do the update.
-
 set -o errexit
 
 # shellcheck disable=SC1091

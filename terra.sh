@@ -106,6 +106,9 @@ test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT var
 test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $script_name: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 
+# TODO Verify that the artifacts that were built have met the service contracts
+# before continuing?
+SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
 
 infra_image="chillbox-$(basename "${terraform_infra_dir}")"
 infra_container="chillbox-$(basename "${terraform_infra_dir}")"

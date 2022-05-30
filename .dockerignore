@@ -11,6 +11,7 @@
 !/terraform-020-chillbox/outputs.tf
 
 !/dist/*
+!/site.schema.json
 !/terraform-020-chillbox/extract-terraform-artifact-modules.sh
 !/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
