@@ -16,8 +16,12 @@ test -e "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at 
 SITES_MANIFEST="${SITES_MANIFEST:-}"
 sites_manifest_file="$working_dir/dist/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
+test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
-test -e "$verified_sites_artifact_file" || (echo "INFO $script_name: Site has already been verified; skipping." && exit 0)
+if [ -e "$verified_sites_artifact_file" ]; then
+  echo "INFO $script_name: Site has already been verified; skipping."
+  exit 0
+fi
 
 docker rm "$verify_sites_container" || printf ""
 docker image rm "$verify_sites_image" || printf ""
@@ -36,5 +40,7 @@ docker run \
   --mount "type=bind,src=$working_dir/dist,dst=/var/lib/verify-sites/dist" \
   "$verify_sites_image"
 
+echo "INFO $script_name: Sites artifact ($SITES_ARTIFACT) is valid."
+echo "INFO $script_name: Sites manifest ($SITES_MANIFEST) is valid."
 # Create this verified sites artifact file to show that it passed.
 touch "$verified_sites_artifact_file"

@@ -196,7 +196,7 @@ main() {
   assert_success
 
   test "$(mock_get_call_num "${mock_python}")" -eq 0
-  test "$(mock_get_call_num "${mock_chill}")" -eq 3
+  test "$(mock_get_call_num "${mock_chill}")" -eq 4
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json
@@ -220,7 +220,7 @@ main() {
   assert_success
 
   test "$(mock_get_call_num "${mock_python}")" -eq 0
-  test "$(mock_get_call_num "${mock_chill}")" -eq 2
+  test "$(mock_get_call_num "${mock_chill}")" -eq 3
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json

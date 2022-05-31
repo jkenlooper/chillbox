@@ -5,7 +5,8 @@
 # docker image ls --digests alpine
 FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5acce2c4f9454
 
-COPY verify-sites/requirements.txt /usr/local/src/verify-sites/requirements.txt
+WORKDIR /usr/local/src/verify-sites
+COPY verify-sites/requirements.txt ./
 RUN <<DEPENDENCIES
 apk update
 apk add sed attr grep coreutils jq
@@ -17,7 +18,6 @@ apk add mandoc man-pages docs
 apk add vim
 
 # TODO install
-#https://github.com/marksparkza/jschon
 mkdir -p /usr/local/src/verify-sites
 cd /usr/local/src/verify-sites
 python3 -m venv .
@@ -26,12 +26,14 @@ python3 -m venv .
 
 DEPENDENCIES
 
-WORKDIR /usr/local/src/verify-sites
 
+# The site.schema.json is at the top level of the project so it's easier to
+# refer to.
 COPY site.schema.json ./
-COPY bin/verify-sites-artifact.sh ./bin/verify-sites-artifact.sh
+COPY verify-sites/check-json.py ./
+COPY verify-sites/verify-sites-artifact.sh ./
 
 ENV SITES_ARTIFACT=""
 ENV SITES_MANIFEST=""
 
-CMD ["/usr/local/src/verify-sites/bin/verify-sites-artifact.sh"]
+CMD ["/usr/local/src/verify-sites/verify-sites-artifact.sh"]

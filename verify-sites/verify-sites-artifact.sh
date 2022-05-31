@@ -2,7 +2,6 @@
 
 set -o errexit
 
-working_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 
 SITES_ARTIFACT="${SITES_ARTIFACT:-}"
@@ -32,9 +31,9 @@ chmod --recursive u+rw "$tmp_sites_dir"
 sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 
 for site_json in $sites; do
-  # TODO Validate the site_json file https://github.com/marksparkza/jschon
-  # run the python script and pass it the schema file
+  site_json_file="$(basename "$site_json")"
+  /usr/local/src/verify-sites/bin/python /usr/local/src/verify-sites/check-json.py "$site_json" \
+      || (echo "ERROR $script_name: Failed site schema for $site_json_file" && exit 1)
 
-  echo "TODO check $site_json"
   # TODO Extract each file listed in the sites manifest and verify
 done

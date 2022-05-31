@@ -11,7 +11,6 @@
 !/terraform-020-chillbox/outputs.tf
 
 !/dist/*
-!/site.schema.json
 !/terraform-020-chillbox/extract-terraform-artifact-modules.sh
 !/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
@@ -26,3 +25,6 @@
 # https://www.terraform.io/language/files/dependency-lock
 !/terraform-010-infra/.terraform.lock.hcl
 !/terraform-020-chillbox/.terraform.lock.hcl
+
+!/site.schema.json
+!/verify-sites/*
