@@ -137,7 +137,6 @@ trap cleanup_run_tmp_secrets EXIT
 docker run \
   -i --tty \
   --name "${infra_container}" \
-  -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
@@ -154,12 +153,12 @@ docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.
 
 docker rm "${infra_container}"
 
+# TODO change the command to be 'doterra.sh $terraform_command' instead of 'sh'
 docker run \
   -i --tty \
   --rm \
   --name "${infra_container}" \
   --hostname "${infra_container}" \
-  -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
@@ -209,7 +208,6 @@ docker run \
   --rm \
   --name "${terraform_chillbox_container}" \
   --hostname "${terraform_chillbox_container}" \
-  -e WORKSPACE="${WORKSPACE}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \

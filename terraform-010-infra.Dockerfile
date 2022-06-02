@@ -23,6 +23,7 @@ WORKDIR /usr/local/src/chillbox-terraform
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
+ENV gpg_key_name="chillbox_doterra__${WORKSPACE}"
 
 RUN <<SETUP
 addgroup dev
@@ -51,4 +52,5 @@ su dev -c "terraform init"
 su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
 
-COPY terraform-010-infra/bin bin
+COPY terraform-bin bin
+COPY terraform-010-infra/bin/ bin/

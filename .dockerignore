@@ -17,6 +17,7 @@
 !/terraform-020-chillbox/user_data_chillbox.sh.tftpl
 
 !/bin/*
+!/terraform-bin/*
 !/terraform-010-infra/bin/*
 !/terraform-020-chillbox/bin/*
 !/terraform-020-chillbox/upload-artifacts.sh

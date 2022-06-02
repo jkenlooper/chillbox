@@ -8,14 +8,10 @@ set -o errexit
 
 WORKSPACE="${WORKSPACE:-}"
 secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
-
-# Sanity check for the terraform workspace being set.
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-
-gpg_key_name="$1"
-test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && exit 1)
+gpg_key_name="${gpg_key_name:-}"
 
 # Sanity check that these were set.
+test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && exit 1)
 test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variable is empty." && exit 1)
 ls -al "$secure_tmp_secrets_dir"

@@ -27,6 +27,36 @@ chown -R dev:dev "$(dirname "$tmp_output_file")"
 chmod -R 0700 "$(dirname "$tmp_output_file")"
 
 
+encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
+if [ ! -e "$encrypted_tfstate" ]; then
+  echo "INFO $0: No encrypted tfstate file exists to pull."
+  exit 0
+fi
+
+# Need to decrypt and push the existing tfstate before pulling it.
+chown dev "$(tty)"
+su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
+  WORKSPACE=$WORKSPACE \
+  _doterra_state_push_as_dev_user.sh '$tmp_output_file'"
+chown root "$(tty)"
+
+#echo "INFO $0: Decrypting file '$encrypted_tfstate' to '$tmp_output_file'"
+#chown dev "$(tty)"
+#su dev -c "gpg --quiet --decrypt '$encrypted_tfstate'" > "$tmp_output_file"
+#chown root "$(tty)"
+#
+#cd /usr/local/src/chillbox-terraform
+#terraform workspace select "$WORKSPACE" || \
+#  terraform workspace new "$WORKSPACE"
+#
+## Check the existance and size of the decrypted tfstate file and push that
+## first before pulling down the state.
+#if [ -e "$tmp_output_file" ] && [ -s "$tmp_output_file" ]; then
+#  su dev -c "terraform state push '$tmp_output_file'"
+#fi
+
+
+
 chown dev "$(tty)"
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
