@@ -2,6 +2,10 @@
 
 set -o errexit
 
+set -x
+_terraform_workspace_check.sh
+set +x
+
 output_file="$1"
 test -n "$output_file" || (echo "ERROR $0: output file path is blank." && exit 1)
 
@@ -27,18 +31,20 @@ chown -R dev:dev "$(dirname "$tmp_output_file")"
 chmod -R 0700 "$(dirname "$tmp_output_file")"
 
 
-encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
-if [ ! -e "$encrypted_tfstate" ]; then
-  echo "INFO $0: No encrypted tfstate file exists to pull."
+if [ ! -e "$ENCRYPTED_TFSTATE" ]; then
+  echo "INFO $0: No encrypted tfstate file ($ENCRYPTED_TFSTATE) exists to pull."
   exit 0
 fi
 
-# Need to decrypt and push the existing tfstate before pulling it.
-chown dev "$(tty)"
-su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-  WORKSPACE=$WORKSPACE \
-  _doterra_state_push_as_dev_user.sh '$tmp_output_file'"
-chown root "$(tty)"
+echo "INFO $0: Executing _init_tfstate_with_push.sh"
+_init_tfstate_with_push.sh
+
+## Need to decrypt and push the existing tfstate before pulling it.
+#chown dev "$(tty)"
+#su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
+#  WORKSPACE=$WORKSPACE \
+#  _doterra_state_push_as_dev_user.sh '$tmp_output_file'"
+#chown root "$(tty)"
 
 #echo "INFO $0: Decrypting file '$encrypted_tfstate' to '$tmp_output_file'"
 #chown dev "$(tty)"
@@ -57,10 +63,8 @@ chown root "$(tty)"
 
 
 
-chown dev "$(tty)"
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
   _doterra_state_pull_as_dev_user.sh '$tmp_output_file'"
-chown root "$(tty)"
 
 cp "$tmp_output_file" "$output_file"

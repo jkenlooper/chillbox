@@ -26,17 +26,25 @@ project_dir="$(dirname "$(realpath "$0")")"
 terraform_infra_dir="$project_dir/terraform-010-infra"
 terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 
+
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
 # shellcheck source=/dev/null
 test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
 
-WORKSPACE="${WORKSPACE:-development}"
+export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
   echo "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
+
+# The WORKSPACE is passed as a build-arg for the images, so make the image and
+# container name also have that in their name.
+export INFRA_IMAGE="chillbox-terraform-010-infra-$WORKSPACE"
+export INFRA_CONTAINER="chillbox-terraform-010-infra-$WORKSPACE"
+export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox-$WORKSPACE"
+export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$WORKSPACE"
 
 test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
   || echo "WARNING $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
@@ -47,10 +55,10 @@ terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_T
 
 # UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
+export ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
 test -n "${ALPINE_CUSTOM_IMAGE}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE variable is empty" && exit 1)
 echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE '${ALPINE_CUSTOM_IMAGE}'"
-ALPINE_CUSTOM_IMAGE_CHECKSUM=${ALPINE_CUSTOM_IMAGE_CHECKSUM:-"f8aa090e27509cc9e9cb57f6ad16d7b3"}
+export ALPINE_CUSTOM_IMAGE_CHECKSUM=${ALPINE_CUSTOM_IMAGE_CHECKSUM:-"f8aa090e27509cc9e9cb57f6ad16d7b3"}
 test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE_CHECKSUM variable is empty" && exit 1)
 echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
 
@@ -98,34 +106,24 @@ eval "$(jq \
   --null-input '{
     sites_artifact_url: $jq_sites_artifact_url,
 }' | "${project_dir}/local-bin/build-artifacts.sh" | jq -r '@sh "
-    SITES_ARTIFACT=\(.sites_artifact)
-    CHILLBOX_ARTIFACT=\(.chillbox_artifact)
-    SITES_MANIFEST=\(.sites_manifest)
+    export SITES_ARTIFACT=\(.sites_artifact)
+    export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
+    export SITES_MANIFEST=\(.sites_manifest)
     "')"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
 test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $script_name: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 
-# TODO Verify that the artifacts that were built have met the service contracts
-# before continuing?
+# Verify that the artifacts that were built have met the service contracts before continuing.
 SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
 
-infra_image="chillbox-$(basename "${terraform_infra_dir}")"
-infra_container="chillbox-$(basename "${terraform_infra_dir}")"
-docker rm "${infra_container}" || printf ""
-docker image rm "$infra_image" || printf ""
-export DOCKER_BUILDKIT=1
-docker build \
-  --build-arg WORKSPACE="${WORKSPACE}" \
-  -t "$infra_image" \
-  -f "${project_dir}/terraform-010-infra.Dockerfile" \
-  "${project_dir}"
+$project_dir/local-bin/_docker_build_terraform-010-infra.sh
 
 cleanup_run_tmp_secrets() {
-  docker stop "${infra_container}" 2> /dev/null || printf ""
-  docker rm "${infra_container}" 2> /dev/null || printf ""
-  docker stop "${terraform_chillbox_container}" 2> /dev/null || printf ""
-  docker rm "${terraform_chillbox_container}" 2> /dev/null || printf ""
+  docker stop "${INFRA_CONTAINER}" 2> /dev/null || printf ""
+  docker rm "${INFRA_CONTAINER}" 2> /dev/null || printf ""
+  docker stop "${TERRAFORM_CHILLBOX_CONTAINER}" 2> /dev/null || printf ""
+  docker rm "${TERRAFORM_CHILLBOX_CONTAINER}" 2> /dev/null || printf ""
 
   # TODO support systems other then Linux that can't use a tmpfs mount. Will
   # need to always run a volume rm command each time the container stops to
@@ -134,92 +132,79 @@ cleanup_run_tmp_secrets() {
 }
 trap cleanup_run_tmp_secrets EXIT
 
+echo "infra container $INFRA_CONTAINER"
 docker run \
   -i --tty \
-  --name "${infra_container}" \
+  --name "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --entrypoint="" \
-  "$infra_image" doterra-init.sh
-docker cp "${infra_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
+  "$INFRA_IMAGE" doterra-init.sh
+docker cp "${INFRA_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
 
 # TODO It may be useful to only allow secret files to be passed in if they were
 # encrypted with this public key first. This way the tfstate backup file stored
 # on the local machine could be encrypted first before it was sent back.
 #test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
-#docker cp "${infra_container}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
+#docker cp "${INFRA_CONTAINER}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
 
-docker rm "${infra_container}"
+docker rm "${INFRA_CONTAINER}"
 
 # TODO change the command to be 'doterra.sh $terraform_command' instead of 'sh'
 docker run \
   -i --tty \
   --rm \
-  --name "${infra_container}" \
-  --hostname "${infra_container}" \
+  --name "${INFRA_CONTAINER}" \
+  --hostname "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
+  --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_infra_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
-  "$infra_image" sh
+  "$INFRA_IMAGE" sh
 
 # Start the chillbox terraform
 
-terraform_chillbox_image="chillbox-$(basename "${terraform_chillbox_dir}")"
-terraform_chillbox_container="chillbox-$(basename "${terraform_chillbox_dir}")"
-docker rm "${terraform_chillbox_container}" || printf ""
-docker image rm "$terraform_chillbox_image" || printf ""
-export DOCKER_BUILDKIT=1
-docker build \
-  --build-arg ALPINE_CUSTOM_IMAGE="${ALPINE_CUSTOM_IMAGE}" \
-  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM="${ALPINE_CUSTOM_IMAGE_CHECKSUM}" \
-  --build-arg SITES_ARTIFACT="${SITES_ARTIFACT}" \
-  --build-arg CHILLBOX_ARTIFACT="${CHILLBOX_ARTIFACT}" \
-  --build-arg SITES_MANIFEST="${SITES_MANIFEST}" \
-  --build-arg WORKSPACE="${WORKSPACE}" \
-  -t "${terraform_chillbox_image}" \
-  -f "${project_dir}/terraform-020-chillbox.Dockerfile" \
-  "${project_dir}"
+$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh
 
 docker run \
-  --name "${terraform_chillbox_container}" \
+  --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
   --user dev \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
-  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  "$terraform_chillbox_image" init
-docker cp "${terraform_chillbox_container}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
-docker rm "${terraform_chillbox_container}"
+  "$TERRAFORM_CHILLBOX_IMAGE" init
+docker cp "${TERRAFORM_CHILLBOX_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
+docker rm "${TERRAFORM_CHILLBOX_CONTAINER}"
 
 docker run \
   -i --tty \
   --rm \
-  --name "${terraform_chillbox_container}" \
-  --hostname "${terraform_chillbox_container}" \
+  --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
+  --hostname "${TERRAFORM_CHILLBOX_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=volume,src=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
+  --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=volume,src=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
   --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
   --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --entrypoint="" \
-  "$terraform_chillbox_image" sh
+  "$TERRAFORM_CHILLBOX_IMAGE" sh

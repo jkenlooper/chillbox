@@ -6,12 +6,10 @@
 
 set -o errexit
 
-WORKSPACE="${WORKSPACE:-}"
 secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
-gpg_key_name="${gpg_key_name:-}"
 
 # Sanity check that these were set.
-test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && exit 1)
+test -n "$GPG_KEY_NAME" || (echo "ERROR $0: GPG_KEY_NAME variable is empty" && exit 1)
 test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variable is empty." && exit 1)
 ls -al "$secure_tmp_secrets_dir"
@@ -84,7 +82,7 @@ jq --null-input \
   chillbox_gpg_passphrase: $jq_chillbox_gpg_passphrase,
   }' > "${secure_tmp_secrets_dir}/credentials.tfvars.json"
 
-gpg --encrypt --recipient "${gpg_key_name}" --armor --output "${encrypted_credentials_tfvars_file}" \
+gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "${encrypted_credentials_tfvars_file}" \
   --comment "Chillbox doterra credentials tfvars" \
   --comment "Terraform workspace: $WORKSPACE" \
   --comment "Date: $(date)" \

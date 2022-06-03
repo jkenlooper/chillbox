@@ -28,35 +28,37 @@ mkdir -p "$data_volume_terraform_010_infra"
 chown -R dev:dev "$data_volume_terraform_010_infra"
 chmod -R 0700 "$data_volume_terraform_010_infra"
 
-decrypted_tfstate="$secure_tmp_secrets_dir/$WORKSPACE-terraform.tfstate.json"
-encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
-
-# Only push the tfstate initially if it hasn't already been decrypted.
-if [ -e "$encrypted_tfstate" ] && [ ! -e "$decrypted_tfstate" ]; then
-  set -x
-  _dev_tty.sh "
-    _decrypt_file_as_dev_user.sh '$encrypted_tfstate' '$decrypted_tfstate'"
-  set +x
-
-  if [ -s "$decrypted_tfstate" ]; then
-    set -x
-    su dev -c "
-      WORKSPACE=$WORKSPACE \
-        _doterra_state_push_as_dev_user.sh '$decrypted_tfstate'"
-    set +x
-  fi
-fi
+echo "INFO $0: Executing _init_tfstate_with_push.sh"
+_init_tfstate_with_push.sh
+#decrypted_tfstate="$secure_tmp_secrets_dir/$WORKSPACE-terraform.tfstate.json"
+#encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
+#
+## Only push the tfstate initially if it hasn't already been decrypted.
+#if [ -e "$encrypted_tfstate" ] && [ ! -e "$decrypted_tfstate" ]; then
+#  set -x
+#  _dev_tty.sh "
+#    _decrypt_file_as_dev_user.sh \"$encrypted_tfstate\" \"$decrypted_tfstate\""
+#  set +x
+#
+#  if [ -s "$decrypted_tfstate" ]; then
+#    set -x
+#    su dev -c "
+#      WORKSPACE=$WORKSPACE \
+#        _doterra_state_push_as_dev_user.sh \"$decrypted_tfstate\""
+#    set +x
+#  fi
+#fi
 
 sync_encrypted_tfstate() {
   set -x
   su dev -c "
     WORKSPACE=$WORKSPACE \
-    _doterra_state_pull_as_dev_user.sh '$decrypted_tfstate'"
+    _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
 
   _dev_tty.sh "
-    gpg_key_name=$gpg_key_name \
+    GPG_KEY_NAME=$GPG_KEY_NAME \
     WORKSPACE=$WORKSPACE \
-    _encrypt_file_as_dev_user.sh '$encrypted_tfstate' '$decrypted_tfstate'"
+    _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
   set +x
 }
 
@@ -64,16 +66,16 @@ sync_encrypted_tfstate() {
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
-  echo "INFO $0: Decrypting file '${encrypted_credentials_tfvars_file}' to '${decrypted_credentials_tfvars_file}'"
+  echo "INFO $0: Decrypting file ${encrypted_credentials_tfvars_file} to ${decrypted_credentials_tfvars_file}"
   set -x
   _dev_tty.sh "
-    _decrypt_file_as_dev_user.sh '${encrypted_credentials_tfvars_file}' '${decrypted_credentials_tfvars_file}'"
+    _decrypt_file_as_dev_user.sh \"${encrypted_credentials_tfvars_file}\" \"${decrypted_credentials_tfvars_file}\""
   set +x
 fi
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
-  _doterra_as_dev_user.sh '$terraform_command' '/var/lib/terraform-010-infra/output.json'"
+  _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-010-infra/output.json\""
 
 # Need to update the encrypted tfstate with any potential changes that have
 # happened.

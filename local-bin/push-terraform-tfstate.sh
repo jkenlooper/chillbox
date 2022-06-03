@@ -3,13 +3,6 @@
 set -o errexit
 
 project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
-terraform_infra_dir="$project_dir/terraform-010-infra"
-terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
-
-infra_container="chillbox-$(basename "${terraform_infra_dir}")"
-infra_image="chillbox-$(basename "${terraform_infra_dir}")"
-terraform_chillbox_container="chillbox-$(basename "${terraform_chillbox_dir}")"
-terraform_chillbox_image="chillbox-$(basename "${terraform_chillbox_dir}")"
 
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
@@ -23,26 +16,36 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
+# The WORKSPACE is passed as a build-arg for the images, so make the image and
+# container name also have that in their name.
+export INFRA_IMAGE="chillbox-terraform-010-infra-$WORKSPACE"
+export INFRA_CONTAINER="chillbox-terraform-010-infra-$WORKSPACE"
+export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox-$WORKSPACE"
+export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$WORKSPACE"
+
 backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${project_dir}/terraform_state_backup}"
 mkdir -p "$backup_terraform_state_dir/$WORKSPACE"
 
-state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${infra_container}-terraform.tfstate.json"
-printf '\n%s\n' "Executing 'terraform state push' on ${infra_container}"
+state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${INFRA_CONTAINER}-terraform.tfstate.json"
+printf '\n%s\n' "Executing 'terraform state push' on ${INFRA_CONTAINER}"
+
+$project_dir/local-bin/_docker_build_terraform-010-infra.sh
+
 if [ -s "$state_infra_json" ]; then
   docker run \
     -i --tty \
     --rm \
-    --name "${infra_container}" \
+    --name "${INFRA_CONTAINER}" \
     -e WORKSPACE="${WORKSPACE}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
     --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-    --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
-    --mount "type=bind,src=${state_infra_json},dst=/usr/local/src/chillbox-terraform/${infra_container}.json" \
+    --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
+    --mount "type=bind,src=${state_infra_json},dst=/usr/local/src/chillbox-terraform/${INFRA_CONTAINER}.json" \
     --entrypoint="" \
-    "$infra_image" doterra-state-push.sh "/usr/local/src/chillbox-terraform/${infra_container}.json"
+    "$INFRA_IMAGE" doterra-state-push.sh "/usr/local/src/chillbox-terraform/${INFRA_CONTAINER}.json"
 
   printf '\n%s\n' "Pushed $state_infra_json"
 else
@@ -50,22 +53,25 @@ else
 fi
 
 
-state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${terraform_chillbox_container}-terraform.tfstate.json"
-printf '\n%s\n' "Executing 'terraform state push' on ${terraform_chillbox_container}"
+state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
+printf '\n%s\n' "Executing 'terraform state push' on ${TERRAFORM_CHILLBOX_CONTAINER}"
+
+$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh
+
 if [ -s "$state_chillbox_json" ]; then
   docker run \
     -i --tty \
     --rm \
-    --name "${terraform_chillbox_container}" \
+    --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
     --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-    --mount "type=volume,src=chillbox-${terraform_chillbox_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
-    --mount "type=bind,src=${state_chillbox_json},dst=/usr/local/src/chillbox-terraform/${terraform_chillbox_container}.json" \
+    --mount "type=volume,src=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
+    --mount "type=bind,src=${state_chillbox_json},dst=/usr/local/src/chillbox-terraform/${TERRAFORM_CHILLBOX_CONTAINER}.json" \
     --entrypoint="" \
-    "$terraform_chillbox_image" doterra-state-push.sh "/usr/local/src/chillbox-terraform/${terraform_chillbox_container}.json"
+    "$TERRAFORM_CHILLBOX_IMAGE" doterra-state-push.sh "/usr/local/src/chillbox-terraform/${TERRAFORM_CHILLBOX_CONTAINER}.json"
   printf '\n%s\n' "Pushed $state_chillbox_json"
 else
   printf '\n%s\n' "WARNING $0: No $state_chillbox_json file or it is empty."

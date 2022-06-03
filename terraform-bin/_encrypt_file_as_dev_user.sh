@@ -13,12 +13,12 @@ test -e "$decrypted_file" || (echo "ERROR $0: decrypted file doesn't exist ($dec
 
 # Sanity check that these were set.
 test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-test -n "$gpg_key_name" || (echo "ERROR $0: gpg_key_name variable is empty" && exit 1)
+test -n "$GPG_KEY_NAME" || (echo "ERROR $0: GPG_KEY_NAME variable is empty" && exit 1)
 
 echo "INFO $0: Encrypting file '${decrypted_file}' to '${encrypted_file}'"
 
 rm -f "${encrypted_file}"
-gpg --encrypt --recipient "${gpg_key_name}" --armor --output "${encrypted_file}" \
+gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "${encrypted_file}" \
   --comment "Terraform workspace: $WORKSPACE" \
   --comment "Date: $(date)" \
   "$decrypted_file"

@@ -55,6 +55,7 @@ Dependencies:
 * jq
 * make
 * tar
+* shred
 * A DigitalOcean account
 
 ```bash

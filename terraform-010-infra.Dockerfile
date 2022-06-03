@@ -23,7 +23,9 @@ WORKDIR /usr/local/src/chillbox-terraform
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
-ENV gpg_key_name="chillbox_doterra__${WORKSPACE}"
+ENV GPG_KEY_NAME="chillbox_doterra__${WORKSPACE}"
+ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
+ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
 
 RUN <<SETUP
 addgroup dev
