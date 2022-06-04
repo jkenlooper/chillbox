@@ -38,6 +38,7 @@ else
   docker run -it --rm \
     --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin" \
     --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
+    --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin" \
     --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
     --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
     --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
@@ -48,6 +49,7 @@ else
       (docker run -it --rm \
         --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin" \
         --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
+        --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin" \
         --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
         --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
         --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \

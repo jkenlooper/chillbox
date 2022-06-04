@@ -53,16 +53,6 @@ test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
 terraform_infra_private_auto_tfvars_file="${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars}"
 terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars}"
 
-# UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
-# Create this file by following instructions at jkenlooper/alpine-droplet
-export ALPINE_CUSTOM_IMAGE=${ALPINE_CUSTOM_IMAGE:-"https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"}
-test -n "${ALPINE_CUSTOM_IMAGE}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE variable is empty" && exit 1)
-echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE '${ALPINE_CUSTOM_IMAGE}'"
-export ALPINE_CUSTOM_IMAGE_CHECKSUM=${ALPINE_CUSTOM_IMAGE_CHECKSUM:-"f8aa090e27509cc9e9cb57f6ad16d7b3"}
-test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}" || (echo "ERROR $script_name: ALPINE_CUSTOM_IMAGE_CHECKSUM variable is empty" && exit 1)
-echo "INFO $script_name: Using ALPINE_CUSTOM_IMAGE_CHECKSUM '${ALPINE_CUSTOM_IMAGE_CHECKSUM}'"
-
-
 SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
 test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
 echo "INFO $script_name: Using SITES_ARTIFACT_URL '${SITES_ARTIFACT_URL}'"
@@ -117,7 +107,13 @@ test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST var
 # Verify that the artifacts that were built have met the service contracts before continuing.
 SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
 
-$project_dir/local-bin/_docker_build_terraform-010-infra.sh
+cat <<HERE > .build-artifacts-vars
+export SITES_ARTIFACT="$SITES_ARTIFACT"
+export CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
+export SITES_MANIFEST="$SITES_MANIFEST"
+HERE
+
+"$project_dir/local-bin/_docker_build_terraform-010-infra.sh"
 
 cleanup_run_tmp_secrets() {
   docker stop "${INFRA_CONTAINER}" 2> /dev/null || printf ""
@@ -172,7 +168,7 @@ docker run \
 
 # Start the chillbox terraform
 
-$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh
+"$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh"
 
 docker run \
   --name "${TERRAFORM_CHILLBOX_CONTAINER}" \

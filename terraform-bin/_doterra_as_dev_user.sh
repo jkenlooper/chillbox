@@ -2,7 +2,6 @@
 
 set -o errexit
 
-WORKSPACE="${WORKSPACE:-}"
 secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
 
 terraform_command=$1
@@ -30,7 +29,7 @@ terraform workspace select "$WORKSPACE" || \
 test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
 create_output_json() {
-  terraform output -json > $terraform_output_file
+  terraform output -json > "$terraform_output_file"
 }
 trap create_output_json EXIT
 

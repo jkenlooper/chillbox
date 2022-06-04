@@ -29,3 +29,5 @@
 
 !/site.schema.json
 !/verify-sites/*
+
+!/.build-artifacts-vars

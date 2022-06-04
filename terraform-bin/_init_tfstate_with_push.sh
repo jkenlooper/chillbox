@@ -2,9 +2,6 @@
 
 set -o errexit
 
-#decrypted_tfstate="$secure_tmp_secrets_dir/$WORKSPACE-terraform.tfstate.json"
-#encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
-
 echo "INFO $0: Initializing terraform state by decrypting the $ENCRYPTED_TFSTATE file if the $DECRYPTED_TFSTATE file doesn't exist."
 # Only push the tfstate initially if it hasn't already been decrypted.
 if [ -e "$ENCRYPTED_TFSTATE" ] && [ ! -e "$DECRYPTED_TFSTATE" ]; then

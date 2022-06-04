@@ -2,6 +2,10 @@
 
 set -o errexit
 
+set -x
+_terraform_workspace_check.sh
+set +x
+
 output_file="$1"
 test -n "$output_file" || (echo "ERROR $0: output file path is blank." && exit 1)
 
@@ -26,11 +30,16 @@ mkdir -p "$(dirname "$tmp_output_file")"
 chown -R dev:dev "$(dirname "$tmp_output_file")"
 chmod -R 0700 "$(dirname "$tmp_output_file")"
 
+if [ ! -e "$ENCRYPTED_TFSTATE" ]; then
+  echo "INFO $0: No encrypted tfstate file ($ENCRYPTED_TFSTATE) exists to pull."
+  exit 0
+fi
 
-chown dev "$(tty)"
+echo "INFO $0: Executing _init_tfstate_with_push.sh"
+_init_tfstate_with_push.sh
+
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
   _doterra_state_pull_as_dev_user.sh '$tmp_output_file'"
-chown root "$(tty)"
 
 cp "$tmp_output_file" "$output_file"

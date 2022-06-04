@@ -7,13 +7,9 @@ project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}" || printf ""
 docker image rm "$TERRAFORM_CHILLBOX_IMAGE" || printf ""
+
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg ALPINE_CUSTOM_IMAGE="${ALPINE_CUSTOM_IMAGE}" \
-  --build-arg ALPINE_CUSTOM_IMAGE_CHECKSUM="${ALPINE_CUSTOM_IMAGE_CHECKSUM}" \
-  --build-arg SITES_ARTIFACT="${SITES_ARTIFACT}" \
-  --build-arg CHILLBOX_ARTIFACT="${CHILLBOX_ARTIFACT}" \
-  --build-arg SITES_MANIFEST="${SITES_MANIFEST}" \
   --build-arg WORKSPACE="${WORKSPACE}" \
   -t "${TERRAFORM_CHILLBOX_IMAGE}" \
   -f "${project_dir}/terraform-020-chillbox.Dockerfile" \

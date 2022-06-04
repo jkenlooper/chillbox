@@ -29,7 +29,7 @@ mkdir -p "$backup_terraform_state_dir/$WORKSPACE"
 state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${INFRA_CONTAINER}-terraform.tfstate.json"
 printf '\n%s\n' "Executing 'terraform state push' on ${INFRA_CONTAINER}"
 
-$project_dir/local-bin/_docker_build_terraform-010-infra.sh
+"$project_dir/local-bin/_docker_build_terraform-010-infra.sh"
 
 if [ -s "$state_infra_json" ]; then
   docker run \
@@ -56,7 +56,7 @@ fi
 state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
 printf '\n%s\n' "Executing 'terraform state push' on ${TERRAFORM_CHILLBOX_CONTAINER}"
 
-$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh
+"$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh"
 
 if [ -s "$state_chillbox_json" ]; then
   docker run \

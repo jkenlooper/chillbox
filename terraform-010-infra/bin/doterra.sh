@@ -12,7 +12,6 @@ if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && 
   exit 1
 fi
 
-
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"
 chown -R dev:dev "$(dirname "$secure_tmp_secrets_dir")"
@@ -30,24 +29,6 @@ chmod -R 0700 "$data_volume_terraform_010_infra"
 
 echo "INFO $0: Executing _init_tfstate_with_push.sh"
 _init_tfstate_with_push.sh
-#decrypted_tfstate="$secure_tmp_secrets_dir/$WORKSPACE-terraform.tfstate.json"
-#encrypted_tfstate="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
-#
-## Only push the tfstate initially if it hasn't already been decrypted.
-#if [ -e "$encrypted_tfstate" ] && [ ! -e "$decrypted_tfstate" ]; then
-#  set -x
-#  _dev_tty.sh "
-#    _decrypt_file_as_dev_user.sh \"$encrypted_tfstate\" \"$decrypted_tfstate\""
-#  set +x
-#
-#  if [ -s "$decrypted_tfstate" ]; then
-#    set -x
-#    su dev -c "
-#      WORKSPACE=$WORKSPACE \
-#        _doterra_state_push_as_dev_user.sh \"$decrypted_tfstate\""
-#    set +x
-#  fi
-#fi
 
 sync_encrypted_tfstate() {
   set -x

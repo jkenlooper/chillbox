@@ -14,3 +14,5 @@ crash.*.log
 # Created when executing the local-bin/pull-terraform-tfstate.sh and
 # local-bin/push-terraform-tfstate.sh scripts.
 /terraform_state_backup
+
+/.build-artifacts-vars

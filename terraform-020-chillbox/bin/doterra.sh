@@ -2,12 +2,15 @@
 
 set -o errexit
 
+set -x
+_terraform_workspace_check.sh
+set +x
+
 terraform_command=$1
 if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
-  echo "This command is not supported when using $0 script."
+  echo "ERROR $0: This command ($terraform_command) is not supported in this script."
   exit 1
 fi
-
 
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"
@@ -29,22 +32,40 @@ mkdir -p "$data_volume_terraform_020_chillbox"
 chown -R dev:dev "$data_volume_terraform_020_chillbox"
 chmod -R 0700 "$data_volume_terraform_020_chillbox"
 
-decrypted_tfstate="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
+echo "INFO $0: Executing _init_tfstate_with_push.sh"
+_init_tfstate_with_push.sh
 
-# TODO rm encrypted file first to avoid serial conflicts?
-
-push_pull_tfstate() {
-  chown dev "$(tty)"
-  su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
+sync_encrypted_tfstate() {
+  set -x
+  su dev -c "
     WORKSPACE=$WORKSPACE \
-    _doterra_state_pull_as_dev_user.sh '$decrypted_tfstate'"
-  chown root "$(tty)"
-}
-push_pull_tfstate
-trap push_pull_tfstate EXIT
+    _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
 
-chown dev "$(tty)"
+  _dev_tty.sh "
+    GPG_KEY_NAME=$GPG_KEY_NAME \
+    WORKSPACE=$WORKSPACE \
+    _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
+  set +x
+}
+
+encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
+decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
+if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
+  echo "INFO $0: Decrypting file ${encrypted_credentials_tfvars_file} to ${decrypted_credentials_tfvars_file}"
+  set -x
+  _dev_tty.sh "
+    _decrypt_file_as_dev_user.sh \"${encrypted_credentials_tfvars_file}\" \"${decrypted_credentials_tfvars_file}\""
+  set +x
+fi
+
+su dev -c "
+_upload_artifacts_as_dev_user.sh \"$terraform_command\" \"$decrypted_credentials_tfvars_file\"
+"
+
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   WORKSPACE=$WORKSPACE \
-  _doterra_as_dev_user.sh '$terraform_command'"
-chown root "$(tty)"
+  _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-020-chillbox/output.json\""
+
+# Need to update the encrypted tfstate with any potential changes that have
+# happened.
+sync_encrypted_tfstate

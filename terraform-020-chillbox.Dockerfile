@@ -21,16 +21,19 @@ apk add \
 
 INSTALL
 
-ARG ALPINE_CUSTOM_IMAGE=""
-ARG ALPINE_CUSTOM_IMAGE_CHECKSUM=""
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
+# UPKEEP due: "2022-07-12" label: "Alpine Linux custom image" interval: "+3 months"
+# Create this file by following instructions at jkenlooper/alpine-droplet
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-04-13-0434/alpine-virt-image-2022-04-13-0434.qcow2.bz2"
+echo "INFO: Using alpine custom image $alpine_custom_image"
+alpine_custom_image_checksum="f8aa090e27509cc9e9cb57f6ad16d7b3"
+echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
+
 set -o errexit
-test -n "${ALPINE_CUSTOM_IMAGE}"
-test -n "${ALPINE_CUSTOM_IMAGE_CHECKSUM}"
-wget $ALPINE_CUSTOM_IMAGE
-alpine_custom_image_file="$(basename ${ALPINE_CUSTOM_IMAGE})"
+wget "$alpine_custom_image"
+alpine_custom_image_file="$(basename "${alpine_custom_image}")"
 md5sum "${alpine_custom_image_file}"
-echo "${ALPINE_CUSTOM_IMAGE_CHECKSUM}  ${alpine_custom_image_file}" | md5sum -c
+echo "${alpine_custom_image_checksum}  ${alpine_custom_image_file}" | md5sum -c
 cat <<HERE > alpine_custom_image.auto.tfvars
 alpine_custom_image = "${alpine_custom_image_file}"
 HERE
@@ -39,14 +42,11 @@ WGET_ALPINE_CUSTOM_IMAGE
 # Set WORKSPACE before SETUP to invalidate that layer.
 ARG WORKSPACE=development
 ENV WORKSPACE=${WORKSPACE}
+ENV GPG_KEY_NAME="chillbox_doterra__${WORKSPACE}"
+ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
+ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/$WORKSPACE-terraform.tfstate.json.asc"
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 
-ARG SITES_ARTIFACT=""
-ENV SITES_ARTIFACT=${SITES_ARTIFACT}
-ARG CHILLBOX_ARTIFACT=""
-ENV CHILLBOX_ARTIFACT=${CHILLBOX_ARTIFACT}
-ARG SITES_MANIFEST=""
-ENV SITES_MANIFEST=${SITES_MANIFEST}
 ENV endpoint_url="http://localhost:9000"
 
 RUN <<SETUP
@@ -73,7 +73,11 @@ SETUP
 
 COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
+COPY --chown=dev:dev .build-artifacts-vars .
 RUN <<ARTIFACT_MODULES
+# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
+. .build-artifacts-vars
+
 mkdir -p artifact-modules
 chown dev:dev artifact-modules
 # NOT_IMPLEMENTED May revisit this feature in the future. The way that this is
@@ -92,6 +96,10 @@ ARTIFACT_MODULES
 
 COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
 RUN <<SITE_DOMAINS
+set -x
+# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
+. .build-artifacts-vars
+
 su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
 SITE_DOMAINS
 
@@ -100,8 +108,6 @@ COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
 COPY --chown=dev:dev terraform-020-chillbox/main.tf .
 COPY --chown=dev:dev terraform-020-chillbox/outputs.tf .
 COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
-#COPY --chown=dev:dev terraform-020-chillbox/private.auto.tfvars .
-COPY --chown=dev:dev terraform-020-chillbox/bin ./bin
 COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
@@ -110,3 +116,5 @@ su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
+COPY --chown=dev:dev terraform-bin bin
+COPY --chown=dev:dev terraform-020-chillbox/bin/ bin/
