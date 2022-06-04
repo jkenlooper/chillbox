@@ -173,8 +173,9 @@ doas -C /etc/doas.conf && echo "doas config ok"
 apk add openssh-server-pam
 
 cat <<SSHD_CONFIG > /etc/ssh/sshd_config
-AuthenticationMethods publickey
+AuthenticationMethods publickey,keyboard-interactive
 AuthorizedKeysFile .ssh/authorized_keys
+ChallengeResponseAuthentication yes
 KbdInteractiveAuthentication no
 PasswordAuthentication no
 PermitRootLogin no
