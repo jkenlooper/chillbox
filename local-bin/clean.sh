@@ -2,6 +2,24 @@
 
 set -o errexit
 
+usage() {
+  cat <<HERE
+Remove container volumes associated with a Terraform workspace.
+Usage:
+  $0
+
+HERE
+}
+
+while getopts "h" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+
 # echo is bad... mmm k
 
 project_dir="$(dirname "$(dirname "$(realpath "$0")")")"

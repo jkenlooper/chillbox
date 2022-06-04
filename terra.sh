@@ -6,6 +6,26 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
+usage() {
+  cat <<HERE
+Wrapper around terraform commands to aid in managing chillbox deployment.
+Usage:
+  $0 [interactive | plan | apply | destroy]
+
+The 'interactive' argument is the default and will start containers in that mode.
+The 'plan', 'apply', and 'destroy' arguments are passed to the terraform command inside each container.
+HERE
+}
+
+while getopts "h" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+
 for required_command in \
   realpath \
   docker \
@@ -22,10 +42,17 @@ if [ -z "$has_wget" ] && [ -z "$has_curl" ]; then
   echo "WARNING $script_name: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
 fi
 
+terraform_command=${1:-interactive}
+if [ "$terraform_command" != "interactive" ] && [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
+  echo "ERROR $0: This command ($terraform_command) is not supported in this script."
+  exit 1
+fi
+
 project_dir="$(dirname "$(realpath "$0")")"
 terraform_infra_dir="$project_dir/terraform-010-infra"
 terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 
+SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
 # Allow setting defaults from an env file
 ENV_CONFIG=${1:-"$project_dir/.env"}
@@ -148,23 +175,32 @@ docker cp "${INFRA_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.
 
 docker rm "${INFRA_CONTAINER}"
 
-# TODO change the command to be 'doterra.sh $terraform_command' instead of 'sh'
-docker run \
-  -i --tty \
-  --rm \
-  --name "${INFRA_CONTAINER}" \
-  --hostname "${INFRA_CONTAINER}" \
-  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
-  --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
-  --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-  --mount "type=bind,src=${terraform_infra_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  --entrypoint="" \
-  "$INFRA_IMAGE" sh
+docker_run_infra_container() {
+  # Change the command passed to the container to be 'doterra.sh $terraform_command'
+  # instead of 'sh' if it is not set to be interactive.
+  if [ "$terraform_command" != "interactive" ]; then
+    set -- doterra.sh "$terraform_command"
+  else
+    set -- sh
+  fi
+  docker run \
+    -i --tty \
+    --rm \
+    --name "${INFRA_CONTAINER}" \
+    --hostname "${INFRA_CONTAINER}" \
+    --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
+    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+    --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
+    --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+    --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_infra_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --entrypoint="" \
+    "$INFRA_IMAGE" "$@"
+}
+docker_run_infra_container
 
 # Start the chillbox terraform
 
@@ -184,23 +220,34 @@ docker run \
 docker cp "${TERRAFORM_CHILLBOX_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}"
 
-docker run \
-  -i --tty \
-  --rm \
-  --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
-  --hostname "${TERRAFORM_CHILLBOX_CONTAINER}" \
-  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
-  --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=volume,src=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-  --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
-  --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
-  --entrypoint="" \
-  "$TERRAFORM_CHILLBOX_IMAGE" sh
+docker_run_chillbox_container() {
+  # Change the command passed to the container to be 'doterra.sh $terraform_command'
+  # instead of 'sh' if it is not set to be interactive.
+  if [ "$terraform_command" != "interactive" ]; then
+    set -- doterra.sh "$terraform_command"
+  else
+    set -- sh
+  fi
+  docker run \
+    -i --tty \
+    --rm \
+    --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
+    --hostname "${TERRAFORM_CHILLBOX_CONTAINER}" \
+    -e SKIP_UPLOAD="${SKIP_UPLOAD}" \
+    --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
+    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+    --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+    --mount "type=volume,src=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --entrypoint="" \
+    "$TERRAFORM_CHILLBOX_IMAGE" "$@"
+}
+docker_run_chillbox_container

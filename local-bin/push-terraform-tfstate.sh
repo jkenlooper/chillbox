@@ -9,7 +9,7 @@ ENV_CONFIG=${1:-"$project_dir/.env"}
 # shellcheck source=/dev/null
 test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
 
-WORKSPACE="${WORKSPACE:-development}"
+export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
   printf '\n%s\n' "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
@@ -36,7 +36,6 @@ if [ -s "$state_infra_json" ]; then
     -i --tty \
     --rm \
     --name "${INFRA_CONTAINER}" \
-    -e WORKSPACE="${WORKSPACE}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
     --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \

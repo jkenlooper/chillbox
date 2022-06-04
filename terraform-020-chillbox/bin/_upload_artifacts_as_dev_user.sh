@@ -3,8 +3,6 @@
 set -o errexit
 set -o nounset
 
-skip_upload="${skip_upload:-n}"
-
 terraform_command=$1
 decrypted_credentials_tfvars_file=$2
 
@@ -56,7 +54,7 @@ immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
 
-if [ "$terraform_command" != "destroy" ] && [ "$skip_upload" != "y" ]; then
+if [ "$terraform_command" != "destroy" ] && [ "$SKIP_UPLOAD" != "y" ]; then
   jq \
     --arg jq_immutable_bucket_name "$immutable_bucket_name" \
     --arg jq_artifact_bucket_name "$artifact_bucket_name" \
