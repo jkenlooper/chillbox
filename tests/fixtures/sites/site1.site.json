@@ -55,7 +55,8 @@
       "name": "api",
       "lang": "flask",
       "handler": "api",
-      "secrets_config": "api.cfg",
+      "secrets_config": "api-bridge.secrets.cfg",
+      "secrets_export_dockerfile": "api.secrets.Dockerfile",
       "environment": [
         {
           "name": "SERVER_NAME",

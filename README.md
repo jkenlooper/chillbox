@@ -182,3 +182,4 @@ grep --line-number --fixed-strings 'UPKEEP' '{}' +
 [POSIX]: https://en.wikipedia.org/wiki/POSIX
 [Linode]: https://www.linode.com/
 [Rust]: https://rust-lang.org/
+[Go]: https://go.dev/
