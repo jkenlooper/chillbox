@@ -4,6 +4,7 @@ set -o errexit
 
 command -v gpg > /dev/null
 
+# TODO Support more than a single chillbox by setting a unique key_name instead of simply 'chillbox'.
 key_name="chillbox"
 user="$(id -un)"
 hostname="$(hostname)"
@@ -58,5 +59,5 @@ aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp \
   "$tmp_pub_key" \
-  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/$key_name.gpg"
+  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/gpg_pubkey/$key_name.gpg"
 rm -f "$tmp_pub_key"

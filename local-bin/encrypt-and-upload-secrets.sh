@@ -5,6 +5,8 @@ set -o errexit
 
 project_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
+encrypted_secrets_dir="$project_dir/encrypted_secrets"
+chillbox_gpg_key_file="$encrypted_secrets_dir/chillbox.gpg"
 
 usage() {
   cat <<HERE
@@ -47,11 +49,13 @@ sites_manifest_file="$project_dir/dist/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
+mkdir -p $encrypted_secrets_dir/gpg_pubkey/
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp \
-  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/chillbox.gpg" \
-  "$project_dir/dist/chillbox.gpg"
+  --recursive \
+  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/gpg_pubkey/" \
+  "$encrypted_secrets_dir/gpg_pubkey/"
 
 tmp_sites_dir="$(mktemp -d)"
 
@@ -79,7 +83,10 @@ for site_json in $sites; do
         test -n "$secrets_config" || continue
         service_handler="$(echo "$service_obj" | jq -r '.handler')"
         secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile')"
-        encrypted_secret_file="$project_dir/dist/$slugname/secrets/$service_handler/${secrets_config}.asc"
+        encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc"
+        encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
+
+        mkdir -p "$encrypted_secret_service_dir"
 
         if [ -e "$encrypted_secret_file" ]; then
           echo "The encrypted file for $slugname $service_handler already exists: $encrypted_secret_file"
@@ -91,40 +98,46 @@ for site_json in $sites; do
 
         tmp_service_dir="$(mktemp -d)"
         tar x -z -f "$project_dir/dist/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
-        #echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
 
-        tmp_image_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
-        tmp_container_name="$tmp_image_name"
+        service_image_name="$slugname-$version-$service_handler-$WORKSPACE"
+        tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
+        tmpfs_dir="/run/tmp/$service_image_name"
+        service_persistent_dir="/var/lib/$slugname-$service_handler/$WORKSPACE"
+        chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
 
         docker rm "$tmp_container_name" || printf ""
-        docker image rm "$tmp_image_name" || printf ""
+        docker image rm "$service_image_name" || printf ""
         export DOCKER_BUILDKIT=1
         docker build \
           --build-arg SECRETS_CONFIG="$secrets_config" \
           --build-arg WORKSPACE="${WORKSPACE}" \
-          --build-arg GPG_KEY_NAME="chillbox" \
-          -t "$tmp_image_name" \
+          --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
+          --build-arg TMPFS_DIR="$tmpfs_dir"
+          --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir"
+          --build-arg SLUGNAME="$slugname"
+          --build-arg VERSION="$version"
+          --build-arg SERVICE_HANDLER="$service_handler"
+          -t "$service_image_name" \
           -f "$tmp_service_dir/$service_handler/$secrets_export_dockerfile" \
           "$tmp_service_dir/$service_handler/"
 
         docker run \
           -i --tty \
           --name "$tmp_container_name" \
-          --mount "type=tmpfs,dst=/run/tmp/secrets" \
-          --mount "type=bind,src=$project_dir/dist/chillbox.gpg,dst=/var/lib/chillbox/chillbox.gpg,readonly=true"
-          "$tmp_image_name"
-        docker cp "$tmp_container_name:/var/lib/secrets/${secrets_config}.asc" "$encrypted_secret_file"
+          --mount "type=tmpfs,dst=$tmpfs_dir" \
+          --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$WORKSPACE,dst=$service_persistent_dir" \
+          --mount "type=bind,src=$encrypted_secrets_dir/gpg_pubkey,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
+          "$service_image_name"
+        docker cp "$tmp_container_name:$service_persistent_dir/encrypted_secrets/" "$encrypted_secret_service_dir/"
         docker rm "$tmp_container_name" || printf ""
-
-        # TODO Upload the encrypted secret to the correct place in the artifact
-        # bucket.
-        aws \
-          --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-          s3 cp \
-          "$encrypted_secret_file" \
-          "s3://${ARTIFACT_BUCKET_NAME}/chillbox/secrets/TODO/"
-
 
       done
 
 done
+
+aws \
+  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
+  s3 cp \
+  --recursive \
+  "$encrypted_secrets_dir" \
+  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/"
