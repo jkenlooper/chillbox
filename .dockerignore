@@ -31,3 +31,5 @@
 !/verify-sites/*
 
 !/.build-artifacts-vars
+
+!/src/*

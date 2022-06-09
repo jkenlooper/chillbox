@@ -1,4 +1,3 @@
-
 #!/usr/bin/env sh
 
 set -o errexit
@@ -6,7 +5,7 @@ set -o errexit
 project_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 encrypted_secrets_dir="$project_dir/encrypted_secrets"
-chillbox_gpg_key_file="$encrypted_secrets_dir/chillbox.gpg"
+gpg_pubkey_dir="$project_dir/gpg_pubkey"
 
 usage() {
   cat <<HERE
@@ -39,23 +38,63 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-SITES_ARTIFACT="${SITES_ARTIFACT:-}"
+# Lowercase the INFRA_CONTAINER var since it isn't exported.
+infra_container="chillbox-terraform-010-infra-$WORKSPACE"
+
+test -e "$project_dir/.build-artifacts-vars" || (echo "ERROR $script_name: No $project_dir/.build-artifacts-vars file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+SITES_ARTIFACT=""
+CHILLBOX_ARTIFACT=""
+SITES_MANIFEST=""
+. "$project_dir/.build-artifacts-vars"
+
 sites_artifact_file="$project_dir/dist/$SITES_ARTIFACT"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
 test -e "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at '$sites_artifact_file'." && exit 1)
 
-SITES_MANIFEST="${SITES_MANIFEST:-}"
 sites_manifest_file="$project_dir/dist/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
-mkdir -p $encrypted_secrets_dir/gpg_pubkey/
-aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp \
-  --recursive \
-  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/gpg_pubkey/" \
-  "$encrypted_secrets_dir/gpg_pubkey/"
+# build the container
+# run the container to download the gpg_pubkey files
+# Back on the host; build and run the services secrets_export_dockerfile
+# build and run the container to upload the encrypted secrets
+
+s3_wrapper_image="chillbox-s3-wrapper-$WORKSPACE:latest"
+docker image rm "$s3_wrapper_image" || printf ""
+export DOCKER_BUILDKIT=1
+docker build \
+  --build-arg WORKSPACE="${WORKSPACE}" \
+  -t "$s3_wrapper_image" \
+  -f "${project_dir}/src/s3-wrapper.Dockerfile" \
+  "${project_dir}"
+
+s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys-$WORKSPACE"
+s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys-$WORKSPACE"
+docker rm "${s3_download_gpg_pubkeys_container}" || printf ""
+docker image rm "$s3_download_gpg_pubkeys_image" || printf ""
+export DOCKER_BUILDKIT=1
+docker build \
+  --build-arg WORKSPACE="${WORKSPACE}" \
+  -t "$s3_download_gpg_pubkeys_image" \
+  -f "${project_dir}/src/s3-download-gpg_pubkeys.Dockerfile" \
+  "${project_dir}"
+
+rm -rf $gpg_pubkey_dir
+mkdir -p $gpg_pubkey_dir
+docker run \
+  -i --tty \
+  --rm \
+  --name "$s3_download_gpg_pubkeys_container" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+  --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
+  --entrypoint="" \
+  "$s3_download_gpg_pubkeys_image" sh
+
 
 tmp_sites_dir="$(mktemp -d)"
 
@@ -68,10 +107,8 @@ trap cleanup EXIT
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
 
-
-sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
-
-for site_json in $sites; do
+find "$tmp_sites_dir/sites" -type f -name '*.site.json' \
+  | while read -r site_json; do
   site_json_file="$(basename "$site_json")"
   slugname="$(basename "$site_json" .site.json)"
   version="$(jq -r '.version' "$site_json")"
@@ -135,6 +172,8 @@ for site_json in $sites; do
 
 done
 
+echo "TODO"
+exit 0
 aws \
   --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
   s3 cp \

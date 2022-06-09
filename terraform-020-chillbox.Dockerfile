@@ -48,7 +48,7 @@ ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/$WORKSPACE-terraform.tfst
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 ENV SKIP_UPLOAD="n"
 
-ENV endpoint_url="http://localhost:9000"
+#ENV endpoint_url="http://localhost:9000"
 
 RUN <<SETUP
 addgroup dev
