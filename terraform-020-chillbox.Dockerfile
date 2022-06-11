@@ -72,12 +72,42 @@ chown -R dev:dev /var/lib/terraform-020-chillbox
 chmod -R 0700 /var/lib/terraform-020-chillbox
 SETUP
 
+ARG SITES_ARTIFACT
+ENV SITES_ARTIFACT="$SITES_ARTIFACT"
+
+COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
+COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
+COPY --chown=dev:dev terraform-020-chillbox/main.tf .
+COPY --chown=dev:dev terraform-020-chillbox/outputs.tf .
+COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
+COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
+
+RUN <<TERRAFORM_INIT
+su dev -c "terraform init"
+su dev -c "terraform workspace new $WORKSPACE"
+TERRAFORM_INIT
+
+ARG CHILLBOX_ARTIFACT
+ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
+ARG SITES_MANIFEST
+ENV SITES_MANIFEST="$SITES_MANIFEST"
+
+COPY --chown=dev:dev dist/$SITES_ARTIFACT ./dist/$SITES_ARTIFACT
+COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
+RUN <<SITE_DOMAINS
+set -x
+# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
+#. .build-artifacts-vars
+
+su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
+SITE_DOMAINS
+
 COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
-COPY --chown=dev:dev .build-artifacts-vars .
 RUN <<ARTIFACT_MODULES
+echo "Extracting artifact terraform modules is not implemented." && exit 0
 # Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
-. .build-artifacts-vars
+#. .build-artifacts-vars
 
 mkdir -p artifact-modules
 chown dev:dev artifact-modules
@@ -93,29 +123,12 @@ echo "$SITES_ARTIFACT"
 
 su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' --arg jq_artifact_module_tf_file '${artifact_module_tf_file}' '{ sites_artifact: \$jq_sites_artifact, artifact_module_tf_file: \$jq_artifact_module_tf_file }' | ./extract-terraform-artifact-modules.sh"
 cat extract-terraform-artifact-modules.sh.log
-ARTIFACT_MODULES
 
-COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
-RUN <<SITE_DOMAINS
-set -x
-# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
-. .build-artifacts-vars
-
-su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
-SITE_DOMAINS
-
-COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
-COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
-COPY --chown=dev:dev terraform-020-chillbox/main.tf .
-COPY --chown=dev:dev terraform-020-chillbox/outputs.tf .
-COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
-COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
-
-RUN <<TERRAFORM_INIT
+# Will need to init again since the artifact modules will have dependencies.
 su dev -c "terraform init"
-su dev -c "terraform workspace new $WORKSPACE"
-TERRAFORM_INIT
+ARTIFACT_MODULES
 
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev terraform-bin bin
 COPY --chown=dev:dev terraform-020-chillbox/bin/ bin/
+COPY --chown=dev:dev .build-artifacts-vars .

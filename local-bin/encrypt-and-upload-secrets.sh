@@ -93,7 +93,7 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
   --entrypoint="" \
-  "$s3_download_gpg_pubkeys_image" sh
+  "$s3_download_gpg_pubkeys_image" _download_gpg_pubkeys.sh || (echo "Ignored." && touch "$gpg_pubkey_dir/chillbox.gpg")
 
 
 tmp_sites_dir="$(mktemp -d)"
@@ -107,68 +107,71 @@ trap cleanup EXIT
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
 
-find "$tmp_sites_dir/sites" -type f -name '*.site.json' \
-  | while read -r site_json; do
-  site_json_file="$(basename "$site_json")"
+site_json_files="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
+for site_json in $site_json_files; do
   slugname="$(basename "$site_json" .site.json)"
   version="$(jq -r '.version' "$site_json")"
 
-  jq -c '.services // [] | .[]' "$site_json_file" \
-    | while read -r service_obj; do
-        test -n "${service_obj}" || continue
-        secrets_config="$(echo "$service_obj" | jq -r '.secrets_config // ""')"
-        test -n "$secrets_config" || continue
-        service_handler="$(echo "$service_obj" | jq -r '.handler')"
-        secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile')"
-        encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc"
-        encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
+  services="$(jq -c '.services // [] | .[]' "$site_json")"
+  test -n "${services}" || continue
+  for service_obj in $services; do
+    test -n "${service_obj}" || continue
+    secrets_config="$(echo "$service_obj" | jq -r '.secrets_config // ""')"
+    test -n "$secrets_config" || continue
+    service_handler="$(echo "$service_obj" | jq -r '.handler')"
+    secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
+    test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
+    encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc"
+    encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
 
-        mkdir -p "$encrypted_secret_service_dir"
+    mkdir -p "$encrypted_secret_service_dir"
 
-        if [ -e "$encrypted_secret_file" ]; then
-          echo "The encrypted file for $slugname $service_handler already exists: $encrypted_secret_file"
-          echo "Replace this file? y/n"
-          read replace_secret_file
-          test "$replace_secret_file" = "y" || continue
-        fi
-        rm -f "$encrypted_secret_file"
+    if [ -e "$encrypted_secret_file" ]; then
+      echo "The encrypted file for $slugname $service_handler already exists: $encrypted_secret_file"
+      echo "Replace this file? y/n"
+      read replace_secret_file
+      test "$replace_secret_file" = "y" || continue
+    fi
+    rm -f "$encrypted_secret_file"
 
-        tmp_service_dir="$(mktemp -d)"
-        tar x -z -f "$project_dir/dist/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
+    tmp_service_dir="$(mktemp -d)"
+    tar x -z -f "$project_dir/dist/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
 
-        service_image_name="$slugname-$version-$service_handler-$WORKSPACE"
-        tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
-        tmpfs_dir="/run/tmp/$service_image_name"
-        service_persistent_dir="/var/lib/$slugname-$service_handler/$WORKSPACE"
-        chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
+    test -e "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 
-        docker rm "$tmp_container_name" || printf ""
-        docker image rm "$service_image_name" || printf ""
-        export DOCKER_BUILDKIT=1
-        docker build \
-          --build-arg SECRETS_CONFIG="$secrets_config" \
-          --build-arg WORKSPACE="${WORKSPACE}" \
-          --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
-          --build-arg TMPFS_DIR="$tmpfs_dir"
-          --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir"
-          --build-arg SLUGNAME="$slugname"
-          --build-arg VERSION="$version"
-          --build-arg SERVICE_HANDLER="$service_handler"
-          -t "$service_image_name" \
-          -f "$tmp_service_dir/$service_handler/$secrets_export_dockerfile" \
-          "$tmp_service_dir/$service_handler/"
+    service_image_name="$slugname-$version-$service_handler-$WORKSPACE"
+    tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
+    tmpfs_dir="/run/tmp/$service_image_name"
+    service_persistent_dir="/var/lib/$slugname-$service_handler/$WORKSPACE"
+    chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
 
-        docker run \
-          -i --tty \
-          --name "$tmp_container_name" \
-          --mount "type=tmpfs,dst=$tmpfs_dir" \
-          --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$WORKSPACE,dst=$service_persistent_dir" \
-          --mount "type=bind,src=$encrypted_secrets_dir/gpg_pubkey,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
-          "$service_image_name"
-        docker cp "$tmp_container_name:$service_persistent_dir/encrypted_secrets/" "$encrypted_secret_service_dir/"
-        docker rm "$tmp_container_name" || printf ""
+    set -x
+    docker image rm "$service_image_name" || printf ""
+    export DOCKER_BUILDKIT=1
+    docker build \
+      --build-arg SECRETS_CONFIG="$secrets_config" \
+      --build-arg WORKSPACE="${WORKSPACE}" \
+      --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
+      --build-arg TMPFS_DIR="$tmpfs_dir" \
+      --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
+      --build-arg SLUGNAME="$slugname" \
+      --build-arg VERSION="$version" \
+      --build-arg SERVICE_HANDLER="$service_handler" \
+      -t "$service_image_name" \
+      -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" \
+      "$tmp_service_dir/$slugname/$service_handler/"
 
-      done
+    docker run \
+      -i --tty \
+      --name "$tmp_container_name" \
+      --mount "type=tmpfs,dst=$tmpfs_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$WORKSPACE,dst=$service_persistent_dir" \
+      --mount "type=bind,src=$gpg_pubkey_dir,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
+      "$service_image_name"
+    docker cp "$tmp_container_name:$service_persistent_dir/encrypted_secrets/" "$encrypted_secret_service_dir/"
+    docker rm "$tmp_container_name" || printf ""
+
+  done
 
 done
 

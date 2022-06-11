@@ -19,7 +19,7 @@ ARG WORKSPACE=development
 ENV WORKSPACE=$WORKSPACE
 ARG SECRETS_CONFIG=api-bridge.secrets.cfg
 ENV SECRETS_CONFIG=$SECRETS_CONFIG
-ARG CHILLBOX_GPG_PUBKEY_DIR=chillbox
+ARG CHILLBOX_GPG_PUBKEY_DIR
 ENV CHILLBOX_GPG_PUBKEY_DIR=$CHILLBOX_GPG_PUBKEY_DIR
 ARG SLUGNAME=slugname
 ENV SLUGNAME=$SLUGNAME
@@ -33,35 +33,63 @@ ARG SERVICE_PERSISTENT_DIR=/var/lib/SLUGNAME-SERVICE_HANDLER/WORKSPACE
 ENV SERVICE_PERSISTENT_DIR=$SERVICE_PERSISTENT_DIR
 
 RUN <<SECRETS_PROMPT_SH
-cat <<HERE > /usr/local/src/api-secrets/secrets-prompt.sh
+cat <<'HERE' > /usr/local/src/api-secrets/secrets-prompt.sh
 #!/usr/bin/env sh
 
 set -o errexit
 set -o nounset
 
+test -e "$CHILLBOX_GPG_PUBKEY_DIR" || (echo "ERROR $0: No directory at $CHILLBOX_GPG_PUBKEY_DIR" && exit 1)
+
 mkdir -p "$TMPFS_DIR/secrets/"
 mkdir -p "$SERVICE_PERSISTENT_DIR"
 
-gpg --import /var/lib/chillbox/chillbox.gpg
+find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.gpg'
 
-echo "Stop. Who would cross the Bridge of Death must answer me these questions three, ere the other side he see."
+find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.gpg' \
+  | while read -r chillbox_gpg_key_file; do
+    gpg --import "$chillbox_gpg_key_file"
+  done
 
-printf "What…"
+printf "\n\n%s\n" "Stop."
+
+typeit() {
+  for w in $1; do
+    chars="$(echo "$w" | sed 's/\(.\)/\1 /g')"
+    for c in $chars; do
+      printf "$c"
+      sleep 0.1
+    done
+    printf " "
+    sleep 0.1
+  done
+}
+
+typeit "Who would cross the Bridge of Death must answer me these questions three, ere the other side he see."
+printf "\n\n"
+
 sleep 1
-printf " is your name?"
+printf "\nWhat… "
+sleep 1
+typeit "is your name?"
+printf "  "
 read first_answer
 
-printf "What…"
+printf "\nWhat… "
 sleep 1
-printf " is your quest?"
+typeit "is your quest?"
+printf "  "
 read second_answer
 
-printf "What…"
+printf "\nWhat… "
 sleep 1
-printf " is your favourite colour?"
+typeit "is your favourite colour?"
+printf "  "
 read fifth_answer
 
-echo "Go on. Off you go."
+printf "\n\n"
+typeit "Go on. Off you go."
+printf "\n\n"
 
 cat <<SECRETS > "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
 ANSWER1=$first_answer
@@ -94,4 +122,4 @@ chmod +x /usr/local/src/api-secrets/secrets-prompt.sh
 
 SECRETS_PROMPT_SH
 
-CMD ["/usr/local/src/api-secrets/secrets-prompt.sh"]
+ENTRYPOINT ["/usr/local/src/api-secrets/secrets-prompt.sh"]

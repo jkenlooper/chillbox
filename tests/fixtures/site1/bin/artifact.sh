@@ -23,6 +23,7 @@ cp -R documents queries templates chill-data.yaml site.cfg VERSION $TMPDIR/$slug
 
 cd $projectdir/api
 mkdir -p $TMPDIR/$slugname/api
+cp -R api-bridge.secrets.Dockerfile $TMPDIR/$slugname/api/
 cp -R pyproject.toml README.md MANIFEST.in requirements.txt setup.cfg setup.py src $TMPDIR/$slugname/api/
 
 cd $projectdir/nginx
