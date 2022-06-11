@@ -16,3 +16,6 @@ crash.*.log
 /terraform_state_backup
 
 /.build-artifacts-vars
+
+/encrypted_secrets
+/gpg_pubkey

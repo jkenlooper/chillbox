@@ -7,11 +7,9 @@ test -n "$decrypted_credentials_tfvars_file" || (echo "ERROR $0: First arg is no
 test -e "$decrypted_credentials_tfvars_file" || (echo "ERROR $0: Missing $decrypted_credentials_tfvars_file file." && exit 1)
 
 endpoint_url=""
-immutable_bucket_name=""
 artifact_bucket_name=""
 eval "$(jq -r 'map_values(.value) | @sh "
 endpoint_url=\(.s3_endpoint_url)
-immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' /var/lib/terraform-010-infra/output.json)"
 
