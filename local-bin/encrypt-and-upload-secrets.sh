@@ -193,11 +193,28 @@ for site_json in $site_json_files; do
 
 done
 
-echo "TODO"
-exit 0
-aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp \
-  --recursive \
-  "$encrypted_secrets_dir" \
-  "s3://${ARTIFACT_BUCKET_NAME}/chillbox/"
+
+s3_upload_encrypted_secrets_image="chillbox-s3-upload-encrypted-secrets-$WORKSPACE"
+s3_upload_encrypted_secrets_container="chillbox-s3-upload-encrypted-secrets-$WORKSPACE"
+docker rm "${s3_upload_encrypted_secrets_container}" || printf ""
+docker image rm "$s3_upload_encrypted_secrets_image" || printf ""
+export DOCKER_BUILDKIT=1
+docker build \
+  --build-arg WORKSPACE="${WORKSPACE}" \
+  -t "$s3_upload_encrypted_secrets_image" \
+  -f "${project_dir}/src/s3-upload-encrypted-secrets.Dockerfile" \
+  "${project_dir}"
+
+docker run \
+  -i --tty \
+  --rm \
+  --name "$s3_upload_encrypted_secrets_container" \
+  --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
+  --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
+  --entrypoint="" \
+  "$s3_upload_encrypted_secrets_image" _upload_encrypted_secrets.sh || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")
+
