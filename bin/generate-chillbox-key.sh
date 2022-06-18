@@ -4,10 +4,11 @@ set -o errexit
 
 command -v gpg > /dev/null
 
-# TODO Support more than a single chillbox by setting a unique key_name instead of simply 'chillbox'.
-key_name="chillbox"
+test -n "$CHILLBOX_GPG_KEY_NAME" || (echo "ERROR $0: No CHILLBOX_GPG_KEY_NAME set. Exiting" && exit 1)
+
 user="$(id -un)"
 hostname="$(hostname)"
+key_name="$CHILLBOX_GPG_KEY_NAME"
 
 test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
 echo "INFO $0: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"

@@ -27,3 +27,5 @@ aws \
   --recursive \
   "/var/lib/encrypted_secrets" \
   "s3://${artifact_bucket_name}/chillbox/encrypted_secrets"
+
+# $encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc

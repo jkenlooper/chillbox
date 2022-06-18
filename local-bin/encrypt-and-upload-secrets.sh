@@ -55,10 +55,6 @@ sites_manifest_file="$project_dir/dist/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
-# build the container
-# run the container to download the gpg_pubkey files
-# Back on the host; build and run the services secrets_export_dockerfile
-# build and run the container to upload the encrypted secrets
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
 docker image rm "$sleeper_image" || printf ""
@@ -100,9 +96,9 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
-  --entrypoint="" \
-  "$s3_download_gpg_pubkeys_image" _download_gpg_pubkeys.sh || (echo "TODO $0: Ignored error on s3 download of gpg pubkeys." && gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox")
+  "$s3_download_gpg_pubkeys_image" || (echo "TODO $0: Ignored error on s3 download of gpg pubkeys." && gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox")
 
+# TODO Remove temporary local gpg pubkey
 echo "INFO: Adding temporary local gpg pubkey"
 gpg --yes --armor --output "$gpg_pubkey_dir/chillbox-temp-local.gpg" --export "chillbox-temp-local"
 
@@ -215,6 +211,4 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
-  --entrypoint="" \
-  "$s3_upload_encrypted_secrets_image" _upload_encrypted_secrets.sh || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")
-
+  "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")

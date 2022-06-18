@@ -2,6 +2,7 @@
 
 set -o errexit
 
+bin_dir="$(dirname "$0")"
 service_obj="$1"
 tmp_artifact="$2"
 
@@ -40,7 +41,13 @@ export IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $0: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $0: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
+export CHILLBOX_GPG_KEY_NAME=${CHILLBOX_GPG_KEY_NAME}
+test -n "${CHILLBOX_GPG_KEY_NAME}" || (echo "ERROR $0: CHILLBOX_GPG_KEY_NAME variable is empty" && exit 1)
+echo "INFO $0: Using CHILLBOX_GPG_KEY_NAME '${CHILLBOX_GPG_KEY_NAME}'"
+
 echo "INFO $0: Running site init for service object: ${service_obj}"
+
+# TODO mount tmpfs at /run/tmp/chillbox_secrets
 
 # Extract and set shell variables from JSON input
 service_name=""
@@ -51,8 +58,21 @@ eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$slugname" '@sh "
   service_name=\(.name)
   service_lang_template=\(.lang)
   service_handler=\(.handler)
-  service_secrets_config=\( if .secrets_config then "/var/lib/chillbox-shared-secrets/\( $jq_slugname )/\( .secrets_config )" else "" end )
+  service_secrets_config=\( .secrets_config // "" )
   "')"
+
+service_secrets_config_file=""
+if [ -n "$service_secrets_config" ]; then
+  service_secrets_config_file="/run/tmp/chillbox_secrets/$slugname/$service_handler/$service_secrets_config"
+  service_secrets_config_dir="$(dirname "$service_secrets_config")"
+  mkdir -p "$service_secrets_config_dir"
+  chown -R "$slugname":"$slugname" "$service_secrets_config_dir"
+  chmod -R 700 "$service_secrets_config_dir"
+
+  "$bin_dir/download-and-decrypt-secrets-config.sh" "$slugname/$service_handler/$service_secrets_config"
+
+fi
+
 # Extract just the new service handler directory from the tmp_artifact
 cd "$(dirname "$slugdir")"
 tar x -z -f "$tmp_artifact" "$slugname/${service_handler}"
@@ -71,9 +91,6 @@ if [ "${service_lang_template}" = "flask" ]; then
 
   mkdir -p "/var/lib/${slugname}/${service_handler}"
   chown -R "$slugname":"$slugname" "/var/lib/${slugname}"
-  mkdir -p "/var/lib/chillbox-shared-secrets/${slugname}"
-  chown -R "$slugname":"$slugname" "/var/lib/chillbox-shared-secrets/${slugname}"
-  chmod -R 700 "/var/lib/chillbox-shared-secrets/${slugname}"
 
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
@@ -82,7 +99,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}" \
   S3_ENDPOINT_URL="$S3_ARTIFACT_ENDPOINT_URL" \
-  SECRETS_CONFIG="${service_secrets_config}" \
+  SECRETS_CONFIG="${service_secrets_config_file}" \
     ./.venv/bin/flask init-db \
     || echo "ERROR $0: Failed to run './.venv/bin/flask init-db' for ${slugname} ${service_handler}."
 
@@ -119,7 +136,7 @@ PURR
 s6-env HOST=localhost \
 s6-env FLASK_ENV=development
 s6-env FLASK_INSTANCE_PATH="/var/lib/${slugname}/${service_handler}"
-s6-env SECRETS_CONFIG=${service_secrets_config}
+s6-env SECRETS_CONFIG=${service_secrets_config_file}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
@@ -132,10 +149,10 @@ PURR
   # defined or if there is one; it should exist.
   # An error isn't thrown here because the service can start later when the
   # secrets config file has been decrypted at a later time.
-  if [ -z "${service_secrets_config}" ] || [ -e "${service_secrets_config}" ]; then
+  if [ -z "${service_secrets_config_file}" ] || [ -e "${service_secrets_config_file}" ]; then
     rc-service "${slugname}-${service_name}" start
   else
-    echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start' since no file found at: ${service_secrets_config}"
+    echo "INFO $0: Skipping call to 'rc-service ${slugname}-${service_name} start' since no file found at: ${service_secrets_config_file}"
   fi
 
 elif [ "${service_lang_template}" = "chill" ]; then

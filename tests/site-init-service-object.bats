@@ -17,13 +17,14 @@ setup_file() {
   export slugdir="$tmp_dir/usr/local/src/$slugname"
   mkdir -p "$slugdir"
 
-  mkdir -p /var/lib/chillbox-shared-secrets/$slugname
-  touch /var/lib/chillbox-shared-secrets/$slugname/api.cfg
+  mkdir -p /run/tmp/chillbox_secrets/$slugname
+  touch /run/tmp/chillbox_secrets/$slugname/api.cfg
 
   export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
+  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
 
   "${BATS_TEST_DIRNAME}"/../bin/create-env_names-file.sh
 }
@@ -31,8 +32,7 @@ teardown_file() {
   rm -f /etc/chillbox/env_names
   test -d "$tmp_dir" && rm -rf $tmp_dir
 
-  rm /var/lib/chillbox-shared-secrets/$slugname/api.cfg
-  rmdir /var/lib/chillbox-shared-secrets/$slugname
+  rm -rf /run/tmp/chillbox_secrets/$slugname
 }
 
 setup() {
@@ -57,6 +57,14 @@ setup() {
 
   mock_rc_service="$(mock_create)"
   ln -s "${mock_rc_service}" $BATS_RUN_TMPDIR/rc-service
+
+  mock_aws="$(mock_create)"
+  mock_set_output "${mock_aws}" "something" 0
+  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+
+  mock_gpg="$(mock_create)"
+  mock_set_output "${mock_gpg}" "something" 0
+  ln -s "${mock_gpg}" $BATS_RUN_TMPDIR/gpg
 
   test "${LOGGING_LEVEL}" -le $DEBUG \
     && echo "# Creates a mock chill symbolic link: /usr/local/bin/chill to $(readlink /usr/local/bin/chill)" >&3
@@ -89,6 +97,12 @@ teardown() {
 
   test -L $BATS_RUN_TMPDIR/rc-service \
     && rm -f $BATS_RUN_TMPDIR/rc-service
+
+  test -L $BATS_RUN_TMPDIR/aws \
+    && rm -f $BATS_RUN_TMPDIR/aws
+
+  test -L $BATS_RUN_TMPDIR/gpg \
+    && rm -f $BATS_RUN_TMPDIR/gpg
 }
 
 main() {
@@ -139,6 +153,12 @@ main() {
 
 @test "fail when IMMUTABLE_BUCKET_NAME is empty" {
   export IMMUTABLE_BUCKET_NAME=""
+  run main "${service_obj}" "${tmp_artifact}"
+  assert_failure
+}
+
+@test "fail when CHILLBOX_GPG_KEY_NAME is empty" {
+  export CHILLBOX_GPG_KEY_NAME=""
   run main "${service_obj}" "${tmp_artifact}"
   assert_failure
 }

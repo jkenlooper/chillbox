@@ -26,7 +26,9 @@ chillbox_artifact="${tf_chillbox_artifact}"
 # shellcheck disable=SC2154
 s3_endpoint_url="${tf_s3_endpoint_url}"
 # shellcheck disable=SC2154
-chillbox_hostname="${tf_chillbox_hostname}"
+chillbox_server_name="${tf_chillbox_server_name}"
+# shellcheck disable=SC2154
+chillbox_gpg_key_name="${tf_chillbox_hostname_prefix}-$(hostname -i)"
 
 tmp_bootstrap_dir="$(mktemp -d)"
 tmp_chillbox_artifact=$(mktemp)
@@ -85,5 +87,6 @@ ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
 SITES_ARTIFACT="$sites_artifact" \
 CHILLBOX_ARTIFACT="$chillbox_artifact" \
 S3_ENDPOINT_URL="$s3_endpoint_url" \
-CHILLBOX_HOSTNAME="$chillbox_hostname" \
+CHILLBOX_SERVER_NAME="$chillbox_server_name" \
+CHILLBOX_GPG_KEY_NAME="$chillbox_gpg_key_name" \
   "$tmp_bootstrap_dir/bin/chillbox-init.sh"

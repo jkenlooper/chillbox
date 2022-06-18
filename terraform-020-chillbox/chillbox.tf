@@ -62,7 +62,8 @@ resource "local_sensitive_file" "alpine_box_init" {
     tf_chillbox_artifact : var.chillbox_artifact
     # No slash at the end of this s3_endpoint_url
     tf_s3_endpoint_url : var.s3_endpoint_url,
-    tf_chillbox_hostname : "${var.sub_domain}${var.domain}",
+    tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
+    tf_chillbox_hostname_prefix : "chillbox-${var.environment}",
   })
 }
 

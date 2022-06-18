@@ -52,6 +52,7 @@ find "$slugname" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler
     # Stopping the service will require removing any secrets config file as
     # well. A new one should be downloaded from s3 and decrypted to start the
     # service back up.
+    # TODO should be /run/tmp/chillbox/encrypted_secrets/
     if [ -e "/var/lib/${slugname}/secrets/${service_secrets_config}" ]; then
       echo "INFO $0: Shredding /var/lib/${slugname}/secrets/${service_secrets_config} file"
       shred -fu "/var/lib/${slugname}/secrets/${service_secrets_config}"

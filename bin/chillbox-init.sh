@@ -13,7 +13,8 @@ artifact_bucket_name="${ARTIFACT_BUCKET_NAME:-}"
 sites_artifact="${SITES_ARTIFACT:-}"
 chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
 s3_endpoint_url="${S3_ENDPOINT_URL:-}"
-chillbox_hostname="${CHILLBOX_HOSTNAME:-}"
+chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
+chillbox_gpg_key_name="${CHILLBOX_GPG_KEY_NAME:-}"
 
 if [ -z "$developer_ssh_key_github_list" ]; then
   printf '\n%s\n' "No DEVELOPER_SSH_KEY_GITHUB_LIST variable set."
@@ -101,11 +102,18 @@ if [ -z "$s3_endpoint_url" ]; then
   test -n "$s3_endpoint_url" || (echo "No s3 endpoint URL set. Exiting" && exit 1)
 fi
 
-if [ -z "$chillbox_hostname" ]; then
-  printf '\n%s\n' "No CHILLBOX_HOSTNAME variable set."
-  printf '\n%s\n' "Enter the chillbox hostname to use."
-  read -r chillbox_hostname
-  test -n "$chillbox_hostname" || (echo "No chillbox hostname set. Exiting" && exit 1)
+if [ -z "$chillbox_server_name" ]; then
+  printf '\n%s\n' "No CHILLBOX_SERVER_NAME variable set."
+  printf '\n%s\n' "Enter the chillbox server name to use which should be a fully qualified domain name."
+  read -r chillbox_server_name
+  test -n "$chillbox_server_name" || (echo "No chillbox server name set. Exiting" && exit 1)
+fi
+
+if [ -z "$chillbox_gpg_key_name" ]; then
+  printf '\n%s\n' "No CHILLBOX_GPG_KEY_NAME variable set."
+  printf '\n%s\n' "Enter the chillbox gpg key name to use (should be unique)."
+  read -r chillbox_gpg_key_name
+  test -n "$chillbox_gpg_key_name" || (echo "No chillbox gpg key name set. Exiting" && exit 1)
 fi
 
 tmp_cred_csv=$(mktemp)
@@ -209,7 +217,8 @@ export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"
 export S3_ARTIFACT_ENDPOINT_URL="${s3_endpoint_url}"
 export CHILLBOX_ARTIFACT="${chillbox_artifact}"
-export CHILLBOX_SERVER_NAME="${chillbox_hostname}"
+export CHILLBOX_SERVER_NAME="${chillbox_server_name}"
+export CHILLBOX_GPG_KEY_NAME="${chillbox_gpg_key_name}"
 export CHILLBOX_SERVER_PORT=80
 # TODO: switch to released chill version
 #export PIP_CHILL="chill==0.9.0"
@@ -266,7 +275,9 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
-CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" /etc/chillbox/bin/generate-chillbox-key.sh
+ CHILLBOX_GPG_KEY_NAME="${chillbox_gpg_key_name}" \
+ CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" \
+   /etc/chillbox/bin/generate-chillbox-key.sh
 
 ## RUN_CHILLBOX_ENV_NAMES
 /etc/chillbox/bin/create-env_names-file.sh

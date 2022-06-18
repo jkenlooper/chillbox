@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+
+set -o errexit
+
+# $slugname/$service_handler/$service_secrets_config
+service_secrets_config_path="$1"
+test -n "$service_secrets_config_path" || (echo "ERROR $0: No arg passed in for service secrets config path. Exiting" && exit 1)
+
+CHILLBOX_GPG_KEY_NAME="${CHILLBOX_GPG_KEY_NAME:-}"
+S3_ENDPOINT_URL="${S3_ENDPOINT_URL:-}"
+ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME:-}"
+
+# TODO Verify that this has already been done?
+# shellcheck disable=SC1091
+# . /home/dev/.env
+
+test -n "$CHILLBOX_GPG_KEY_NAME" || (echo "ERROR $0: No CHILLBOX_GPG_KEY_NAME set. Exiting" && exit 1)
+test -n "$S3_ENDPOINT_URL" || (echo "ERROR $0: No S3_ENDPOINT_URL set. Exiting" && exit 1)
+test -n "$ARTIFACT_BUCKET_NAME" || (echo "ERROR $0: No ARTIFACT_BUCKET_NAME set. Exiting" && exit 1)
+
+tmp_encrypted_secret_config="$(mktemp)"
+
+# TODO Need to grab the one that was encrypted for this chillbox gpg key.
+
+aws \
+  --endpoint-url "$S3_ENDPOINT_URL" \
+  s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_path" \
+  "$tmp_encrypted_secret_config"
+
+decrypted_file="/run/tmp/chillbox_secrets/$service_secrets_config_path"
+mkdir -p "$(dirname "$decrypted_file")"
+
+echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$service_secrets_config_path to ${decrypted_file}"
+gpg --quiet --decrypt "$tmp_encrypted_secret_config" > "${decrypted_file}"

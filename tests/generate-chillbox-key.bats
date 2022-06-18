@@ -23,7 +23,9 @@ setup() {
   tmp_gpg_home="$(mktemp -d)"
   export GNUPGHOME="$tmp_gpg_home"
   export S3_ARTIFACT_ENDPOINT_URL="test"
+  export S3_ENDPOINT_URL="test"
   export ARTIFACT_BUCKET_NAME="test"
+  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
   export AWS_PROFILE="test"
 }
 teardown() {
@@ -34,7 +36,9 @@ teardown() {
 }
 
 main() {
-  CHILLBOX_GPG_PASSPHRASE="test" "${BATS_TEST_DIRNAME}"/../bin/generate-chillbox-key.sh
+  CHILLBOX_GPG_KEY_NAME="chillbox-test" \
+  CHILLBOX_GPG_PASSPHRASE="test" \
+    "${BATS_TEST_DIRNAME}"/../bin/generate-chillbox-key.sh
 }
 
 @test "pass when chillbox gpg key is generated" {
