@@ -26,8 +26,8 @@ docker build -t chillbox-bats:latest - < "${tests_dir}/Dockerfile"
 debug=${DEBUG:-"n"}
 if [ "$debug" = "y" ]; then
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
-    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
     --entrypoint="sh" \
     chillbox-bats:latest
 
@@ -36,30 +36,30 @@ else
 
   # Run shellcheck on all scripts and fail if there are issues
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin" \
-    --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
-    --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin" \
-    --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
-    --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
-    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+    --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh,readonly=true" \
+    --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra,readonly=true" \
+    --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox,readonly=true" \
+    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
     --entrypoint="sh" \
     chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
     || \
       (docker run -it --rm \
-        --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin" \
-        --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh" \
-        --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin" \
-        --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra" \
-        --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox" \
-        --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
-        --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+        --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin,readonly=true" \
+        --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh,readonly=true" \
+        --mount "type=bind,src=${project_dir}/terraform-bin,dst=/code/terraform-bin,readonly=true" \
+        --mount "type=bind,src=${project_dir}/terraform-010-infra,dst=/code/terraform-010-infra,readonly=true" \
+        --mount "type=bind,src=${project_dir}/terraform-020-chillbox,dst=/code/terraform-020-chillbox,readonly=true" \
+        --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+        --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
         --entrypoint="sh" \
         chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck {} +" && exit 1)
 
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin" \
-    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests" \
+    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
     chillbox-bats:latest "$TEST"
 
 fi

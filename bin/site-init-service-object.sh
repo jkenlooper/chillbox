@@ -64,13 +64,17 @@ eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$slugname" '@sh "
 service_secrets_config_file=""
 if [ -n "$service_secrets_config" ]; then
   service_secrets_config_file="/run/tmp/chillbox_secrets/$slugname/$service_handler/$service_secrets_config"
-  service_secrets_config_dir="$(dirname "$service_secrets_config")"
+  service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
   mkdir -p "$service_secrets_config_dir"
   chown -R "$slugname":"$slugname" "$service_secrets_config_dir"
   chmod -R 700 "$service_secrets_config_dir"
 
   "$bin_dir/download-and-decrypt-secrets-config.sh" "$slugname/$service_handler/$service_secrets_config"
-
+fi
+# Need to check if this secrets config file was successfully downloaded since it
+# might not exist yet.
+if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file" ]; then
+  echo "WARNING $0: No service secrets config file was able to be downloaded and decrypted."
 fi
 
 # Extract just the new service handler directory from the tmp_artifact

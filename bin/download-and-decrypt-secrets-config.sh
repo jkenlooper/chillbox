@@ -19,8 +19,22 @@ test -n "$S3_ENDPOINT_URL" || (echo "ERROR $0: No S3_ENDPOINT_URL set. Exiting" 
 test -n "$ARTIFACT_BUCKET_NAME" || (echo "ERROR $0: No ARTIFACT_BUCKET_NAME set. Exiting" && exit 1)
 
 tmp_encrypted_secret_config="$(mktemp)"
+cleanup() {
+  rm -f "$tmp_encrypted_secret_config"
+}
+trap cleanup EXIT
 
-# TODO Need to grab the one that was encrypted for this chillbox gpg key.
+service_secrets_config_exists="$(aws \
+  --endpoint-url "$S3_ENDPOINT_URL" \
+  s3 ls \
+  "s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_path" > /dev/null \
+    && printf 'yes' \
+    || printf 'no')"
+if [ "$service_secrets_config_exists" = "no" ]; then
+  echo "INFO $0: Service secrets config doesn't exist at: s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_path"
+  echo "INFO $0: Skipping download and decrypt secrets config for $service_secrets_config_path"
+  exit 0
+fi
 
 aws \
   --endpoint-url "$S3_ENDPOINT_URL" \
