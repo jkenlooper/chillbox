@@ -33,7 +33,9 @@ immediate use case that I currently have. It may be better to adopt a different
 solution (kubernetes) if the below features are needed. These are the things I
 would be tempted to implement.
 
-- Option to use [Linode] for hosting instead of only [DigitalOcean]
+- Option to use other cloud hosting instead of only [DigitalOcean]
+  - [Linode] 
+  - [Vultr]
 - Deploy multiple chillbox servers for high availability
   - [AWS Route53 failover](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover.html)
   - TODO: Find other cloud hosting providers that do this?
@@ -78,6 +80,7 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [NGINX]: https://nginx.org/
 [POSIX]: https://en.wikipedia.org/wiki/POSIX
 [Linode]: https://www.linode.com/
+[Vultr]: https://www.vultr.com/
 [Rust]: https://rust-lang.org/
 [Go]: https://go.dev/
 [Bats-core]: https://github.com/bats-core/bats-core#readme

@@ -8,7 +8,7 @@
 Infrastructure for websites that use [Chill] and custom Python [Flask] services
 that are deployed on an [Alpine Linux] server and backed by s3 object storage.
 Supports automating deployments to [DigitalOcean] with [Terraform] and plans to
-support other cloud hosting providers like [Linode].
+support other cloud hosting providers like [Linode], [Vultr].
 
 ## Goals
 
@@ -71,6 +71,7 @@ grep --line-number --fixed-strings 'UPKEEP' '{}' +
 [NGINX]: https://nginx.org/
 [POSIX]: https://en.wikipedia.org/wiki/POSIX
 [Linode]: https://www.linode.com/
+[Vultr]: https://www.vultr.com/
 [Rust]: https://rust-lang.org/
 [Go]: https://go.dev/
 [Bats-core]: https://github.com/bats-core/bats-core#readme
