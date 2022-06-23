@@ -16,6 +16,13 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
+chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE/build-artifacts-vars"
+test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $0: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+# SITES_ARTIFACT=""
+# SITES_MANIFEST=""
+# shellcheck source=/dev/null
+. "$chillbox_build_artifact_vars_file"
+
 # The WORKSPACE is passed as a build-arg for the images, so make the image and
 # container name also have that in their name.
 export INFRA_IMAGE="chillbox-terraform-010-infra-$WORKSPACE"

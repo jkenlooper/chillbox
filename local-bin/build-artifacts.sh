@@ -31,9 +31,9 @@ eval "$(jq -r '@sh "
   echo "  sites_artifact_url=$sites_artifact_url"
 } >> "$LOG_FILE"
 
-chillbox_artifact_version="$(cat VERSION)"
-CHILLBOX_ARTIFACT="chillbox.$chillbox_artifact_version.tar.gz"
-echo "CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT" >> "$LOG_FILE"
+chillbox_artifact_version="$(cat "$working_dir/VERSION")"
+chillbox_artifact="chillbox.$chillbox_artifact_version.tar.gz"
+echo "chillbox_artifact: $chillbox_artifact" >> "$LOG_FILE"
 
 sites_manifest_json="sites.manifest.json"
 
@@ -43,8 +43,8 @@ echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
 mkdir -p "$working_dir/dist"
 
 # Create the chillbox artifact file
-if [ ! -f "$working_dir/dist/$CHILLBOX_ARTIFACT" ]; then
-  tar c -z -f "$working_dir/dist/$CHILLBOX_ARTIFACT" \
+if [ ! -f "$working_dir/dist/$chillbox_artifact" ]; then
+  tar c -z -f "$working_dir/dist/$chillbox_artifact" \
     -C "$working_dir" \
     nginx/default.nginx.conf \
     nginx/nginx.conf \
@@ -52,7 +52,7 @@ if [ ! -f "$working_dir/dist/$CHILLBOX_ARTIFACT" ]; then
     bin \
     VERSION
 else
-  echo "No changes to existing chillbox artifact: $CHILLBOX_ARTIFACT" >> "$LOG_FILE"
+  echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$LOG_FILE"
 fi
 
 # Download or copy over the sites artifact file
@@ -197,12 +197,12 @@ fi
 # Output the json
 jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
-  --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
+  --arg jq_chillbox_artifact "$chillbox_artifact" \
   --arg jq_sites_manifest "$sites_manifest_json" \
   --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$working_dir/dist/$sites_manifest_json")" \
   '{
     sites_artifact:$sites_artifact,
-    chillbox_artifact:$chillbox_artifact,
+    chillbox_artifact:$jq_chillbox_artifact,
     sites_manifest:$jq_sites_manifest,
     sites:$sites_immutable_and_artifacts
   }'

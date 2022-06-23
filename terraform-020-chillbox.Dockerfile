@@ -96,8 +96,6 @@ COPY --chown=dev:dev dist/$SITES_ARTIFACT ./dist/$SITES_ARTIFACT
 COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
 RUN <<SITE_DOMAINS
 set -x
-# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
-#. .build-artifacts-vars
 
 su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
 SITE_DOMAINS
@@ -106,8 +104,6 @@ COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.s
 COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
 echo "Extracting artifact terraform modules is not implemented." && exit 0
-# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
-#. .build-artifacts-vars
 
 mkdir -p artifact-modules
 chown dev:dev artifact-modules
@@ -131,4 +127,3 @@ ARTIFACT_MODULES
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev terraform-bin bin
 COPY --chown=dev:dev terraform-020-chillbox/bin/ bin/
-COPY --chown=dev:dev .build-artifacts-vars .

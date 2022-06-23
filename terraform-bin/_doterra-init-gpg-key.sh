@@ -23,10 +23,3 @@ else
   echo "ERROR $0: Failed running command: 'gpg --quick-generate-key \"${GPG_KEY_NAME}\" default encrypt never' exited with error code: $qgk_err_code"
   exit 1
 fi
-
-# TODO No longer doing this since the gpg key to decrypt site secrets will only
-# live on the chillbox server.
-## Export the public gpg key for this workspace so the site secrets can be
-## encrypted and uploaded to the s3 artifact bucket.
-#gpg --list-keys
-#gpg --armor --output "${GPG_KEY_NAME}.gpg" --export "${GPG_KEY_NAME}"

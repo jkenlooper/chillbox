@@ -54,17 +54,45 @@ terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
 
 SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
-# Allow setting defaults from an env file
-ENV_CONFIG=${1:-"$project_dir/.env"}
-# shellcheck source=/dev/null
-test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
-
 export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
   echo "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
+
+chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$WORKSPACE"
+mkdir -p "$chillbox_config_home"
+
+env_config="$chillbox_config_home/env"
+if [ ! -f "${env_config}" ]; then
+  # Prompt the user if no environment config file exists in case this was not
+  # the desired operation. If this is the first time running this script for the
+  # environment; it is helpful to create the files needed.
+  echo "INFO $script_name: No $env_config file found."
+  printf "\n%s\n" "Create the $env_config file? [y/n]"
+  read -r create_default_environment_file
+  if [ "$create_default_environment_file" != "y" ]; then
+    echo "Exiting since no environment file exists at $env_config."
+    exit 2
+  fi
+
+  test -f "$chillbox_config_home/terraform-010-infra.private.auto.tfvars" \
+    || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
+  test -f "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars" \
+    || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars"
+  cat <<HERE > "$env_config"
+# Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
+# export SITES_ARTIFACT_URL="https://example.test/site1-0.1-example-sites.tar.gz"
+
+# Update these files as needed.
+export TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
+export TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars"
+HERE
+fi
+
+# shellcheck source=/dev/null
+. "${env_config}"
 
 # The WORKSPACE is passed as a build-arg for the images, so make the image and
 # container name also have that in their name.
@@ -74,11 +102,13 @@ export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox-$WORKSPACE"
 export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$WORKSPACE"
 
 test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
-  || echo "WARNING $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
+  || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
 test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
-  || echo "WARNING $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set; using the default file in tests directory."
-terraform_infra_private_auto_tfvars_file="${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars}"
-terraform_chillbox_private_auto_tfvars_file="${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars}"
+  || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config.  See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars'." && exit 1)
+test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
+  || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE is set to a file that doesn't exist: $TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" && exit 1)
+test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
+  || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE is set to a file that doesn't exist: $TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" && exit 1)
 
 SITES_ARTIFACT_URL=${SITES_ARTIFACT_URL:-"example"}
 test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
@@ -134,7 +164,11 @@ test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST var
 # Verify that the artifacts that were built have met the service contracts before continuing.
 SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
 
-cat <<HERE > .build-artifacts-vars
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE"
+mkdir -p "$chillbox_state_home"
+
+chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
+cat <<HERE > "$chillbox_build_artifact_vars_file"
 export SITES_ARTIFACT="$SITES_ARTIFACT"
 export CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 export SITES_MANIFEST="$SITES_MANIFEST"
@@ -167,12 +201,6 @@ docker run \
   "$INFRA_IMAGE" doterra-init.sh
 docker cp "${INFRA_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_infra_dir}/"
 
-# TODO It may be useful to only allow secret files to be passed in if they were
-# encrypted with this public key first. This way the tfstate backup file stored
-# on the local machine could be encrypted first before it was sent back.
-#test -f "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg" && rm "${project_dir}/chillbox_doterra__${WORKSPACE}.gpg"
-#docker cp "${INFRA_CONTAINER}:/usr/local/src/chillbox-terraform/chillbox_doterra__${WORKSPACE}.gpg" "${project_dir}/"
-
 docker rm "${INFRA_CONTAINER}"
 
 docker_run_infra_container() {
@@ -196,7 +224,7 @@ docker_run_infra_container() {
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
     --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
-    --mount "type=bind,src=${terraform_infra_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --entrypoint="" \
     "$INFRA_IMAGE" "$@"
 }
@@ -215,7 +243,8 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
-  --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+  --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$TERRAFORM_CHILLBOX_IMAGE" init
 docker cp "${TERRAFORM_CHILLBOX_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}"
@@ -246,7 +275,8 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
-    --mount "type=bind,src=${terraform_chillbox_private_auto_tfvars_file},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
     --entrypoint="" \
     "$TERRAFORM_CHILLBOX_IMAGE" "$@"
 }

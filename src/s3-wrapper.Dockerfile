@@ -57,6 +57,5 @@ SETUP
 
 ENV PATH=/usr/local/src/s3-wrapper/bin:${PATH}
 
-COPY --chown=dev:dev .build-artifacts-vars .
 COPY --chown=dev:dev terraform-bin/_dev_tty.sh bin/
 COPY --chown=dev:dev terraform-bin/_decrypt_file_as_dev_user.sh bin/

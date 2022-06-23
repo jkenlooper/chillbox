@@ -26,11 +26,6 @@ while getopts "h" OPTION ; do
   esac
 done
 
-# Allow setting defaults from an env file
-ENV_CONFIG=${1:-"$project_dir/.env"}
-# shellcheck source=/dev/null
-test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
-
 export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
@@ -38,14 +33,27 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
+# TODO what variables does this script need?
+# Allow setting defaults from an env file
+env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$WORKSPACE/env"
+if [ -f "${env_config}" ]; then
+  # shellcheck source=/dev/null
+  . "${env_config}"
+else
+  echo "ERROR $script_name: No $env_config file found."
+  exit 1
+fi
+
 # Lowercase the INFRA_CONTAINER var since it isn't exported.
 infra_container="chillbox-terraform-010-infra-$WORKSPACE"
 
-test -e "$project_dir/.build-artifacts-vars" || (echo "ERROR $script_name: No $project_dir/.build-artifacts-vars file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE/build-artifacts-vars"
+test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+
 SITES_ARTIFACT=""
 SITES_MANIFEST=""
 # shellcheck source=/dev/null
-. "$project_dir/.build-artifacts-vars"
+. "$chillbox_build_artifact_vars_file"
 
 sites_artifact_file="$project_dir/dist/$SITES_ARTIFACT"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
@@ -96,6 +104,7 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
+  --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_download_gpg_pubkeys_image" || (echo "TODO $0: Ignored error on s3 download of gpg pubkeys." && gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox")
 
 # TODO Remove temporary local gpg pubkey
@@ -211,4 +220,5 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
+  --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")

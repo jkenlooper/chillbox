@@ -30,7 +30,7 @@ cd /usr/local/src/chillbox-terraform
 
 # Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
 # shellcheck disable=SC1091
-. .build-artifacts-vars
+. /var/lib/chillbox-build-artifacts-vars
 
 jq \
   --arg jq_sites_artifact "${SITES_ARTIFACT}" \

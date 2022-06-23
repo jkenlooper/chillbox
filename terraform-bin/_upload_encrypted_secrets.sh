@@ -12,7 +12,7 @@ fi
 
 # Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
 # shellcheck disable=SC1091
-. /usr/local/src/s3-wrapper/.build-artifacts-vars
+. /var/lib/chillbox-build-artifacts-vars
 
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"

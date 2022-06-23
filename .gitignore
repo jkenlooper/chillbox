@@ -15,7 +15,5 @@ crash.*.log
 # local-bin/push-terraform-tfstate.sh scripts.
 /terraform_state_backup
 
-/.build-artifacts-vars
-
 /encrypted_secrets
 /gpg_pubkey
