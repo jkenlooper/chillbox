@@ -22,7 +22,7 @@ done
 
 # echo is bad... mmm k
 
-project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+# project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty" && exit 1)

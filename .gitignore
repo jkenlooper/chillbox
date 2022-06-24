@@ -8,10 +8,5 @@ crash.*.log
 
 /dist
 
-# Default BACKUP_TERRAFORM_STATE_DIR if not set in .env
-# Created when executing the local-bin/pull-terraform-tfstate.sh and
-# local-bin/push-terraform-tfstate.sh scripts.
-/terraform_state_backup
-
 /encrypted_secrets
 /gpg_pubkey

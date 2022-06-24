@@ -34,10 +34,12 @@ export INFRA_CONTAINER="chillbox-terraform-010-infra-$WORKSPACE"
 export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox-$WORKSPACE"
 export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$WORKSPACE"
 
-backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${project_dir}/terraform_state_backup}"
-mkdir -p "$backup_terraform_state_dir/$WORKSPACE"
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$WORKSPACE"
 
-state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${INFRA_CONTAINER}-terraform.tfstate.json"
+backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${chillbox_data_home}/terraform_state_backup}"
+mkdir -p "$backup_terraform_state_dir"
+
+state_infra_json="$backup_terraform_state_dir/${INFRA_CONTAINER}-terraform.tfstate.json"
 
 if [ -e "$state_infra_json.bak" ]; then
   printf '\n%s\n' "Remove old $state_infra_json.bak file first? [y/n]"
@@ -68,7 +70,7 @@ docker run \
 printf '\n%s\n' "Created $state_infra_json"
 
 
-state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
+state_chillbox_json="$backup_terraform_state_dir/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
 if [ -e "$state_chillbox_json.bak" ]; then
   printf '\n%s\n' "Remove old $state_chillbox_json.bak file first? [y/n]"
   read -r confirm

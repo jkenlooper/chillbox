@@ -34,10 +34,13 @@ export INFRA_CONTAINER="chillbox-terraform-010-infra-$WORKSPACE"
 export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox-$WORKSPACE"
 export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$WORKSPACE"
 
-backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${project_dir}/terraform_state_backup}"
-mkdir -p "$backup_terraform_state_dir/$WORKSPACE"
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$WORKSPACE"
 
-state_infra_json="$backup_terraform_state_dir/$WORKSPACE/${INFRA_CONTAINER}-terraform.tfstate.json"
+backup_terraform_state_dir="${BACKUP_TERRAFORM_STATE_DIR:-${chillbox_data_home}/terraform_state_backup}"
+mkdir -p "$backup_terraform_state_dir"
+
+state_infra_json="$backup_terraform_state_dir/${INFRA_CONTAINER}-terraform.tfstate.json"
+
 printf '\n%s\n' "Executing 'terraform state push' on ${INFRA_CONTAINER}"
 
 "$project_dir/local-bin/_docker_build_terraform-010-infra.sh"
@@ -63,7 +66,7 @@ else
 fi
 
 
-state_chillbox_json="$backup_terraform_state_dir/$WORKSPACE/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
+state_chillbox_json="$backup_terraform_state_dir/${TERRAFORM_CHILLBOX_CONTAINER}-terraform.tfstate.json"
 printf '\n%s\n' "Executing 'terraform state push' on ${TERRAFORM_CHILLBOX_CONTAINER}"
 
 "$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh"
