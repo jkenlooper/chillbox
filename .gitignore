@@ -6,8 +6,6 @@
 /build-artifacts.sh.log
 crash.*.log
 
-/.env
-
 /dist
 
 # Default BACKUP_TERRAFORM_STATE_DIR if not set in .env

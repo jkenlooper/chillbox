@@ -24,15 +24,19 @@ done
 
 project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
 
-# Allow setting defaults from an env file
-ENV_CONFIG=${1:-"$project_dir/.env"}
-# shellcheck source=/dev/null
-test -f "${ENV_CONFIG}" && . "${ENV_CONFIG}"
-
 export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
   printf '\n%s\n' "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
+  exit 1
+fi
+
+env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$WORKSPACE/env"
+if [ -f "${env_config}" ]; then
+  # shellcheck source=/dev/null
+  . "${env_config}"
+else
+  echo "ERROR $0: No $env_config file found."
   exit 1
 fi
 
