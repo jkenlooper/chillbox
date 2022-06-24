@@ -4,8 +4,6 @@ set -o errexit
 
 project_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
-encrypted_secrets_dir="$project_dir/encrypted_secrets"
-gpg_pubkey_dir="$project_dir/gpg_pubkey"
 
 usage() {
   cat <<HERE
@@ -32,6 +30,10 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   echo "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
+
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$WORKSPACE"
+
+encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
 
 # TODO what variables does this script need?
 # Allow setting defaults from an env file
@@ -92,8 +94,15 @@ docker build \
   -f "${project_dir}/src/s3-download-gpg_pubkeys.Dockerfile" \
   "${project_dir}"
 
-rm -rf "$gpg_pubkey_dir"
-mkdir -p "$gpg_pubkey_dir"
+gpg_pubkey_dir="$(mktemp -d)"
+tmp_sites_dir="$(mktemp -d)"
+
+cleanup() {
+  rm -rf "$tmp_sites_dir"
+  rm -rf "$gpg_pubkey_dir"
+}
+trap cleanup EXIT
+
 docker run \
   -i --tty \
   --rm \
@@ -105,19 +114,13 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_download_gpg_pubkeys_image" || (echo "TODO $0: Ignored error on s3 download of gpg pubkeys." && gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox")
+  "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of gpg pubkeys."
 
-# TODO Remove temporary local gpg pubkey
-echo "INFO: Adding temporary local gpg pubkey"
+# TODO Remove temporary local gpg pubkeys
+echo "TODO: Adding temporary local gpg pubkey 'chillbox-temp-local'"
 gpg --yes --armor --output "$gpg_pubkey_dir/chillbox-temp-local.gpg" --export "chillbox-temp-local"
-
-tmp_sites_dir="$(mktemp -d)"
-
-cleanup() {
-  rm -rf "$tmp_sites_dir"
-}
-trap cleanup EXIT
-
+echo "TODO: Adding temporary local gpg pubkey 'chillbox'"
+gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox"
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"

@@ -7,13 +7,23 @@ script_name="$(basename "$0")"
 
 # Need to use a log file for stdout since the stdout could be parsed as JSON by
 # terraform external data source.
-LOG_FILE="${working_dir}/${script_name}.log"
-date > "$LOG_FILE"
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
+chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE"
+
+# TODO Move dist out of working_dir
+#chillbox_dist_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/dist"
+
+build_artifacts_logs_dir="${chillbox_state_dir}/build_artifacts_logs"
+mkdir -p "$build_artifacts_logs_dir"
+log_timestamp="$(date -I)"
+LOG_FILE="${build_artifacts_logs_dir}/${log_timestamp}.log"
+printf "\n\n\n%s\n" "### START ###" >> "$LOG_FILE"
+date >> "$LOG_FILE"
 
 showlog () {
   # Terraform external data will need to echo to stderr to show the message to
   # the user.
-  >&2 echo "See log file: $LOG_FILE for further details."
+  >&2 echo "INFO $0: See log file: $LOG_FILE for further details."
 }
 trap showlog EXIT
 

@@ -143,6 +143,9 @@ if [ "$(basename "$SITES_ARTIFACT_URL" ".tar.gz")" = "$(basename "$SITES_ARTIFAC
   exit 1
 fi
 
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE"
+mkdir -p "$chillbox_state_home"
+
 # The artifacts are built locally by executing the local-bin/build-artifacts.sh.
 echo "INFO $script_name: Build the artifacts"
 SITES_ARTIFACT=""
@@ -163,9 +166,6 @@ test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST var
 
 # Verify that the artifacts that were built have met the service contracts before continuing.
 SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
-
-chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE"
-mkdir -p "$chillbox_state_home"
 
 chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
 cat <<HERE > "$chillbox_build_artifact_vars_file"

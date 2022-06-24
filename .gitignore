@@ -1,12 +1,14 @@
 # Prevent including any Terraform var files like private.auto.tfvars and such.
+# These shouldn't be in the project directory anyway.
 *.tfvars
-
-/chillbox_doterra__*.gpg
-
-/build-artifacts.sh.log
-crash.*.log
+# With the exception of these example tfvars files
+!/tests/fixtures/example-chillbox-config/development/terraform-010-infra/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/development/terraform-020-chillbox/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/acceptance/terraform-010-infra/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/acceptance/terraform-020-chillbox/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/production/terraform-010-infra/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/production/terraform-020-chillbox/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/test/terraform-010-infra/example-private.auto.tfvars
+!/tests/fixtures/example-chillbox-config/test/terraform-020-chillbox/example-private.auto.tfvars
 
 /dist
-
-/encrypted_secrets
-/gpg_pubkey
