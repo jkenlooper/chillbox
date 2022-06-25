@@ -3,10 +3,6 @@
 set -o errexit
 
 set -x
-_terraform_workspace_check.sh
-set +x
-
-set -x
 _dev_tty.sh "GPG_KEY_NAME=$GPG_KEY_NAME _doterra-init-gpg-key.sh"
 set +x
 
@@ -17,7 +13,6 @@ chown -R dev:dev "$(dirname "$secure_tmp_secrets_dir")"
 chmod -R 0700 "$(dirname "$secure_tmp_secrets_dir")"
 set -x
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-  WORKSPACE=$WORKSPACE \
   GPG_KEY_NAME=$GPG_KEY_NAME \
   _doterra-encrypt_tfvars.sh"
 set +x

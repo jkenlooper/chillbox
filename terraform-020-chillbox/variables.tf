@@ -92,6 +92,11 @@ variable "developer_ssh_key_fingerprints" {
   type        = list(string)
 }
 
+variable "chillbox_instance" {
+  description = "Used as part of the name in the project as well as in the hostname of any created servers."
+  type        = string
+  default     = "default"
+}
 
 variable "environment" {
   description = "Used as part of the name in the project as well as in the hostname of any created servers."

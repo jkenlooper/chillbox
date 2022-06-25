@@ -30,5 +30,4 @@ chmod -R 0700 "$(dirname "$tmp_input_file")"
 cp "$input_file" "$tmp_input_file"
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-  WORKSPACE=$WORKSPACE \
   _doterra_state_push_as_dev_user.sh '$tmp_input_file'"

@@ -39,12 +39,9 @@ alpine_custom_image = "${alpine_custom_image_file}"
 HERE
 WGET_ALPINE_CUSTOM_IMAGE
 
-# Set WORKSPACE before SETUP to invalidate that layer.
-ARG WORKSPACE=development
-ENV WORKSPACE=${WORKSPACE}
-ENV GPG_KEY_NAME="chillbox_doterra__${WORKSPACE}"
-ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
-ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/$WORKSPACE-terraform.tfstate.json.asc"
+ENV GPG_KEY_NAME="chillbox_doterra"
+ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
+ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/terraform.tfstate.json.asc"
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 ENV SKIP_UPLOAD="n"
 
@@ -84,7 +81,6 @@ COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
 su dev -c "terraform init"
-su dev -c "terraform workspace new $WORKSPACE"
 TERRAFORM_INIT
 
 ARG CHILLBOX_ARTIFACT

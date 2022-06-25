@@ -14,7 +14,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_project" "chillbox-infra" {
-  name        = "ChillBox Infrastructure - ${var.environment} ${var.project_version}"
+  name        = "ChillBox Infrastructure - ${var.chillbox_instance} ${var.environment} ${var.project_version}"
   description = var.project_description
   purpose     = "Website Hosting"
   environment = var.project_environment
@@ -28,13 +28,13 @@ resource "random_uuid" "immutable" {}
 resource "random_uuid" "artifact" {}
 
 resource "digitalocean_spaces_bucket" "artifact" {
-  name   = substr("chillbox-artifact-${lower(var.environment)}-${random_uuid.artifact.result}", 0, 63)
+  name   = substr("chillbox-artifact-${lower(var.environment)}-${lower(var.chillbox_instance)}-${random_uuid.artifact.result}", 0, 63)
   region = var.bucket_region
   acl    = "private"
 }
 
 resource "digitalocean_spaces_bucket" "immutable" {
-  name   = substr("chillbox-immutable-${lower(var.environment)}-${random_uuid.immutable.result}", 0, 63)
+  name   = substr("chillbox-immutable-${lower(var.environment)}-${lower(var.chillbox_instance)}-${random_uuid.immutable.result}", 0, 63)
   region = var.bucket_region
   acl    = "public-read"
 }

@@ -1,5 +1,4 @@
-ARG WORKSPACE=development
-FROM chillbox-s3-wrapper-$WORKSPACE:latest
+FROM chillbox-s3-wrapper:latest
 
 COPY --chown=dev:dev terraform-bin/_upload_encrypted_secrets.sh bin/
 COPY --chown=dev:dev terraform-bin/_upload_encrypted_secrets_as_dev_user.sh bin/

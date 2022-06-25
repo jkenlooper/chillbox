@@ -27,7 +27,7 @@ resource "digitalocean_custom_image" "alpine" {
 
 resource "digitalocean_droplet" "chillbox" {
   count      = var.create_chillbox ? 1 : 0
-  name       = lower("chillbox-${var.environment}")
+  name       = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}"
   size       = var.chillbox_droplet_size
   image      = digitalocean_custom_image.alpine.id
   region     = var.region
@@ -47,7 +47,7 @@ resource "digitalocean_droplet" "chillbox" {
 
 resource "local_sensitive_file" "alpine_box_init" {
   count      = 1
-  filename        = "/run/tmp/secrets/terraform-020-chillbox/${lower(var.environment)}/user_data_chillbox.sh"
+  filename        = "/run/tmp/secrets/terraform-020-chillbox/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
     tf_developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
@@ -63,7 +63,7 @@ resource "local_sensitive_file" "alpine_box_init" {
     # No slash at the end of this s3_endpoint_url
     tf_s3_endpoint_url : var.s3_endpoint_url,
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
-    tf_chillbox_hostname_prefix : "chillbox-${var.environment}",
+    tf_chillbox_hostname_prefix : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}",
   })
 }
 

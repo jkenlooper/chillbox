@@ -10,7 +10,6 @@ secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
 
 # Sanity check that these were set.
 test -n "$GPG_KEY_NAME" || (echo "ERROR $0: GPG_KEY_NAME variable is empty" && exit 1)
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variable is empty." && exit 1)
 ls -al "$secure_tmp_secrets_dir"
 test -d "$secure_tmp_secrets_dir" || (echo "ERROR $0: The path '$secure_tmp_secrets_dir' is not a directory" && exit 1)
@@ -84,7 +83,6 @@ jq --null-input \
 
 gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "${encrypted_credentials_tfvars_file}" \
   --comment "Chillbox doterra credentials tfvars" \
-  --comment "Terraform workspace: $WORKSPACE" \
   --comment "Date: $(date)" \
   "${secure_tmp_secrets_dir}/credentials.tfvars.json"
 shred -z -u "${secure_tmp_secrets_dir}/credentials.tfvars.json"

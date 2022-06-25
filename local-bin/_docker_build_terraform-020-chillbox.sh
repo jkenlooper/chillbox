@@ -10,7 +10,6 @@ docker image rm "$TERRAFORM_CHILLBOX_IMAGE" || printf ""
 
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg WORKSPACE="${WORKSPACE}" \
   --build-arg SITES_ARTIFACT="$SITES_ARTIFACT" \
   --build-arg CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT" \
   --build-arg SITES_MANIFEST="$SITES_MANIFEST" \

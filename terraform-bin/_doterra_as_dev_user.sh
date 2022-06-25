@@ -13,7 +13,6 @@ fi
 terraform_output_file="$2"
 
 # Sanity check that these were set.
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
 test -n "$secure_tmp_secrets_dir" || (echo "ERROR $0: secure_tmp_secrets_dir variable is empty." && exit 1)
 test -n "$terraform_output_file" || (echo "ERROR $0: second arg should be the terraform output file path and should not be empty." && exit 1)
 touch "$terraform_output_file" || (echo "ERROR $0: Failed to touch '$terraform_output_file' file." && exit 1)
@@ -22,11 +21,6 @@ decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.
 test -e "$decrypted_credentials_tfvars_file" || (echo "ERROR $0: The decrypted credentials file at $decrypted_credentials_tfvars_file does not exist." && exit 1)
 
 cd /usr/local/src/chillbox-terraform
-
-terraform workspace select "$WORKSPACE" || \
-  terraform workspace new "$WORKSPACE"
-
-test "$WORKSPACE" = "$(terraform workspace show)" || (echo "Sanity check to make sure workspace selected matches environment has failed." && exit 1)
 
 create_output_json() {
   terraform output -json > "$terraform_output_file"

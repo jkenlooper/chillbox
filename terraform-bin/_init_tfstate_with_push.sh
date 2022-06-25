@@ -13,7 +13,6 @@ if [ -e "$ENCRYPTED_TFSTATE" ] && [ ! -e "$DECRYPTED_TFSTATE" ]; then
   if [ -s "$DECRYPTED_TFSTATE" ]; then
     set -x
     su dev -c "
-      WORKSPACE=$WORKSPACE \
         _doterra_state_push_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
     set +x
   fi

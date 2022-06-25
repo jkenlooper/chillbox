@@ -30,12 +30,6 @@ apk add mandoc man-pages docs
 apk add vim
 DEPENDENCIES
 
-# Set WORKSPACE before SETUP to invalidate that layer.
-ARG WORKSPACE=development
-ENV WORKSPACE=${WORKSPACE}
-ENV GPG_KEY_NAME="chillbox_doterra__${WORKSPACE}"
-
-
 RUN <<SETUP
 addgroup dev
 adduser -G dev -D dev

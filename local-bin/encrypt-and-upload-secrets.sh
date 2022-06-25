@@ -24,6 +24,8 @@ while getopts "h" OPTION ; do
   esac
 done
 
+export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
+
 export WORKSPACE="${WORKSPACE:-development}"
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
@@ -31,13 +33,13 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$WORKSPACE"
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
 
 # TODO what variables does this script need?
 # Allow setting defaults from an env file
-env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$WORKSPACE/env"
+env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/env"
 if [ -f "${env_config}" ]; then
   # shellcheck source=/dev/null
   . "${env_config}"
@@ -47,9 +49,9 @@ else
 fi
 
 # Lowercase the INFRA_CONTAINER var since it isn't exported.
-infra_container="chillbox-terraform-010-infra-$WORKSPACE"
+infra_container="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"
 
-chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE/build-artifacts-vars"
+chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/build-artifacts-vars"
 test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
 
 SITES_ARTIFACT=""
@@ -74,22 +76,20 @@ export DOCKER_BUILDKIT=1
     -t "$sleeper_image" \
     -
 
-s3_wrapper_image="chillbox-s3-wrapper-$WORKSPACE:latest"
+s3_wrapper_image="chillbox-s3-wrapper:latest"
 docker image rm "$s3_wrapper_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$s3_wrapper_image" \
   -f "${project_dir}/src/s3-wrapper.Dockerfile" \
   "${project_dir}"
 
-s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys-$WORKSPACE"
-s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys-$WORKSPACE"
+s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys:latest"
+s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys"
 docker rm "${s3_download_gpg_pubkeys_container}" || printf ""
 docker image rm "$s3_download_gpg_pubkeys_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$s3_download_gpg_pubkeys_image" \
   -f "${project_dir}/src/s3-download-gpg_pubkeys.Dockerfile" \
   "${project_dir}"
@@ -109,9 +109,9 @@ docker run \
   --name "$s3_download_gpg_pubkeys_container" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=true" \
+  --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of gpg pubkeys."
@@ -157,10 +157,10 @@ for site_json in $site_json_files; do
 
     test -e "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 
-    service_image_name="$slugname-$version-$service_handler-$WORKSPACE"
+    service_image_name="$slugname-$version-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE"
     tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
     tmpfs_dir="/run/tmp/$service_image_name"
-    service_persistent_dir="/var/lib/$slugname-$service_handler/$WORKSPACE"
+    service_persistent_dir="/var/lib/$slugname-$service_handler"
     chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
 
     set -x
@@ -168,7 +168,6 @@ for site_json in $site_json_files; do
     export DOCKER_BUILDKIT=1
     docker build \
       --build-arg SECRETS_CONFIG="$secrets_config" \
-      --build-arg WORKSPACE="${WORKSPACE}" \
       --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
       --build-arg TMPFS_DIR="$tmpfs_dir" \
       --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
@@ -184,14 +183,14 @@ for site_json in $site_json_files; do
       --rm \
       --name "$tmp_container_name" \
       --mount "type=tmpfs,dst=$tmpfs_dir" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$WORKSPACE,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE,dst=$service_persistent_dir" \
       --mount "type=bind,src=$gpg_pubkey_dir,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
       "$service_image_name"
 
     docker run \
       -d \
       --name "$tmp_container_name-sleeper" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$WORKSPACE,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE,dst=$service_persistent_dir" \
       "$sleeper_image"
     docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/" "$encrypted_secret_service_dir/"
     docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
@@ -202,13 +201,12 @@ for site_json in $site_json_files; do
 done
 
 
-s3_upload_encrypted_secrets_image="chillbox-s3-upload-encrypted-secrets-$WORKSPACE"
-s3_upload_encrypted_secrets_container="chillbox-s3-upload-encrypted-secrets-$WORKSPACE"
+s3_upload_encrypted_secrets_image="chillbox-s3-upload-encrypted-secrets:latest"
+s3_upload_encrypted_secrets_container="chillbox-s3-upload-encrypted-secrets-$CHILLBOX_INSTANCE-$WORKSPACE"
 docker rm "${s3_upload_encrypted_secrets_container}" || printf ""
 docker image rm "$s3_upload_encrypted_secrets_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  --build-arg WORKSPACE="${WORKSPACE}" \
   -t "$s3_upload_encrypted_secrets_image" \
   -f "${project_dir}/src/s3-upload-encrypted-secrets.Dockerfile" \
   "${project_dir}"
@@ -219,9 +217,9 @@ docker run \
   --name "$s3_upload_encrypted_secrets_container" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
-  --mount "type=volume,src=chillbox-terraform-var-lib--${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=volume,src=chillbox-${infra_container}-var-lib--${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+  --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")

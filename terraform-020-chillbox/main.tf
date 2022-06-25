@@ -14,7 +14,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_project" "chillbox" {
-  name        = "ChillBox - ${var.environment} ${var.project_version}"
+  name        = "ChillBox - ${var.chillbox_instance} ${var.environment} ${var.project_version}"
   description = var.project_version
   purpose     = "Website Hosting"
   environment = var.project_environment
@@ -24,26 +24,26 @@ resource "digitalocean_project" "chillbox" {
 }
 
 resource "digitalocean_vpc" "chillbox" {
-  name        = "chillbox-${lower(var.environment)}"
-  description = "ChillBox network for the ${var.environment} environment"
+  name        = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}"
+  description = "ChillBox network for ${var.chillbox_instance} ${var.environment}"
   region      = var.region
   ip_range    = var.vpc_ip_range
 }
 
 resource "digitalocean_tag" "fw_developer_ssh" {
-  name = "fw_chillbox_${lower(var.environment)}_developer_ssh"
+  name = "fw_chillbox_developer_ssh_${lower(var.chillbox_instance)}_${lower(var.environment)}"
 }
 
 resource "digitalocean_tag" "fw_web" {
-  name = "fw_chillbox_${lower(var.environment)}_web"
+  name = "fw_chillbox_web_${lower(var.chillbox_instance)}_${lower(var.environment)}"
 }
 
 resource "digitalocean_tag" "droplet" {
-  name = "chillbox_${lower(var.environment)}_droplet"
+  name = "chillbox_droplet_${lower(var.chillbox_instance)}_${lower(var.environment)}"
 }
 
 resource "digitalocean_firewall" "developer_ssh" {
-  name = "chillbox-${lower(var.environment)}-developer-ssh"
+  name = "chillbox-developer-ssh-${lower(var.chillbox_instance)}-${lower(var.environment)}"
   tags = [digitalocean_tag.fw_developer_ssh.name]
   inbound_rule {
     protocol         = "tcp"
@@ -58,7 +58,7 @@ resource "digitalocean_firewall" "developer_ssh" {
 }
 
 resource "digitalocean_firewall" "web" {
-  name = "chillbox-${lower(var.environment)}-web"
+  name = "chillbox-web-${lower(var.chillbox_instance)}-${lower(var.environment)}"
   tags = [digitalocean_tag.fw_web.name]
   inbound_rule {
     protocol         = "tcp"
@@ -91,7 +91,7 @@ resource "digitalocean_firewall" "web" {
 }
 
 resource "local_file" "host_inventory" {
-  filename        = "/var/lib/terraform-020-chillbox/${lower(var.environment)}/host_inventory.ansible.cfg"
+  filename        = "/var/lib/terraform-020-chillbox/host_inventory.ansible.cfg"
   file_permission = "0400"
   content         = <<-HOST_INVENTORY
   [all:vars]

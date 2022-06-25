@@ -2,10 +2,6 @@
 
 set -o errexit
 
-set -x
-_terraform_workspace_check.sh
-set +x
-
 terraform_command=$1
 if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
   echo "ERROR $0: This command ($terraform_command) is not supported in this script."
@@ -33,12 +29,10 @@ _init_tfstate_with_push.sh
 sync_encrypted_tfstate() {
   set -x
   su dev -c "
-    WORKSPACE=$WORKSPACE \
     _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
 
   _dev_tty.sh "
     GPG_KEY_NAME=$GPG_KEY_NAME \
-    WORKSPACE=$WORKSPACE \
     _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
   set +x
 }
@@ -55,7 +49,6 @@ if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
 fi
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-  WORKSPACE=$WORKSPACE \
   _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-010-infra/output.json\""
 
 # Need to update the encrypted tfstate with any potential changes that have

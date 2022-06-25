@@ -64,7 +64,7 @@ else
 
 fi
 
-printf '\n%s\n' "Run integration test with a deployment with Terraform? [y/n]"
+printf '\n%s\n' "Run integration test with a deployment using Terraform? [y/n]"
 read -r CONFIRM
 if [ "${CONFIRM}" = "y" ]; then
   WORKSPACE="test" ./terra.sh

@@ -19,13 +19,10 @@ INSTALL
 
 WORKDIR /usr/local/src/chillbox-terraform
 
-# Set WORKSPACE before SETUP to invalidate that layer.
-ARG WORKSPACE=development
-ENV WORKSPACE=${WORKSPACE}
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
-ENV GPG_KEY_NAME="chillbox_doterra__${WORKSPACE}"
-ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/$WORKSPACE-terraform.tfstate.json"
-ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/$WORKSPACE-terraform.tfstate.json.asc"
+ENV GPG_KEY_NAME="chillbox_doterra"
+ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
+ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/terraform.tfstate.json.asc"
 
 RUN <<SETUP
 addgroup dev
@@ -51,7 +48,7 @@ COPY --chown=dev:dev terraform-010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
 # Creates the /home/dev/.terraform.d directory.
 su dev -c "terraform init"
-su dev -c "terraform workspace new $WORKSPACE"
+
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-bin bin

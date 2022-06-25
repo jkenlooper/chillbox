@@ -15,8 +15,6 @@ apk add mandoc man-pages docs
 apk add vim
 DEPENDENCIES
 
-ARG WORKSPACE=development
-ENV WORKSPACE=$WORKSPACE
 ARG SECRETS_CONFIG=api-bridge.secrets.cfg
 ENV SECRETS_CONFIG=$SECRETS_CONFIG
 ARG CHILLBOX_GPG_PUBKEY_DIR
@@ -29,7 +27,7 @@ ARG SERVICE_HANDLER=service_handler
 ENV SERVICE_HANDLER=$SERVICE_HANDLER
 ARG TMPFS_DIR=/run/tmp/SLUGNAME-VERSION-SERVICE_HANDLER
 ENV TMPFS_DIR=$TMPFS_DIR
-ARG SERVICE_PERSISTENT_DIR=/var/lib/SLUGNAME-SERVICE_HANDLER/WORKSPACE
+ARG SERVICE_PERSISTENT_DIR=/var/lib/SLUGNAME-SERVICE_HANDLER
 ENV SERVICE_PERSISTENT_DIR=$SERVICE_PERSISTENT_DIR
 
 RUN <<SECRETS_PROMPT_SH
@@ -111,7 +109,6 @@ find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.
     rm -f "$encrypted_secrets_config_file"
     gpg --encrypt --recipient "${gpg_key_name}" --armor --output "$encrypted_secrets_config_file" \
       --comment "Example site1 api secrets for bridge crossing" \
-      --comment "Environment workspace: $WORKSPACE" \
       --comment "Date: $(date)" \
       "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
   done

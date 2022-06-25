@@ -7,8 +7,9 @@ script_name="$(basename "$0")"
 
 # Need to use a log file for stdout since the stdout could be parsed as JSON by
 # terraform external data source.
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
-chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$WORKSPACE"
+chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 # TODO Move dist out of working_dir
 #chillbox_dist_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/dist"
