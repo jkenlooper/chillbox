@@ -174,6 +174,21 @@ export CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 export SITES_MANIFEST="$SITES_MANIFEST"
 HERE
 
+# TODO
+#dist_dir="$chillbox_state_home/dist"
+
+dist_dir="$project_dir/dist"
+mkdir -p "$dist_dir"
+
+site_domains_file="$chillbox_state_home/site_domains.auto.tfvars.json"
+jq --null-input \
+  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
+  --arg jq_site_domains_file "${site_domains_file}" \
+  '{
+    sites_artifact: $jq_sites_artifact,
+    site_domains_file: $jq_site_domains_file
+  }' | "${project_dir}/local-bin/_generate-site_domains_auto_tfvars.sh"
+
 "$project_dir/local-bin/_docker_build_terraform-010-infra.sh"
 
 cleanup_run_tmp_secrets() {
@@ -277,7 +292,9 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
+    --mount "type=bind,src=$dist_dir,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
     --entrypoint="" \
     "$TERRAFORM_CHILLBOX_IMAGE" "$@"
 }

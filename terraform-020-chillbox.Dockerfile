@@ -88,17 +88,6 @@ ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 ARG SITES_MANIFEST
 ENV SITES_MANIFEST="$SITES_MANIFEST"
 
-COPY --chown=dev:dev dist/$SITES_ARTIFACT ./dist/$SITES_ARTIFACT
-COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
-# TODO Should bind mount the site_domains.auto.tfvars.json file instead of creating it in the build.
-RUN <<SITE_DOMAINS
-set -x
-
-su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
-SITE_DOMAINS
-
-COPY --chown=dev:dev dist ./dist
-
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev terraform-bin bin
 COPY --chown=dev:dev terraform-020-chillbox/bin/ bin/
