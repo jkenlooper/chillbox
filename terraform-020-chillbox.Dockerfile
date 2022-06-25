@@ -90,35 +90,14 @@ ENV SITES_MANIFEST="$SITES_MANIFEST"
 
 COPY --chown=dev:dev dist/$SITES_ARTIFACT ./dist/$SITES_ARTIFACT
 COPY --chown=dev:dev terraform-020-chillbox/generate-site_domains_auto_tfvars.sh .
+# TODO Should bind mount the site_domains.auto.tfvars.json file instead of creating it in the build.
 RUN <<SITE_DOMAINS
 set -x
 
 su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' '{ sites_artifact: \$jq_sites_artifact }' | ./generate-site_domains_auto_tfvars.sh"
 SITE_DOMAINS
 
-COPY --chown=dev:dev terraform-020-chillbox/extract-terraform-artifact-modules.sh .
 COPY --chown=dev:dev dist ./dist
-RUN <<ARTIFACT_MODULES
-echo "Extracting artifact terraform modules is not implemented." && exit 0
-
-mkdir -p artifact-modules
-chown dev:dev artifact-modules
-# NOT_IMPLEMENTED May revisit this feature in the future. The way that this is
-# included with the terraform-020-chillbox deployment is not ideal since it will
-# modify the .terraform.lock.hcl. A better solution would probably be to have
-# a separate terraform deployment for each site that has defined an artifact
-# module.
-artifact_module_tf_file=artifact-modules.tf.not_implemented
-touch "$artifact_module_tf_file"
-chown dev:dev "$artifact_module_tf_file"
-echo "$SITES_ARTIFACT"
-
-su dev -p -c "jq --null-input --arg jq_sites_artifact '${SITES_ARTIFACT}' --arg jq_artifact_module_tf_file '${artifact_module_tf_file}' '{ sites_artifact: \$jq_sites_artifact, artifact_module_tf_file: \$jq_artifact_module_tf_file }' | ./extract-terraform-artifact-modules.sh"
-cat extract-terraform-artifact-modules.sh.log
-
-# Will need to init again since the artifact modules will have dependencies.
-su dev -c "terraform init"
-ARTIFACT_MODULES
 
 COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev terraform-bin bin
