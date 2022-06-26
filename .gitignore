@@ -10,3 +10,5 @@
 !/tests/fixtures/example-chillbox-config/production/terraform-020-chillbox/example-private.auto.tfvars
 !/tests/fixtures/example-chillbox-config/test/terraform-010-infra/example-private.auto.tfvars
 !/tests/fixtures/example-chillbox-config/test/terraform-020-chillbox/example-private.auto.tfvars
+
+/dist

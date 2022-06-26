@@ -40,7 +40,7 @@ would be tempted to implement.
   - [AWS Route53 failover](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover.html)
   - TODO: Find other cloud hosting providers that do this?
 - Deploy multiple chillbox servers to different regions and improve response time with [GeoDNS]
-- Option to use a managed DNS provider that has [GeoDNS](https://en.wikipedia.org/wiki/GeoDNS)
+- Option to use a managed DNS provider that has [GeoDNS]
   - [AWS Route53 Geo DNS](https://aws.amazon.com/about-aws/whats-new/2014/07/31/amazon-route-53-announces-domain-name-registration-geo-routing-and-lower-pricing/)
   - [Cloudflare Geo steering](https://developers.cloudflare.com/load-balancing/understand-basics/traffic-steering/steering-policies/geo-steering/)
 - Support other language handlers for services
@@ -85,3 +85,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [Go]: https://go.dev/
 [Bats-core]: https://github.com/bats-core/bats-core#readme
 [shellcheck]: https://www.shellcheck.net/
+[GeoDNS]: https://en.wikipedia.org/wiki/GeoDNS

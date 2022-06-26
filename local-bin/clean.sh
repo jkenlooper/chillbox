@@ -4,7 +4,9 @@ set -o errexit
 
 usage() {
   cat <<HERE
-Remove container volumes associated with a Terraform workspace.
+Cleans the state data associated with chillbox instance and workspace.
+This will remove the container volumes and the chillbox local state files.
+
 Usage:
   $0
 
@@ -31,6 +33,23 @@ test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty"
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
   printf '\n%s\n' "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
+fi
+
+chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+
+state_file_list="$(find "$chillbox_state_dir" -type f)"
+if [ -z "$state_file_list" ]; then
+  printf '\n%s\n' "No cache files found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+else
+  printf '\n%s\n' "The $0 script will delete the cache files in the directory '$chillbox_state_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+  printf '\n%s\n' "$state_file_list"
+  printf '\n%s\n' "Delete the cache files in the $chillbox_state_dir directory? [y/n]"
+  read -r confirm
+  if [ "$confirm" = "y" ]; then
+    find "$chillbox_state_dir" -type f -delete
+  else
+    printf '\n%s\n' "Skipping deletion of cache files in $chillbox_state_dir directory."
+  fi
 fi
 
 env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/env"

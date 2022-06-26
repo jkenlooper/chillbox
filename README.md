@@ -5,10 +5,10 @@
 
 **_Work in Progress_. This is under active development and is not complete.**
 
-Infrastructure for websites that use [Chill] and custom Python [Flask] services
-that are deployed on an [Alpine Linux] server and backed by s3 object storage.
-Supports automating deployments to [DigitalOcean] with [Terraform] and plans to
-support other cloud hosting providers like [Linode], [Vultr].
+Deployment scripts for websites that use [Chill] and custom Python [Flask] services
+that are on an [Alpine Linux] server and backed by s3 object storage.
+Supports deployments to [DigitalOcean] with [Terraform] and plans to
+support other cloud hosting providers like [Linode], and [Vultr].
 
 ## Goals
 
