@@ -11,9 +11,6 @@ test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE var
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
-# TODO Move dist out of working_dir
-#chillbox_dist_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/dist"
-
 build_artifacts_logs_dir="${chillbox_state_dir}/build_artifacts_logs"
 mkdir -p "$build_artifacts_logs_dir"
 log_timestamp="$(date -I)"
@@ -46,16 +43,20 @@ chillbox_artifact_version="$(cat "$working_dir/VERSION")"
 chillbox_artifact="chillbox.$chillbox_artifact_version.tar.gz"
 echo "chillbox_artifact: $chillbox_artifact" >> "$LOG_FILE"
 
+chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$chillbox_artifact"
+
 sites_manifest_json="sites.manifest.json"
+sites_manifest_json_file="$chillbox_state_dir/$sites_manifest_json"
 
-SITES_ARTIFACT="$(basename "${sites_artifact_url}")"
-echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
+sites_artifact="$(basename "${sites_artifact_url}")"
+echo "sites_artifact=$sites_artifact" >> "$LOG_FILE"
 
-mkdir -p "$working_dir/dist"
+sites_artifact_file="$chillbox_state_dir/$sites_artifact"
+mkdir -p "$chillbox_state_dir"
 
 # Create the chillbox artifact file
-if [ ! -f "$working_dir/dist/$chillbox_artifact" ]; then
-  tar c -z -f "$working_dir/dist/$chillbox_artifact" \
+if [ ! -f "$chillbox_dist_file" ]; then
+  tar c -z -f "$chillbox_dist_file" \
     -C "$working_dir" \
     nginx/default.nginx.conf \
     nginx/nginx.conf \
@@ -67,25 +68,25 @@ else
 fi
 
 # Download or copy over the sites artifact file
-if [ -f "$working_dir/dist/$SITES_ARTIFACT" ]; then
-  echo "Sites artifact file already exists: dist/$SITES_ARTIFACT" >> "$LOG_FILE"
+if [ -f "$sites_artifact_file" ]; then
+  echo "Sites artifact file already exists: $sites_artifact_file" >> "$LOG_FILE"
 
 else
   # Reset the verified sites marker file since the sites artifact file doesn't
   # exist.
-  rm -f "$working_dir/dist/.verified_sites_artifact"
+  rm -f "$chillbox_state_dir/.verified_sites_artifact"
 
   # Support using a local sites artifact if the first character is a '/';
   # otherwise it should be a downloadable URL.
   first_char_of_sites_artifact_url="$(printf '%.1s' "$sites_artifact_url")"
   is_downloadable="$(printf '%.4s' "$sites_artifact_url")"
   if [ "$first_char_of_sites_artifact_url" = "/" ]; then
-    cp -v "$sites_artifact_url" "$working_dir/dist/$SITES_ARTIFACT" >> "$LOG_FILE"
+    cp -v "$sites_artifact_url" "$sites_artifact_file" >> "$LOG_FILE"
   elif [ "$is_downloadable" = "http" ]; then
     if [ -n "$has_wget" ]; then
-      wget -a "$LOG_FILE" -O "$working_dir/dist/$SITES_ARTIFACT" "$sites_artifact_url"
+      wget -a "$LOG_FILE" -O "$sites_artifact_file" "$sites_artifact_url"
     elif [ -n "$has_curl" ]; then
-      curl --location --output "$working_dir/dist/$SITES_ARTIFACT" --silent --show-error "$sites_artifact_url" >> "$LOG_FILE"
+      curl --location --output "$sites_artifact_file" --silent --show-error "$sites_artifact_url" >> "$LOG_FILE"
     else
       echo "ERROR $script_name: No wget or curl commands found." >> "$LOG_FILE"
       exit 1
@@ -98,7 +99,7 @@ else
   tmp_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_sites_dir"' EXIT
   #cd "$tmp_sites_dir"
-  tar x -f "$working_dir/dist/$SITES_ARTIFACT" -C "$tmp_sites_dir" sites
+  tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
   chmod --recursive u+rw "$tmp_sites_dir"
 
   sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
@@ -147,14 +148,14 @@ else
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
     rm "$site_json.original"
 
-    mkdir -p "${working_dir}/dist/${slugname}"
-    dist_immutable_archive_file="$working_dir/dist/$slugname/$slugname-$version.immutable.tar.gz"
-    dist_artifact_file="$working_dir/dist/$slugname/$slugname-$version.artifact.tar.gz"
+    mkdir -p "${chillbox_state_dir}/sites/${slugname}"
+    dist_immutable_archive_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.immutable.tar.gz"
+    dist_artifact_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.artifact.tar.gz"
     if [ -f "$dist_immutable_archive_file" ] && [ -f "$dist_artifact_file" ]; then
       echo "Skipping the 'make' command for $slugname" >> "$LOG_FILE"
       continue
     fi
-    find "${working_dir}/dist/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
+    find "${chillbox_state_dir}/sites/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
       || echo "No existing archive files to delete for ${slugname}" >> "$LOG_FILE"
 
     tmp_dir="$(mktemp -d)"
@@ -181,7 +182,7 @@ else
 
   done
 
-  echo "SITES_ARTIFACT=$SITES_ARTIFACT" >> "$LOG_FILE"
+  echo "sites_artifact=$sites_artifact" >> "$LOG_FILE"
 
   # Make a sites manifest json file
   cd "$tmp_sites_dir"
@@ -195,22 +196,22 @@ else
     echo "$slugname/$slugname-$version.artifact.tar.gz" >> "$tmp_file_list"
   done
   # shellcheck disable=SC2016
-  < "$tmp_file_list" xargs jq --null-input --args '$ARGS.positional' > "$working_dir/dist/$sites_manifest_json"
+  < "$tmp_file_list" xargs jq --null-input --args '$ARGS.positional' > "$sites_manifest_json_file"
   rm -f "$tmp_file_list"
 
   # Need to repackage the sites artifact since the version fields have been
   # updated.
-  rm -f "$working_dir/dist/$SITES_ARTIFACT"
-  tar c -z -f "$working_dir/dist/$SITES_ARTIFACT" -C "$tmp_sites_dir" sites
+  rm -f "$sites_artifact_file"
+  tar c -z -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 
 fi
 
 # Output the json
 jq --null-input \
-  --arg sites_artifact "$SITES_ARTIFACT" \
+  --arg sites_artifact "$sites_artifact" \
   --arg jq_chillbox_artifact "$chillbox_artifact" \
   --arg jq_sites_manifest "$sites_manifest_json" \
-  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$working_dir/dist/$sites_manifest_json")" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$sites_manifest_json_file")" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$jq_chillbox_artifact,

@@ -2,7 +2,8 @@
 
 set -o errexit
 
-working_dir="$(realpath "$(dirname "$(dirname "$0")")")"
+test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $0: CHILLBOX_INSTANCE variable is empty" && exit 1)
 
 # Extract and set shell variables from JSON input
 sites_artifact=""
@@ -12,13 +13,15 @@ eval "$(jq -r '@sh "
   site_domains_file=\(.site_domains_file)
   "')"
 
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+
 tmp_dir=$(mktemp -d)
 cleanup() {
   rm -rf "$tmp_dir"
 }
 trap cleanup EXIT
 
-tar x -z -f "$working_dir/dist/$sites_artifact" -C "${tmp_dir}"
+tar x -z -f "$chillbox_state_home/$sites_artifact" -C "${tmp_dir}"
 
 find "${tmp_dir}/sites" -type f -name '*.site.json' -exec \
   jq -s '[.[].domain_list] | flatten | {site_domains: .}' {} + > "$site_domains_file"

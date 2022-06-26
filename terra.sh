@@ -174,11 +174,11 @@ export CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 export SITES_MANIFEST="$SITES_MANIFEST"
 HERE
 
-# TODO
-#dist_dir="$chillbox_state_home/dist"
+chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_ARTIFACT"
 
-dist_dir="$project_dir/dist"
-mkdir -p "$dist_dir"
+dist_sites_dir="$chillbox_state_home/dist/sites"
+mkdir -p "$dist_sites_dir"
+
 
 site_domains_file="$chillbox_state_home/site_domains.auto.tfvars.json"
 jq --null-input \
@@ -294,7 +294,10 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-    --mount "type=bind,src=$dist_dir,dst=/usr/local/src/chillbox-terraform/dist,readonly=true" \
+    --mount "type=bind,src=$chillbox_dist_file,dst=/usr/local/src/chillbox-terraform/dist/$CHILLBOX_ARTIFACT,readonly=true" \
+    --mount "type=bind,src=$chillbox_state_home/$SITES_MANIFEST,dst=/usr/local/src/chillbox-terraform/dist/$SITES_MANIFEST,readonly=true" \
+    --mount "type=bind,src=$chillbox_state_home/$SITES_ARTIFACT,dst=/usr/local/src/chillbox-terraform/dist/$SITES_ARTIFACT,readonly=true" \
+    --mount "type=bind,src=$dist_sites_dir,dst=/usr/local/src/chillbox-terraform/dist/sites,readonly=true" \
     --entrypoint="" \
     "$TERRAFORM_CHILLBOX_IMAGE" "$@"
 }

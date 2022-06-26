@@ -10,10 +10,7 @@
 !/terraform-020-chillbox/main.tf
 !/terraform-020-chillbox/outputs.tf
 
-!/dist/*
 !/terraform-030-artifact-modules/extract-terraform-artifact-modules.sh
-
-!/terraform-020-chillbox/generate-site_domains_auto_tfvars.sh
 
 !/terraform-020-chillbox/user_data_chillbox.sh.tftpl
 

@@ -48,6 +48,8 @@ else
   exit 1
 fi
 
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+
 # Lowercase the INFRA_CONTAINER var since it isn't exported.
 infra_container="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"
 
@@ -59,11 +61,11 @@ SITES_MANIFEST=""
 # shellcheck source=/dev/null
 . "$chillbox_build_artifact_vars_file"
 
-sites_artifact_file="$project_dir/dist/$SITES_ARTIFACT"
+sites_artifact_file="$chillbox_state_home/$SITES_ARTIFACT"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
 test -e "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at '$sites_artifact_file'." && exit 1)
 
-sites_manifest_file="$project_dir/dist/$SITES_MANIFEST"
+sites_manifest_file="$chillbox_state_home/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
@@ -125,6 +127,7 @@ gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox"
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
 
+
 site_json_files="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 for site_json in $site_json_files; do
   slugname="$(basename "$site_json" .site.json)"
@@ -153,7 +156,7 @@ for site_json in $site_json_files; do
     rm -f "$encrypted_secret_file"
 
     tmp_service_dir="$(mktemp -d)"
-    tar x -z -f "$project_dir/dist/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
+    tar x -z -f "$chillbox_state_home/dist/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
 
     test -e "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 

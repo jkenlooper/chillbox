@@ -78,7 +78,7 @@ jq -r '.[]' "$SITES_MANIFEST" \
       echo "INFO $0: Uploading artifact: $artifact_file" >> "$LOG_FILE"
       aws \
         --endpoint-url "$endpoint_url" \
-        s3 cp "$working_dir/dist/$artifact_file" \
+        s3 cp "$working_dir/dist/sites/$artifact_file" \
         "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" >> "$LOG_FILE"
     else
       echo "INFO $0: No changes to existing artifact: $artifact_file" >> "$LOG_FILE"

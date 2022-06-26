@@ -4,9 +4,6 @@ set -o errexit
 
 working_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
-verified_sites_artifact_file="$working_dir/dist/.verified_sites_artifact"
-verify_sites_container="chillbox-verify-sites"
-verify_sites_image="chillbox-verify-sites"
 
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 
@@ -17,7 +14,13 @@ if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSP
   exit 1
 fi
 
-chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/build-artifacts-vars"
+verify_sites_image="chillbox-verify-sites:latest"
+verify_sites_container="chillbox-verify-sites-$CHILLBOX_INSTANCE-$WORKSPACE"
+
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+verified_sites_artifact_file="$chillbox_state_home/.verified_sites_artifact"
+
+chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
 if [ -f "${chillbox_build_artifact_vars_file}" ]; then
   # shellcheck source=/dev/null
   . "${chillbox_build_artifact_vars_file}"
@@ -28,12 +31,12 @@ fi
 
 
 SITES_ARTIFACT="${SITES_ARTIFACT:-}"
-sites_artifact_file="$working_dir/dist/$SITES_ARTIFACT"
+sites_artifact_file="$chillbox_state_home/$SITES_ARTIFACT"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
 test -e "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at '$sites_artifact_file'." && exit 1)
 
 SITES_MANIFEST="${SITES_MANIFEST:-}"
-sites_manifest_file="$working_dir/dist/$SITES_MANIFEST"
+sites_manifest_file="$chillbox_state_home/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
@@ -56,7 +59,8 @@ docker run \
   --env SITES_ARTIFACT="${SITES_ARTIFACT}" \
   --env SITES_MANIFEST="${SITES_MANIFEST}" \
   --name "${verify_sites_container}" \
-  --mount "type=bind,src=$working_dir/dist,dst=/var/lib/verify-sites/dist" \
+  --mount "type=bind,src=$chillbox_state_home/$SITES_MANIFEST,dst=/var/lib/verify-sites/dist/$SITES_MANIFEST,readonly=true" \
+  --mount "type=bind,src=$chillbox_state_home/$SITES_ARTIFACT,dst=/var/lib/verify-sites/dist/$SITES_ARTIFACT,readonly=true" \
   "$verify_sites_image"
 
 echo "INFO $script_name: Sites artifact ($SITES_ARTIFACT) is valid."
