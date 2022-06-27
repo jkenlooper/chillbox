@@ -49,6 +49,14 @@ RUN <<TERRAFORM_INIT
 # Creates the /home/dev/.terraform.d directory.
 su dev -c "terraform init"
 
+# A Terraform workspace is required so that there is a directory created for the
+# terraform state location instead of a file.  This way a docker volume can be
+# made for this path since volumes can only be made from paths that are
+# directories.
+# Creates a directory at /usr/local/src/chillbox-terraform/terraform.tfstate.d
+# to store the terraform.tfstate file.
+su dev -c "terraform workspace new chillbox"
+
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-bin bin

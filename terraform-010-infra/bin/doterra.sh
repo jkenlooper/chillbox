@@ -26,18 +26,6 @@ chmod -R 0700 "$data_volume_terraform_010_infra"
 echo "INFO $0: Executing _init_tfstate_with_push.sh"
 _init_tfstate_with_push.sh
 
-sync_encrypted_tfstate() {
-  set -x
-  su dev -c "
-    _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
-
-  _dev_tty.sh "
-    GPG_KEY_NAME=$GPG_KEY_NAME \
-    _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
-  set +x
-}
-
-
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
@@ -48,9 +36,19 @@ if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
   set +x
 fi
 
+# Need to update the encrypted tfstate with any potential changes that have
+# happened when the script exits.
+sync_encrypted_tfstate() {
+  set -x
+  su dev -c "
+    _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
+
+  _dev_tty.sh "
+    GPG_KEY_NAME=$GPG_KEY_NAME \
+    _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
+  set +x
+}
+trap sync_encrypted_tfstate EXIT
+
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-010-infra/output.json\""
-
-# Need to update the encrypted tfstate with any potential changes that have
-# happened.
-sync_encrypted_tfstate
