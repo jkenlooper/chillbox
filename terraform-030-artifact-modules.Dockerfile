@@ -37,7 +37,7 @@ su dev -c "terraform init"
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-030-artifact-modules/extract-terraform-artifact-modules.sh .
-COPY --chown=dev:dev dist ./dist
+#COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
 echo "Extracting artifact terraform modules is not implemented." && exit 0
 

@@ -164,9 +164,6 @@ test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT var
 test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $script_name: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
 
-# Verify that the artifacts that were built have met the service contracts before continuing.
-SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
-
 chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
 cat <<HERE > "$chillbox_build_artifact_vars_file"
 export SITES_ARTIFACT="$SITES_ARTIFACT"
@@ -174,9 +171,12 @@ export CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 export SITES_MANIFEST="$SITES_MANIFEST"
 HERE
 
+# Verify that the artifacts that were built have met the service contracts before continuing.
+SITES_ARTIFACT="$SITES_ARTIFACT" SITES_MANIFEST="$SITES_MANIFEST" "$project_dir/local-bin/verify-sites-artifact.sh"
+
 chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_ARTIFACT"
 
-dist_sites_dir="$chillbox_state_home/dist/sites"
+dist_sites_dir="$chillbox_state_home/sites"
 mkdir -p "$dist_sites_dir"
 
 

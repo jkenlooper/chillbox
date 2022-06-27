@@ -156,7 +156,7 @@ for site_json in $site_json_files; do
     rm -f "$encrypted_secret_file"
 
     tmp_service_dir="$(mktemp -d)"
-    tar x -z -f "$chillbox_state_home/dist/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
+    tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
 
     test -e "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 

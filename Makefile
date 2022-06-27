@@ -10,7 +10,6 @@ project_dir := $(dir $(mkfile_path))
 
 objects := todo
 
-# Get the version from the package.json
 VERSION := $(shell cat $(project_dir)/VERSION)
 
 # Set to tmp/ when debugging the install
