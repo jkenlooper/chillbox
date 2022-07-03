@@ -127,6 +127,7 @@
 ./src/local/verify-sites/requirements.txt
 ./src/local/verify-sites/verify-sites.Dockerfile
 ./src/local/verify-sites/.dockerignore
+./src/local/verify-sites/site.schema.json
 ./src/s3-download-gpg_pubkeys.Dockerfile
 ./src/chillbox/bin/site-init-nginx-service.sh
 ./src/chillbox/bin/install-aws-cli.sh
@@ -153,4 +154,3 @@
 ./src/s3-wrapper.Dockerfile
 ./src/sleeper.Dockerfile
 ./terra.sh
-./site.schema.json
