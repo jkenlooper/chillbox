@@ -2,28 +2,7 @@
 /*
 
 # Except these specific files and directories
-!/terraform-010-infra/variables.tf
-!/terraform-010-infra/main.tf
-
-!/terraform-020-chillbox/chillbox.tf
-!/terraform-020-chillbox/variables.tf
-!/terraform-020-chillbox/main.tf
-!/terraform-020-chillbox/outputs.tf
-
-!/terraform-030-artifact-modules/extract-terraform-artifact-modules.sh
-
-!/terraform-020-chillbox/user_data_chillbox.sh.tftpl
-
 !/bin/*
-!/terraform-bin/*
-!/terraform-010-infra/bin/*
-!/terraform-020-chillbox/bin/*
-!/terraform-020-chillbox/upload-artifacts.sh
-
-# terraform init creates the dependency lock file
-# https://www.terraform.io/language/files/dependency-lock
-!/terraform-010-infra/.terraform.lock.hcl
-!/terraform-020-chillbox/.terraform.lock.hcl
 
 !/site.schema.json
 !/verify-sites/*

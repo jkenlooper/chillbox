@@ -20,8 +20,8 @@ set -x
 docker build \
   --progress=plain \
   -t "$INFRA_IMAGE" \
-  -f "${project_dir}/terraform-010-infra.Dockerfile" \
-  "${project_dir}" > "$build_tmp_log" 2>&1
+  -f "${project_dir}/src/terraform/010-infra/infra.Dockerfile" \
+  "${project_dir}/src/terraform" > "$build_tmp_log" 2>&1
 docker_build_exit="$?"
 set +x
 set -o errexit

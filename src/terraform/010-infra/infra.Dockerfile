@@ -42,9 +42,9 @@ chown -R dev:dev /var/lib/terraform-010-infra
 chmod -R 0700 /var/lib/terraform-010-infra
 SETUP
 
-COPY --chown=dev:dev terraform-010-infra/variables.tf ./
-COPY --chown=dev:dev terraform-010-infra/main.tf ./
-COPY --chown=dev:dev terraform-010-infra/.terraform.lock.hcl ./
+COPY --chown=dev:dev 010-infra/variables.tf ./
+COPY --chown=dev:dev 010-infra/main.tf ./
+COPY --chown=dev:dev 010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
 # Creates the /home/dev/.terraform.d directory.
 su dev -c "terraform init"
@@ -59,5 +59,5 @@ su dev -c "terraform workspace new chillbox"
 
 TERRAFORM_INIT
 
-COPY --chown=dev:dev terraform-bin bin
-COPY --chown=dev:dev terraform-010-infra/bin/ bin/
+COPY --chown=dev:dev bin bin
+COPY --chown=dev:dev 010-infra/bin/ bin/

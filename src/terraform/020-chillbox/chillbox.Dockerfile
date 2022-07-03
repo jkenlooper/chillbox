@@ -7,17 +7,31 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 
 WORKDIR /usr/local/src/chillbox-terraform
 
-COPY bin/install-aws-cli.sh bin/
+#COPY bin/install-aws-cli.sh bin/
 RUN <<INSTALL
+set -o errexit
 apk update
-/usr/local/src/chillbox-terraform/bin/install-aws-cli.sh
 apk add \
   jq \
   vim \
   mandoc man-pages \
   coreutils \
+  unzip \
   gnupg \
   gnupg-dirmngr
+
+install_aws_cli_dir="$(mktemp -d)"
+
+# UPKEEP due: "2022-07-12" label: "install-aws-cli gist" interval: "+3 months"
+# https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
+# Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/23066345e862578c1cbca7ae6c65e983a0aff3a6.zip \
+  -O "$install_aws_cli_dir/install-aws-cli.zip"
+echo "dbba9d0904ef5f57fba8dc4a38ce7b53  $install_aws_cli_dir/install-aws-cli.zip" | md5sum -c
+
+unzip -j "$install_aws_cli_dir/install-aws-cli.zip" -d "$install_aws_cli_dir"
+chmod +x "$install_aws_cli_dir/install-aws-cli.sh"
+"$install_aws_cli_dir/install-aws-cli.sh"
 
 INSTALL
 
@@ -72,12 +86,12 @@ SETUP
 ARG SITES_ARTIFACT
 ENV SITES_ARTIFACT="$SITES_ARTIFACT"
 
-COPY --chown=dev:dev terraform-020-chillbox/chillbox.tf .
-COPY --chown=dev:dev terraform-020-chillbox/variables.tf .
-COPY --chown=dev:dev terraform-020-chillbox/main.tf .
-COPY --chown=dev:dev terraform-020-chillbox/outputs.tf .
-COPY --chown=dev:dev terraform-020-chillbox/user_data_chillbox.sh.tftpl .
-COPY --chown=dev:dev terraform-020-chillbox/.terraform.lock.hcl .
+COPY --chown=dev:dev 020-chillbox/chillbox.tf .
+COPY --chown=dev:dev 020-chillbox/variables.tf .
+COPY --chown=dev:dev 020-chillbox/main.tf .
+COPY --chown=dev:dev 020-chillbox/outputs.tf .
+COPY --chown=dev:dev 020-chillbox/user_data_chillbox.sh.tftpl .
+COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
 su dev -c "terraform init"
@@ -97,6 +111,6 @@ ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 ARG SITES_MANIFEST
 ENV SITES_MANIFEST="$SITES_MANIFEST"
 
-COPY --chown=dev:dev terraform-020-chillbox/upload-artifacts.sh .
-COPY --chown=dev:dev terraform-bin bin
-COPY --chown=dev:dev terraform-020-chillbox/bin/ bin/
+COPY --chown=dev:dev 020-chillbox/upload-artifacts.sh .
+COPY --chown=dev:dev bin bin
+COPY --chown=dev:dev 020-chillbox/bin/ bin/

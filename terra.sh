@@ -49,8 +49,8 @@ if [ "$terraform_command" != "interactive" ] && [ "$terraform_command" != "plan"
 fi
 
 project_dir="$(dirname "$(realpath "$0")")"
-terraform_infra_dir="$project_dir/terraform-010-infra"
-terraform_chillbox_dir="$project_dir/terraform-020-chillbox"
+terraform_infra_dir="$project_dir/src/terraform/010-infra"
+terraform_chillbox_dir="$project_dir/src/terraform/020-chillbox"
 
 SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
