@@ -1,0 +1,8 @@
+# Ignore everything
+/*
+
+# Except these specific files and directories
+!/requirements.txt
+!/site.schema.json
+!/check-json.py
+!/verify-sites-artifact.sh

@@ -50,8 +50,8 @@ docker image rm "$verify_sites_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   -t "$verify_sites_image" \
-  -f "${working_dir}/verify-sites.Dockerfile" \
-  "${working_dir}"
+  -f "${working_dir}/src/local/verify-sites/verify-sites.Dockerfile" \
+  "${working_dir}/src/local/verify-sites"
 
 docker run \
   -i --tty \

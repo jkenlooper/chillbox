@@ -6,7 +6,7 @@
 FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5acce2c4f9454
 
 WORKDIR /usr/local/src/verify-sites
-COPY verify-sites/requirements.txt ./
+COPY requirements.txt ./
 RUN <<DEPENDENCIES
 apk update
 apk add sed attr grep coreutils jq
@@ -30,8 +30,8 @@ DEPENDENCIES
 # The site.schema.json is at the top level of the project so it's easier to
 # refer to.
 COPY site.schema.json ./
-COPY verify-sites/check-json.py ./
-COPY verify-sites/verify-sites-artifact.sh ./
+COPY check-json.py ./
+COPY verify-sites-artifact.sh ./
 
 ENV SITES_ARTIFACT=""
 ENV SITES_MANIFEST=""
