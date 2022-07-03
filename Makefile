@@ -10,7 +10,7 @@ project_dir := $(dir $(mkfile_path))
 
 objects := todo
 
-VERSION := $(shell cat $(project_dir)/VERSION)
+VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)
 
 # Set to tmp/ when debugging the install
 # make PREFIXDIR=${PWD}/tmp inspect.SRVDIR

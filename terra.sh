@@ -123,7 +123,7 @@ if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
   echo "INFO $script_name: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_example_sites_dir"' EXIT
-  example_sites_version="$(cat VERSION)"
+  example_sites_version="$(make inspect.VERSION)"
   SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.

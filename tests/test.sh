@@ -10,6 +10,8 @@ cd "${project_dir}"
 # Default to run all tests (any files with '.bats' extension) in tests directory.
 TEST="tests/"
 
+export CHILLBOX_BATS_IMAGE="${CHILLBOX_BATS_IMAGE:-chillbox-bats:latest}"
+
 # Need to verify that if an argument is passed in it is an actual path to a bats file.
 if [ -n "$1" ]; then
   bats_file_without_extension=$(basename "$1" .bats)
@@ -17,50 +19,27 @@ if [ -n "$1" ]; then
   TEST="tests/$bats_file_without_extension.bats"
 fi
 
-# No context for the docker build is needed.
-docker image rm chillbox-bats:latest || printf ""
-export DOCKER_BUILDKIT=1
-docker build -t chillbox-bats:latest - < "${tests_dir}/Dockerfile"
+"$tests_dir/_docker_build_chillbox_bats.sh"
 
 # When developing and writing tests it is useful to execute and debug tests directly.
 debug=${DEBUG:-"n"}
 if [ "$debug" = "y" ]; then
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/src/chillbox/bin,dst=/code/bin,readonly=true" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
     --entrypoint="sh" \
-    chillbox-bats:latest
+    "$CHILLBOX_BATS_IMAGE"
 
 # Default to run all tests or the test that was passed in.
 else
 
   # Run shellcheck on all scripts and fail if there are issues
-  docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin,readonly=true" \
-    --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh,readonly=true" \
-    --mount "type=bind,src=${project_dir}/src/terraform/bin,dst=/code/terraform-bin,readonly=true" \
-    --mount "type=bind,src=${project_dir}/src/terraform/010-infra,dst=/code/terraform-010-infra,readonly=true" \
-    --mount "type=bind,src=${project_dir}/src/terraform/020-chillbox,dst=/code/terraform-020-chillbox,readonly=true" \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
-    --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
-    --entrypoint="sh" \
-    chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
-    || \
-      (docker run -it --rm \
-        --mount "type=bind,src=${project_dir}/local-bin,dst=/code/local-bin,readonly=true" \
-        --mount "type=bind,src=${project_dir}/terra.sh,dst=/code/terra.sh,readonly=true" \
-        --mount "type=bind,src=${project_dir}/src/terraform/bin,dst=/code/terraform-bin,readonly=true" \
-        --mount "type=bind,src=${project_dir}/src/terraform/010-infra,dst=/code/terraform-010-infra,readonly=true" \
-        --mount "type=bind,src=${project_dir}/src/terraform/020-chillbox,dst=/code/terraform-020-chillbox,readonly=true" \
-        --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
-        --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
-        --entrypoint="sh" \
-        chillbox-bats:latest -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck {} +" && exit 1)
+  "$tests_dir/shellcheck.sh"
 
   docker run -it --rm \
-    --mount "type=bind,src=${project_dir}/bin,dst=/code/bin,readonly=true" \
+    --mount "type=bind,src=${project_dir}/src/chillbox/bin,dst=/code/bin,readonly=true" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
-    chillbox-bats:latest "$TEST"
+    "$CHILLBOX_BATS_IMAGE" "$TEST"
 
 fi
 
