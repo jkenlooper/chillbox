@@ -3,7 +3,7 @@
 set -o errexit
 set -o nounset
 
-project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 
 build_tmp_log="$(mktemp)"
 cleanup() {

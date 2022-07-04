@@ -54,7 +54,7 @@ printf '\n%s\n' "Executing 'terraform state pull' on ${INFRA_CONTAINER}"
 test ! -e "$state_infra_json" || mv --backup=numbered "$state_infra_json" "$state_infra_json.bak"
 touch "$state_infra_json"
 
-"$project_dir/local-bin/_docker_build_terraform-010-infra.sh"
+"$project_dir/src/local/_docker_build_terraform-010-infra.sh"
 
 docker run \
   -i --tty \
@@ -84,7 +84,7 @@ printf '\n%s\n' "Executing 'terraform state pull' on ${TERRAFORM_CHILLBOX_CONTAI
 test ! -e "$state_chillbox_json" || mv --backup=numbered "$state_chillbox_json" "$state_chillbox_json.bak"
 touch "$state_chillbox_json"
 
-"$project_dir/local-bin/_docker_build_terraform-020-chillbox.sh"
+"$project_dir/src/local/_docker_build_terraform-020-chillbox.sh"
 
 docker run \
   -i --tty \

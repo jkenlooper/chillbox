@@ -73,7 +73,7 @@ test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest
 sleeper_image="chillbox-sleeper"
 docker image rm "$sleeper_image" || printf ""
 export DOCKER_BUILDKIT=1
-< "$project_dir/src/sleeper.Dockerfile" \
+< "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
     -t "$sleeper_image" \
     -
@@ -83,7 +83,7 @@ docker image rm "$s3_wrapper_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_wrapper_image" \
-  -f "${project_dir}/src/s3-wrapper.Dockerfile" \
+  -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
   "${project_dir}"
 
 s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys:latest"
@@ -93,7 +93,7 @@ docker image rm "$s3_download_gpg_pubkeys_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_download_gpg_pubkeys_image" \
-  -f "${project_dir}/src/s3-download-gpg_pubkeys.Dockerfile" \
+  -f "${project_dir}/src/local/secrets/s3-download-gpg_pubkeys.Dockerfile" \
   "${project_dir}"
 
 gpg_pubkey_dir="$(mktemp -d)"
@@ -211,7 +211,7 @@ docker image rm "$s3_upload_encrypted_secrets_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_upload_encrypted_secrets_image" \
-  -f "${project_dir}/src/s3-upload-encrypted-secrets.Dockerfile" \
+  -f "${project_dir}/src/local/secrets/s3-upload-encrypted-secrets.Dockerfile" \
   "${project_dir}"
 
 docker run \
