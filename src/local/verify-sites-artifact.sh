@@ -2,7 +2,7 @@
 
 set -o errexit
 
-working_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
@@ -50,8 +50,8 @@ docker image rm "$verify_sites_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
   -t "$verify_sites_image" \
-  -f "${working_dir}/src/local/verify-sites/verify-sites.Dockerfile" \
-  "${working_dir}/src/local/verify-sites"
+  -f "${project_dir}/src/local/verify-sites/verify-sites.Dockerfile" \
+  "${project_dir}/src/local/verify-sites"
 
 docker run \
   -i --tty \

@@ -2,7 +2,7 @@
 
 set -o errexit
 
-project_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 
 usage() {
@@ -84,7 +84,7 @@ export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_wrapper_image" \
   -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
-  "${project_dir}"
+  "${project_dir}/src/local/secrets"
 
 s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys:latest"
 s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys"
@@ -94,7 +94,7 @@ export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_download_gpg_pubkeys_image" \
   -f "${project_dir}/src/local/secrets/s3-download-gpg_pubkeys.Dockerfile" \
-  "${project_dir}"
+  "${project_dir}/src/local/secrets"
 
 gpg_pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
@@ -212,7 +212,7 @@ export DOCKER_BUILDKIT=1
 docker build \
   -t "$s3_upload_encrypted_secrets_image" \
   -f "${project_dir}/src/local/secrets/s3-upload-encrypted-secrets.Dockerfile" \
-  "${project_dir}"
+  "${project_dir}/src/local/secrets"
 
 docker run \
   -i --tty \

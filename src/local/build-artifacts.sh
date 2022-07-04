@@ -2,7 +2,7 @@
 
 set -o errexit
 
-working_dir="$(realpath "$(dirname "$(dirname "$(realpath "$0")")")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 
 # Need to use a log file for stdout since the stdout could be parsed as JSON by
@@ -40,7 +40,7 @@ eval "$(jq -r '@sh "
   echo "  sites_artifact_url=$sites_artifact_url"
 } >> "$LOG_FILE"
 
-chillbox_artifact_version="$(cat "$working_dir/src/chillbox/VERSION")"
+chillbox_artifact_version="$(cat "$project_dir/src/chillbox/VERSION")"
 chillbox_artifact="chillbox.$chillbox_artifact_version.tar.gz"
 echo "chillbox_artifact: $chillbox_artifact" >> "$LOG_FILE"
 
@@ -58,7 +58,7 @@ mkdir -p "$chillbox_state_dir"
 # Create the chillbox artifact file
 if [ ! -f "$chillbox_dist_file" ]; then
   tar c -z -f "$chillbox_dist_file" \
-    -C "$working_dir/src/chillbox" \
+    -C "$project_dir/src/chillbox" \
     nginx/default.nginx.conf \
     nginx/nginx.conf \
     nginx/templates \

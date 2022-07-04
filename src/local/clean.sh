@@ -24,8 +24,6 @@ done
 
 # echo is bad... mmm k
 
-# project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
-
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 
 export WORKSPACE="${WORKSPACE:-development}"

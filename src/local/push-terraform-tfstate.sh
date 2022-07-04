@@ -2,7 +2,7 @@
 
 set -o errexit
 
-project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 

@@ -7,17 +7,29 @@ FROM alpine:3.15.4@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5ac
 
 WORKDIR /usr/local/src/s3-wrapper
 
-COPY bin/install-aws-cli.sh /usr/local/src/s3-wrapper/bin/
 RUN <<INSTALL
 apk update
-/usr/local/src/s3-wrapper/bin/install-aws-cli.sh
 apk add \
   jq \
   vim \
   mandoc man-pages \
   coreutils \
+  unzip \
   gnupg \
   gnupg-dirmngr
+
+install_aws_cli_dir="$(mktemp -d)"
+
+# UPKEEP due: "2022-07-12" label: "install-aws-cli gist" interval: "+3 months"
+# https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
+# Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/23066345e862578c1cbca7ae6c65e983a0aff3a6.zip \
+  -O "$install_aws_cli_dir/install-aws-cli.zip"
+echo "dbba9d0904ef5f57fba8dc4a38ce7b53  $install_aws_cli_dir/install-aws-cli.zip" | md5sum -c
+
+unzip -j "$install_aws_cli_dir/install-aws-cli.zip" -d "$install_aws_cli_dir"
+chmod +x "$install_aws_cli_dir/install-aws-cli.sh"
+"$install_aws_cli_dir/install-aws-cli.sh"
 
 INSTALL
 
@@ -51,5 +63,5 @@ SETUP
 
 ENV PATH=/usr/local/src/s3-wrapper/bin:${PATH}
 
-COPY --chown=dev:dev terraform-bin/_dev_tty.sh bin/
-COPY --chown=dev:dev terraform-bin/_decrypt_file_as_dev_user.sh bin/
+COPY --chown=dev:dev _dev_tty.sh bin/
+COPY --chown=dev:dev _decrypt_file_as_dev_user.sh bin/

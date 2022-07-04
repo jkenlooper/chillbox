@@ -3,7 +3,7 @@
 set -o errexit
 
 script_name="$(basename "$0")"
-project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
+project_dir="$(dirname "$(realpath "$0")")"
 sub_command=${1:-interactive}
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 export WORKSPACE="${WORKSPACE:-development}"
@@ -163,7 +163,7 @@ validate_environment_vars() {
 build_artifacts() {
   mkdir -p "$chillbox_state_home"
 
-  # The artifacts are built locally by executing the local-bin/build-artifacts.sh.
+  # The artifacts are built locally by executing the src/local/build-artifacts.sh.
   echo "INFO $script_name: Build the artifacts"
   SITES_ARTIFACT=""
   CHILLBOX_ARTIFACT=""
@@ -172,7 +172,7 @@ build_artifacts() {
     --arg jq_sites_artifact_url "$SITES_ARTIFACT_URL" \
     --null-input '{
       sites_artifact_url: $jq_sites_artifact_url,
-  }' | "${project_dir}/local-bin/build-artifacts.sh" | jq -r '@sh "
+  }' | "${project_dir}/src/local/build-artifacts.sh" | jq -r '@sh "
       export SITES_ARTIFACT=\(.sites_artifact)
       export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
       export SITES_MANIFEST=\(.sites_manifest)
@@ -191,14 +191,14 @@ HERE
 
 verify_built_artifacts() {
   # Verify that the artifacts that were built have met the service contracts before continuing.
-  "$project_dir/local-bin/verify-sites-artifact.sh"
+  "$project_dir/src/local/verify-sites-artifact.sh"
 }
 
 generate_site_domains_file() {
   dist_sites_dir="$chillbox_state_home/sites"
   mkdir -p "$dist_sites_dir"
 
-  "$project_dir/local-bin/_generate-site_domains_auto_tfvars.sh"
+  "$project_dir/src/local/generate-site_domains_auto_tfvars.sh"
 }
 
 while getopts "h" OPTION ; do
@@ -232,16 +232,16 @@ if [ "$sub_command" = "interactive" ] || \
   "$project_dir/src/local/terra.sh" "$sub_command"
 
 elif [ "$sub_command" = "clean" ]; then
-  "$project_dir/local-bin/clean.sh"
+  "$project_dir/src/local/clean.sh"
 
 elif [ "$sub_command" = "pull" ]; then
-  "$project_dir/local-bin/pull-terraform-tfstate.sh"
+  "$project_dir/src/local/pull-terraform-tfstate.sh"
 
 elif [ "$sub_command" = "push" ]; then
-  "$project_dir/local-bin/push-terraform-tfstate.sh"
+  "$project_dir/src/local/push-terraform-tfstate.sh"
 
 elif [ "$sub_command" = "secrets" ]; then
-  "$project_dir/local-bin/encrypt-and-upload-secrets.sh"
+  "$project_dir/src/local/encrypt-and-upload-secrets.sh"
 
 else
   echo "ERROR $script_name: the sub command '$sub_command' was not handled."
