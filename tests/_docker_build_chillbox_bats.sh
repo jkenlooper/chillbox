@@ -3,7 +3,7 @@
 set -o errexit
 set -o nounset
 
-tests_dir="$(dirname "$(realpath "$0")")"
+project_dir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 build_tmp_log="$(mktemp)"
 cleanup() {
@@ -18,7 +18,7 @@ set +o errexit
 export DOCKER_BUILDKIT=1
 set -x
 
-docker build --progress=plain -t "$CHILLBOX_BATS_IMAGE" - < "${tests_dir}/Dockerfile" \
+docker build --progress=plain -t "$CHILLBOX_BATS_IMAGE" - < "${project_dir}/tests/Dockerfile" \
  > "$build_tmp_log" 2>&1
 
 docker_build_exit="$?"
