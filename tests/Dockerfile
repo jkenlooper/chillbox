@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.3.0-labs
+# syntax=docker/dockerfile:1.4.1
 
 # UPKEEP due: "2022-08-12" label: "bats/bats base image" interval: "+4 months"
 # docker pull bats/bats:1.6.0

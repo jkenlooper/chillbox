@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.3.0-labs
+# syntax=docker/dockerfile:1.4.1
 
 # UPKEEP due: "2022-08-12" label: "hashicorp/terraform base image" interval: "+4 months"
 # docker pull hashicorp/terraform:1.2.0-alpha-20220328
