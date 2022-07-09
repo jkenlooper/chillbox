@@ -3,8 +3,6 @@
 ./chillbox.sh
 ./CHANGELOG.md
 ./build/create-manifest.sh
-./build/install.sh
-./build/uninstall.sh
 ./build/MANIFEST
 ./build/dist.sh
 ./docs/chillbox.md

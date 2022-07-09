@@ -18,6 +18,7 @@ if [ ! -f "$chillbox_cli_dist_file" ]; then
     --files-from=build/MANIFEST
 else
   echo "Chillbox CLI dist file already exists: $chillbox_cli_dist_file"
+  touch "$chillbox_cli_dist_file"
   exit 0
 fi
 

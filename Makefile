@@ -1,4 +1,3 @@
-#MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := all
@@ -8,19 +7,14 @@ SHELL := bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 
-objects := todo
-
 VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)
 
-# Set to tmp/ when debugging the install
-# make PREFIXDIR=${PWD}/tmp inspect.SRVDIR
-# make PREFIXDIR=${PWD}/tmp ENVIRONMENT=development install
-PREFIXDIR :=
+objects := dist/chillbox-cli-$(VERSION).tar.gz
+manifest_files := $(shell find . -type f -not -path './.git/*' -not -path './.github/*' -not -name '.gitignore' -not -path './build/MANIFEST' -not -path './dist/chillbox-cli-$(VERSION).tar.gz')
 
 # For debugging what is set in variables
 inspect.%:
 	@echo $($*)
-
 
 # Always run.  Useful when target is like targetname.% .
 # Use $* to get the stem
@@ -29,27 +23,19 @@ FORCE:
 .PHONY: all
 all: $(objects)
 
-.PHONY: install
-install:
-	./build/install.sh
-
 # Remove any created files which were created by the `make all` recipe.
 .PHONY: clean
 clean:
 	rm $(objects)
 
-# Remove files placed outside of src directory and uninstall app.
-.PHONY: uninstall
-uninstall:
-	./build/uninstall.sh
-
 .PHONY: dist
 dist: dist/chillbox-cli-$(VERSION).tar.gz
 
-.PHONY: dist/chillbox-cli-$(VERSION).tar.gz
-dist/chillbox-cli-$(VERSION).tar.gz: build/dist.sh
+dist/chillbox-cli-$(VERSION).tar.gz: build/dist.sh build/MANIFEST
 	./$< $(abspath $@)
 
-# TODO
-todo:
-	touch $@
+.PHONY: manifest
+manifest: build/MANIFEST
+
+build/MANIFEST: build/create-manifest.sh $(manifest_files)
+	./$<
