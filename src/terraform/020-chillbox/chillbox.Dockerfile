@@ -7,7 +7,6 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 
 WORKDIR /usr/local/src/chillbox-terraform
 
-#COPY bin/install-aws-cli.sh bin/
 RUN <<INSTALL
 set -o errexit
 apk update
@@ -22,32 +21,44 @@ apk add \
 
 install_aws_cli_dir="$(mktemp -d)"
 
-# UPKEEP due: "2022-07-12" label: "install-aws-cli gist" interval: "+3 months"
+# UPKEEP due: "2022-10-08" label: "install-aws-cli gist" interval: "+3 months"
 # https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
 # Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/23066345e862578c1cbca7ae6c65e983a0aff3a6.zip \
+install_aws_cli_dir="$(mktemp -d)"
+wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/0951e80d092960cf27f893aaa12d5ed754dc3bed.zip \
   -O "$install_aws_cli_dir/install-aws-cli.zip"
-echo "dbba9d0904ef5f57fba8dc4a38ce7b53  $install_aws_cli_dir/install-aws-cli.zip" | md5sum -c
-
+echo "9006755dfbc2cdaf192029a3a2f60941beecc868157ea265c593f11e608a906a5928dcad51a815c676e8f77593e5847e9b6023b47c28bc87b5ffeecd5708e9ac  $install_aws_cli_dir/install-aws-cli.zip" | sha512sum --strict -c \
+  || ( \
+    echo "Cleaning up in case errexit is not set." \
+    && mv --verbose "$install_aws_cli_dir/install-aws-cli.zip" "$install_aws_cli_dir/install-aws-cli.zip.INVALID" \
+    && exit 1 \
+    )
 unzip -j "$install_aws_cli_dir/install-aws-cli.zip" -d "$install_aws_cli_dir"
 chmod +x "$install_aws_cli_dir/install-aws-cli.sh"
 "$install_aws_cli_dir/install-aws-cli.sh"
+rm -rf "$install_aws_cli_dir"
 
 INSTALL
 
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
+set -o errexit
 # UPKEEP due: "2022-10-08" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
 alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-07-08-2149/alpine-virt-image-2022-07-08-2149.qcow2.bz2"
 echo "INFO: Using alpine custom image $alpine_custom_image"
-alpine_custom_image_checksum="29b8eb6b1347be0b5dfe132c2a2fcc96"
+alpine_custom_image_checksum="01e227af78ded78a10440cbb6f6adf86aa9c2581525d5e4f59cb2b5df4b9060dc35e13fb410a48d7e79f2ed7ee9c354263dbfc8bcfb8c375f19611d23801dd96"
 echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
 
 set -o errexit
 wget "$alpine_custom_image"
 alpine_custom_image_file="$(basename "${alpine_custom_image}")"
-md5sum "${alpine_custom_image_file}"
-echo "${alpine_custom_image_checksum}  ${alpine_custom_image_file}" | md5sum -c
+sha512sum "${alpine_custom_image_file}"
+echo "${alpine_custom_image_checksum}  ${alpine_custom_image_file}" | sha512sum --strict -c \
+  || ( \
+    echo "Cleaning up in case errexit is not set." \
+    && mv --verbose "${alpine_custom_image_file}" "${alpine_custom_image_file}.INVALID" \
+    && exit 1 \
+    )
 cat <<HERE > alpine_custom_image.auto.tfvars
 alpine_custom_image = "${alpine_custom_image_file}"
 HERE
@@ -62,6 +73,7 @@ ENV SKIP_UPLOAD="n"
 #ENV endpoint_url="http://localhost:9000"
 
 RUN <<SETUP
+set -o errexit
 addgroup dev
 adduser -G dev -D dev
 chown -R dev:dev .
@@ -94,6 +106,7 @@ COPY --chown=dev:dev 020-chillbox/user_data_chillbox.sh.tftpl .
 COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
+set -o errexit
 su dev -c "terraform init"
 
 # A Terraform workspace is required so that there is a directory created for the

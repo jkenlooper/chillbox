@@ -46,7 +46,7 @@ fi
 printf '\n%s\n' "Run integration test with a deployment using Terraform? [y/n]"
 read -r CONFIRM
 if [ "${CONFIRM}" = "y" ]; then
-  WORKSPACE="test" ./terra.sh
+  WORKSPACE="test" ./chillbox.sh
 
   # TODO Automated checking of deployed test site is not implemented.
   exit

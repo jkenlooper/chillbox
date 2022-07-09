@@ -2,10 +2,10 @@
 
 set -o errexit
 
-# UPKEEP due: "2022-07-12" label: "Update aws-cli" interval: "+3 months"
+# UPKEEP due: "2022-10-08" label: "Update aws-cli" interval: "+3 months"
 # https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
 # Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-AWS_CLI_VERSION="2.5.4"
+AWS_CLI_VERSION="2.7.14"
 
 # Prevent reinstalling aws-cli by checking the version.
 current_aws_version="$(command -v aws > /dev/null && aws --version | cut -f1 -d ' ' || printf "")"

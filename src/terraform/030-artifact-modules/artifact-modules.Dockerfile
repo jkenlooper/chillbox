@@ -8,6 +8,7 @@ FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c791
 WORKDIR /usr/local/src/artifact-modules
 
 RUN <<INSTALL
+set -o errexit
 apk update
 apk add \
   jq \
@@ -20,6 +21,7 @@ INSTALL
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 
 RUN <<SETUP
+set -o errexit
 addgroup dev
 adduser -G dev -D dev
 chown -R dev:dev .
@@ -33,12 +35,14 @@ SETUP
 COPY --chown=dev:dev terraform-030-artifact-modules/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
+set -o errexit
 su dev -c "terraform init"
 TERRAFORM_INIT
 
 COPY --chown=dev:dev terraform-030-artifact-modules/extract-terraform-artifact-modules.sh .
 #COPY --chown=dev:dev dist ./dist
 RUN <<ARTIFACT_MODULES
+set -o errexit
 echo "Extracting artifact terraform modules is not implemented." && exit 0
 
 mkdir -p artifact-modules

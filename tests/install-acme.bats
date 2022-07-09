@@ -40,7 +40,7 @@ main() {
 
 @test "pass when acme.sh can be installed, but skip the actual install step" {
   run main
-  assert_output --partial "acme.sh version: https://github.com/acmesh-official/acme.sh v3.0.1"
+  assert_output --partial "acme.sh version: https://github.com/acmesh-official/acme.sh v3.0.4"
   assert_output --partial "Skipping 'acme.sh --install ...' step"
   assert_success
 }

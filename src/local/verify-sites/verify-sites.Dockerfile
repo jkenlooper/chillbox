@@ -8,6 +8,7 @@ FROM alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1ac
 WORKDIR /usr/local/src/verify-sites
 COPY requirements.txt ./
 RUN <<DEPENDENCIES
+set -o errexit
 apk update
 apk add sed attr grep coreutils jq
 

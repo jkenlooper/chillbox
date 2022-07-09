@@ -7,6 +7,7 @@ FROM alpine:3.16.0@sha256:686d8c9dfa6f3ccfc8230bc3178d23f84eeaf7e457f36f271ab1ac
 
 WORKDIR /usr/local/src/api-secrets
 RUN <<DEPENDENCIES
+set -o errexit
 apk update
 apk add sed attr grep coreutils jq gnupg gnupg-dirmngr
 
@@ -31,6 +32,7 @@ ARG SERVICE_PERSISTENT_DIR=/var/lib/SLUGNAME-SERVICE_HANDLER
 ENV SERVICE_PERSISTENT_DIR=$SERVICE_PERSISTENT_DIR
 
 RUN <<SECRETS_PROMPT_SH
+set -o errexit
 cat <<'HERE' > /usr/local/src/api-secrets/secrets-prompt.sh
 #!/usr/bin/env sh
 

@@ -6,6 +6,7 @@
 FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
 
 RUN <<INSTALL
+set -o errexit
 apk update
 apk add \
   jq \
@@ -25,6 +26,7 @@ ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
 ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/terraform.tfstate.json.asc"
 
 RUN <<SETUP
+set -o errexit
 addgroup dev
 adduser -G dev -D dev
 chown -R dev:dev .
@@ -46,6 +48,7 @@ COPY --chown=dev:dev 010-infra/variables.tf ./
 COPY --chown=dev:dev 010-infra/main.tf ./
 COPY --chown=dev:dev 010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
+set -o errexit
 # Creates the /home/dev/.terraform.d directory.
 su dev -c "terraform init"
 
