@@ -15,18 +15,21 @@ main() {
   "${BATS_TEST_DIRNAME}"/../bin/install-chill.sh
 }
 
-@test "fail when PIP_CHILL is empty" {
-  export PIP_CHILL=""
-  run main
-  echo "$output"
-  assert_failure
-}
-
-@test "pass when PIP_CHILL is set and chill can be installed" {
-  export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@develop#egg=chill"
+@test "pass when chill can be installed" {
   run main
   assert_output --partial "Installing chill version"
-  assert_output --partial "Python 3.9.7"
+  # The python version is 3.9 because the base image for bats/bats-core uses the
+  # docker 'bash:latest' base image which is alpine 3.15. Alpine 3.15 uses
+  # python 3.9. Only check that at least python 3 has been installed.
+  assert_output --partial "Python 3"
+  assert_output --partial "Chill 0.9.0"
+  assert_success
+}
+
+@test "pass when chill can be installed a second time" {
+  run main
+  assert_output --partial "Skipping reinstall of chill version"
+  assert_output --partial "Python 3"
   assert_output --partial "Chill 0.9.0"
   assert_success
 }

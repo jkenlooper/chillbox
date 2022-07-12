@@ -206,7 +206,6 @@ S3_ARTIFACT_ENDPOINT_URL=""
 CHILLBOX_ARTIFACT=""
 # CHILLBOX_SERVER_NAME=""
 # CHILLBOX_SERVER_PORT=80
-PIP_CHILL=""
 # SITES_ARTIFACT=""
 TECH_EMAIL=""
 LETS_ENCRYPT_SERVER=""
@@ -220,9 +219,6 @@ export CHILLBOX_ARTIFACT="${chillbox_artifact}"
 export CHILLBOX_SERVER_NAME="${chillbox_server_name}"
 export CHILLBOX_GPG_KEY_NAME="${chillbox_gpg_key_name}"
 export CHILLBOX_SERVER_PORT=80
-# TODO: switch to released chill version
-#export PIP_CHILL="chill==0.9.0"
-export PIP_CHILL="git+https://github.com/jkenlooper/chill.git@7ad7c87da8f3184d884403d86ecf70abf293039f#egg=chill"
 export SITES_ARTIFACT="${sites_artifact}"
 export TECH_EMAIL="${tech_email}"
 # TODO: switch to production version for letsencrypt server
@@ -271,7 +267,7 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 
 ## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-aws-cli.sh
-/etc/chillbox/bin/install-chill.sh "$PIP_CHILL"
+/etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
