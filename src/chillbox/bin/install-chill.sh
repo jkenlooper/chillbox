@@ -17,18 +17,15 @@ if [ "$current_chill_version" = "$chill_version" ]; then
 fi
 
 echo "INFO $0: Installing chill dependencies"
-
 apk add \
   -q --no-progress \
-  py3-pip \
+  build-base \
   gcc \
+  libffi-dev \
+  musl-dev \
+  py3-pip \
   python3 \
   python3-dev \
-  libffi-dev \
-  build-base \
-  musl-dev \
-  make \
-  git \
   sqlite
 
 ln -s -f /usr/bin/python3 /usr/bin/python

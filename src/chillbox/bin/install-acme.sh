@@ -41,8 +41,7 @@ echo "acme.sh version: $(acme.sh --version | xargs)"
 # Allow tests to skip the rest of the script
 test "${SKIP_INSTALL_ACMESH}" = "y" && echo "Skipping 'acme.sh --install ...' step" && exit 0
 
-apk add \
-  openssl
+apk add openssl
 
 acme.sh --install \
   --email "$TECH_EMAIL" \
