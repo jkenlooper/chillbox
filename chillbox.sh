@@ -220,7 +220,7 @@ while getopts "hw:i:" OPTION ; do
        exit 1 ;;
   esac
 done
-shift $(expr $OPTIND - 1)
+shift $((OPTIND - 1))
 sub_command=${1:-interactive}
 
 export CHILLBOX_INSTANCE="$chillbox_instance"
