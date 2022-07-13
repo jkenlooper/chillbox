@@ -4,24 +4,30 @@ set -o errexit
 
 script_name="$(basename "$0")"
 project_dir="$(dirname "$(realpath "$0")")"
-sub_command=${1:-interactive}
-export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
-export WORKSPACE="${WORKSPACE:-development}"
-chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
-env_config="$chillbox_config_home/env"
-chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 usage() {
   cat <<HERE
-chillbox
+
+Script to handle chillbox deployments.
 
 Usage:
   $script_name -h
-  $script_name <instance_name> [interactive | init | plan | apply | destroy | clean | pull | push | secrets]
+  $script_name [<options>] [<sub-command>]
+
+Options:
+  -h                  Show this help message.
+
+  -i <instance_name>  Pass in the name of the chillbox instance.
+                      Defaults to the name 'default' if no CHILLBOX_INSTANCE
+                      variable is set.
+
+  -w <workspace>      Set the workspace environment.
+                      Must be: development, test, acceptance, production
+                      Default workspace environment is development if no
+                      WORKSPACE variable is set.
 
 Sub commands:
-  interactive - Start containers in that mode.
-  init        - Create a new chillbox instance.
+  interactive - Start containers in that mode. This is the default.
   plan        - Passed to the Terraform command inside each container.
   apply       - Passed to the Terraform command inside each container.
   destroy     - Passed to the Terraform command inside each container.
@@ -31,7 +37,6 @@ Sub commands:
   secrets     - Encrypt and upload the site secrets to the s3 object storage.
 
 HERE
-show_environment
 }
 
 show_environment() {
@@ -202,15 +207,27 @@ generate_site_domains_file() {
 
   "$project_dir/src/local/generate-site_domains_auto_tfvars.sh"
 }
+workspace="${WORKSPACE:-development}"
+chillbox_instance="${CHILLBOX_INSTANCE:-default}"
 
-while getopts "h" OPTION ; do
+while getopts "hw:i:" OPTION ; do
   case "$OPTION" in
     h) usage
        exit 0 ;;
+    w) workspace=$OPTARG ;;
+    i) chillbox_instance=$OPTARG ;;
     ?) usage
        exit 1 ;;
   esac
 done
+shift $(expr $OPTIND - 1)
+sub_command=${1:-interactive}
+
+export CHILLBOX_INSTANCE="$chillbox_instance"
+export WORKSPACE="$workspace"
+chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+env_config="$chillbox_config_home/env"
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 show_environment
 check_args_and_environment_vars
