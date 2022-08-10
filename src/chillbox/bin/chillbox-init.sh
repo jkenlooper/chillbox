@@ -2,7 +2,7 @@
 
 set -o errexit
 
-developer_ssh_key_github_list="${DEVELOPER_SSH_KEY_GITHUB_LIST:-}"
+developer_public_ssh_keys="${DEVELOPER_PUBLIC_SSH_KEYS:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"
 chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
@@ -16,11 +16,11 @@ s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
 chillbox_gpg_key_name="${CHILLBOX_GPG_KEY_NAME:-}"
 
-if [ -z "$developer_ssh_key_github_list" ]; then
-  printf '\n%s\n' "No DEVELOPER_SSH_KEY_GITHUB_LIST variable set."
-  printf '\n%s\n' "Enter the GitHub usernames that should have access separated by spaces."
-  read -r developer_ssh_key_github_list
-  test -n "$developer_ssh_key_github_list" || (echo "No usernames set. Exiting" && exit 1)
+if [ -z "$developer_public_ssh_keys" ]; then
+  printf '\n%s\n' "No DEVELOPER_PUBLIC_SSH_KEYS variable set."
+  printf '\n%s\n' "Enter a public ssh key that should have access."
+  read -r developer_public_ssh_keys
+  test -n "$developer_public_ssh_keys" || (echo "No developer ssh key added. Exiting" && exit 1)
 fi
 
 if [ -z "$access_key_id" ]; then
@@ -153,9 +153,7 @@ passwd --expire dev
 # public keys added. This handles a locally provisioned box.
 if [ ! -e /root/.ssh/authorized_keys ]; then
   mkdir -p /root/.ssh
-  for github_username in ${developer_ssh_key_github_list}; do
-    wget "https://github.com/$github_username.keys" -O - | tee -a /root/.ssh/authorized_keys
-  done
+  echo -e "$developer_public_ssh_keys" > /root/.ssh/authorized_keys
   chown -R root:root /root/.ssh
   chmod -R 700 /root/.ssh
   chmod -R 644 /root/.ssh/authorized_keys

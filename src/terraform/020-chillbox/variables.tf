@@ -81,15 +81,14 @@ variable "web_ips" {
   default     = ["0.0.0.0/0", "::/0"]
 }
 
-
-variable "developer_ssh_key_github" {
-  description = "The GitHub usernames that should have access."
+variable "developer_public_ssh_keys" {
+  description = "The public SSH keys that will be added to the deployed chillbox server."
   type        = list(string)
-}
-
-variable "developer_ssh_key_fingerprints" {
-  description = "The fingerprints of any public SSH keys that were added to the DigitalOcean account that should have access to the droplets."
-  type        = list(string)
+  nullable = false
+  validation {
+    condition = length(var.developer_public_ssh_keys) != 0
+    error_message = "Must have at least one public ssh key in the list."
+  }
 }
 
 variable "chillbox_instance" {

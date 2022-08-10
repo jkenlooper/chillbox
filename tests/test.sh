@@ -8,7 +8,7 @@ project_dir="$(dirname "$tests_dir")"
 cd "${project_dir}"
 
 # Default to run all tests (any files with '.bats' extension) in tests directory.
-TEST="tests/"
+test_target="tests/"
 
 export CHILLBOX_BATS_IMAGE="${CHILLBOX_BATS_IMAGE:-chillbox-bats:latest}"
 
@@ -16,7 +16,7 @@ export CHILLBOX_BATS_IMAGE="${CHILLBOX_BATS_IMAGE:-chillbox-bats:latest}"
 if [ -n "$1" ]; then
   bats_file_without_extension=$(basename "$1" .bats)
   test -e "${tests_dir}/$bats_file_without_extension.bats" || (echo "ERROR $0: The path '${tests_dir}/$bats_file_without_extension.bats' does not exist." && exit 1)
-  TEST="tests/$bats_file_without_extension.bats"
+  test_target="tests/$bats_file_without_extension.bats"
 fi
 
 "$tests_dir/_docker_build_chillbox_bats.sh"
@@ -39,14 +39,19 @@ else
   docker run -it --rm \
     --mount "type=bind,src=${project_dir}/src/chillbox/bin,dst=/code/bin,readonly=true" \
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
-    "$CHILLBOX_BATS_IMAGE" "$TEST"
+    "$CHILLBOX_BATS_IMAGE" "$test_target"
 
 fi
 
 printf '\n%s\n' "Run integration test with a deployment using Terraform? [y/n]"
 read -r CONFIRM
 if [ "${CONFIRM}" = "y" ]; then
-  WORKSPACE="test" ./chillbox.sh
+  ./chillbox.sh -w "test" -i "chillboxtest"
+  echo "Confirm that deployment worked. Destroy the deployed chillboxtest instance now? [y/n] "
+  read -r CONFIRM
+  if [ "${CONFIRM}" = "y" ]; then
+    ./chillbox.sh -w "test" -i "chillboxtest" destroy
+  fi
 
   # TODO Automated checking of deployed test site is not implemented.
   exit

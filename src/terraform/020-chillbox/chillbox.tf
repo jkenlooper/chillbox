@@ -32,7 +32,7 @@ resource "digitalocean_droplet" "chillbox" {
   image      = digitalocean_custom_image.alpine.id
   region     = var.region
   vpc_uuid   = digitalocean_vpc.chillbox.id
-  ssh_keys   = var.developer_ssh_key_fingerprints
+  ssh_keys   = [digitalocean_ssh_key.chillbox[*].fingerprint]
   tags       = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
   monitoring = false
   lifecycle {
@@ -40,9 +40,16 @@ resource "digitalocean_droplet" "chillbox" {
     ignore_changes = [
       image,
       user_data,
+      ssh_keys,
     ]
   }
   user_data = one(local_sensitive_file.alpine_box_init[*].content)
+}
+
+resource "digitalocean_ssh_key" "chillbox" {
+  for_each      = var.create_chillbox ? toset(var.developer_public_ssh_keys) : []
+  name       = "Chillbox ${each.key}"
+  public_key = each.value
 }
 
 resource "local_sensitive_file" "alpine_box_init" {
@@ -50,7 +57,7 @@ resource "local_sensitive_file" "alpine_box_init" {
   filename        = "/run/tmp/secrets/terraform-020-chillbox/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
-    tf_developer_ssh_key_github_list : "%{for username in var.developer_ssh_key_github} ${username} %{endfor}",
+    tf_developer_public_ssh_keys : "%{for public_ssh_key in var.developer_public_ssh_keys} ${public_ssh_key}\n %{endfor}",
     tf_access_key_id : var.do_chillbox_spaces_access_key_id,
     tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
     tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,

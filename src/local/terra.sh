@@ -30,6 +30,7 @@ chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_
 chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
 dist_sites_dir="$chillbox_state_home/sites"
 site_domains_file="$chillbox_state_home/site_domains.auto.tfvars.json"
+ssh_keys_file="$chillbox_state_home/ssh_keys.auto.tfvars.json"
 
 export INFRA_IMAGE="chillbox-terraform-010-infra:latest"
 export INFRA_CONTAINER="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"

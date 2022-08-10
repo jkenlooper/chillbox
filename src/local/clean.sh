@@ -80,7 +80,7 @@ volume_list="$(docker volume list \
   --filter "name=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --quiet)"
-  test -n "$volume_list" || (printf '\n%s\n' "No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'." && exit 1)
+  test -n "$volume_list" || printf '\n%s\n' "WARNING $0: No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
 printf '\n%s\n' "$volume_list"
 printf '\n%s\n' "Continue? [y/n]"
 read -r confirm
@@ -93,5 +93,7 @@ docker rm "${INFRA_CONTAINER}" 2> /dev/null || printf ""
 docker stop "${TERRAFORM_CHILLBOX_CONTAINER}" 2> /dev/null || printf ""
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}" 2> /dev/null || printf ""
 
-printf '\n%s\n\n' "Deleting the volumes for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
-printf '%s' "$volume_list" | xargs docker volume rm
+if [ -n "$volume_list" ]; then
+  printf '\n%s\n\n' "Deleting the volumes for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+  printf '%s' "$volume_list" | xargs docker volume rm
+fi

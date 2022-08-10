@@ -4,7 +4,7 @@ set -o errexit
 
 # Set by terraform
 # shellcheck disable=SC2154
-developer_ssh_key_github_list="${tf_developer_ssh_key_github_list}"
+developer_public_ssh_keys="${tf_developer_public_ssh_keys}"
 # shellcheck disable=SC2154
 access_key_id="${tf_access_key_id}"
 # shellcheck disable=SC2154
@@ -76,7 +76,7 @@ aws \
 
 tar x -f "$tmp_chillbox_artifact" -C "$tmp_bootstrap_dir" bin/chillbox-init.sh
 
-DEVELOPER_SSH_KEY_GITHUB_LIST="$developer_ssh_key_github_list" \
+DEVELOPER_PUBLIC_SSH_KEYS="$developer_public_ssh_keys" \
 ACCESS_KEY_ID="$access_key_id" \
 SECRET_ACCESS_KEY="$secret_access_key" \
 CHILLBOX_GPG_PASSPHRASE="$chillbox_gpg_passphrase" \

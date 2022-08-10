@@ -40,6 +40,7 @@ HERE
 }
 
 show_environment() {
+  printf "\n\n%s\n" "INFO $script_name: Environment"
   cat <<HERE
 CHILLBOX_INSTANCE: $CHILLBOX_INSTANCE
 WORKSPACE: $WORKSPACE
@@ -87,6 +88,7 @@ check_for_required_commands() {
 }
 
 init_and_source_chillbox_config() {
+  printf "\n\n%s\n" "INFO $script_name: Initializing and sourcing Chillbox configuration at $env_config"
   mkdir -p "$chillbox_config_home"
 
   if [ ! -f "${env_config}" ]; then
@@ -105,12 +107,49 @@ init_and_source_chillbox_config() {
       || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
     test -f "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars" \
       || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars"
+
+    fingerprint_sha256_accept_list=""
+
+    pub_ssh_key_urls=""
+    printf "\n%s\n" "Use the public ssh key from your GitHub username? [y/n]"
+    read -r fetch_pub_ssh_from_gh
+    if [ "$fetch_pub_ssh_from_gh" = "y" ]; then
+      printf "\n%s\n" "Enter GitHub username:"
+      read -r gh_username
+      wget "https://github.com/${gh_username}.keys" -O - \
+        | while read -r pub_ssh_key; do
+              fingerprint_sha256_accept_list="${fingerprint_sha256_accept_list}$(printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")")"
+          done
+      pub_ssh_key_urls="https://github.com/${gh_username}.keys"
+    fi
+
+    pub_ssh_key_files=""
+    if [ -f "$HOME/.ssh/id_rsa.pub" ]; then
+      printf "\n%s\n" "Use the public ssh key from $HOME/.ssh/id_rsa.pub ? [y/n]"
+      read -r fetch_pub_ssh_from_home
+      if [ "$fetch_pub_ssh_from_home" = "y" ]; then
+        fingerprint_sha256_accept_list="${fingerprint_sha256_accept_list}$(printf "%s\n" "$(ssh-keygen -l -E sha256 -f $HOME/.ssh/id_rsa.pub || echo "")")"
+        pub_ssh_key_files="$HOME/.ssh/id_rsa.pub"
+      fi
+    fi
+
     cat <<HERE > "$env_config"
 # Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
 # export SITES_ARTIFACT_URL="/absolute/path/to/site1-0.1-example-sites.tar.gz"
 # export SITES_ARTIFACT_URL="https://example.test/site1-0.1-example-sites.tar.gz"
 # Setting this to 'example' will just use the example site in $project_dir
 export SITES_ARTIFACT_URL="example"
+
+# The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
+# public ssh keys that will be added to the deployed chillbox server.
+# https://github.com/your-github-username.keys
+export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files"
+
+# Only include the public ssh keys that match the fingerprint in the accept
+# list. These are compared with the
+# ssh-keygen -l -E sha256 -f path-to-public-ssh-key.pub
+# command after fetching them.
+export PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST="$fingerprint_sha256_accept_list"
 
 # Update these files as needed.
 export TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
@@ -123,6 +162,7 @@ HERE
 }
 
 create_example_site_tar_gz() {
+  printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
   test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
@@ -147,6 +187,7 @@ create_example_site_tar_gz() {
 }
 
 validate_environment_vars() {
+  printf "\n\n%s\n" "INFO $script_name: Validating environment variables."
   test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
   test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
     || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
@@ -168,10 +209,10 @@ validate_environment_vars() {
 }
 
 build_artifacts() {
+  printf "\n\n%s\n" "INFO $script_name: Build artifacts locally for sites artifact $SITES_ARTIFACT_URL"
   mkdir -p "$chillbox_state_home"
 
   # The artifacts are built locally by executing the src/local/build-artifacts.sh.
-  echo "INFO $script_name: Build the artifacts"
   SITES_ARTIFACT=""
   CHILLBOX_ARTIFACT=""
   SITES_MANIFEST=""
@@ -197,16 +238,24 @@ HERE
 }
 
 verify_built_artifacts() {
-  # Verify that the artifacts that were built have met the service contracts before continuing.
+  printf "\n\n%s\n" "INFO $script_name: Verify that the artifacts that were built have met the service contracts before continuing."
   "$project_dir/src/local/verify-sites-artifact.sh"
 }
 
 generate_site_domains_file() {
+  printf "\n\n%s\n" "INFO $script_name: Create site domains file site_domains.auto.tfvars.json"
   dist_sites_dir="$chillbox_state_home/sites"
   mkdir -p "$dist_sites_dir"
 
   "$project_dir/src/local/generate-site_domains_auto_tfvars.sh"
 }
+
+update_ssh_keys_auto_tfvars() {
+  printf "\n\n%s\n" "INFO $script_name: Update public ssh keys file developer-public-ssh-keys.auto.tfvars.json"
+
+  "$project_dir/src/local/update-public-ssh-keys-auto-tfvars.sh"
+}
+
 workspace="${WORKSPACE:-development}"
 chillbox_instance="${CHILLBOX_INSTANCE:-default}"
 
@@ -235,7 +284,7 @@ check_for_required_commands
 init_and_source_chillbox_config
 
 if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
-  echo "WARNING $script_name: Using the example sites artifact."
+  printf "\n\n%s\n" "WARNING $script_name: Using the example sites artifact."
   create_example_site_tar_gz
 fi
 
@@ -248,18 +297,26 @@ if [ "$sub_command" = "interactive" ] || \
   [ "$sub_command" = "plan" ] || \
   [ "$sub_command" = "apply" ] || \
   [ "$sub_command" = "destroy" ]; then
+  update_ssh_keys_auto_tfvars
+  printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 
 elif [ "$sub_command" = "clean" ]; then
+  printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command."
+  "$project_dir/src/local/clean.sh" -h
   "$project_dir/src/local/clean.sh"
 
 elif [ "$sub_command" = "pull" ]; then
+  printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to pull terraform state."
   "$project_dir/src/local/pull-terraform-tfstate.sh"
 
 elif [ "$sub_command" = "push" ]; then
+  printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to push terraform state."
   "$project_dir/src/local/push-terraform-tfstate.sh"
 
 elif [ "$sub_command" = "secrets" ]; then
+  printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to encrypt and upload secrets."
+  "$project_dir/src/local/encrypt-and-upload-secrets.sh" -h
   "$project_dir/src/local/encrypt-and-upload-secrets.sh"
 
 else

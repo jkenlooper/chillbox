@@ -99,7 +99,6 @@ else
 
   tmp_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_sites_dir"' EXIT
-  #cd "$tmp_sites_dir"
   tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
   chmod --recursive u+rw "$tmp_sites_dir"
 
