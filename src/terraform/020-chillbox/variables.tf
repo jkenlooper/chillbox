@@ -61,7 +61,7 @@ variable "s3_endpoint_url" {
 variable "sites_manifest" {
   type        = string
   description = "The sites manifest."
-  default = "dist/sites.manifest.json"
+  default     = "dist/sites.manifest.json"
 }
 
 
@@ -84,9 +84,9 @@ variable "web_ips" {
 variable "developer_public_ssh_keys" {
   description = "The public SSH keys that will be added to the deployed chillbox server."
   type        = list(string)
-  nullable = false
+  nullable    = false
   validation {
-    condition = length(var.developer_public_ssh_keys) != 0
+    condition     = length(var.developer_public_ssh_keys) != 0
     error_message = "Must have at least one public ssh key in the list."
   }
 }
@@ -144,9 +144,9 @@ variable "vpc_ip_range" {
 }
 
 variable "site_domains" {
-  type = list(string)
+  type        = list(string)
   description = "List of site domain names that will be pointing to the chillbox ip address."
-  default = []
+  default     = []
 }
 variable "domain" {
   default     = "example.com"
@@ -178,17 +178,17 @@ variable "dns_ttl" {
 }
 
 variable "create_chillbox" {
-  default = true
+  default     = true
   description = "Create the chillbox droplet."
-  type = bool
+  type        = bool
 }
 variable "sites_artifact" {
-  default = ""
+  default     = ""
   description = "The sites artifact file."
   type        = string
 }
 variable "chillbox_artifact" {
-  default = ""
+  default     = ""
   description = "The chillbox artifact file."
   type        = string
 }

@@ -47,13 +47,13 @@ resource "digitalocean_droplet" "chillbox" {
 }
 
 resource "digitalocean_ssh_key" "chillbox" {
-  for_each      = var.create_chillbox ? toset(var.developer_public_ssh_keys) : []
+  for_each   = var.create_chillbox ? toset(var.developer_public_ssh_keys) : []
   name       = "Chillbox ${each.key}"
   public_key = each.value
 }
 
 resource "local_sensitive_file" "alpine_box_init" {
-  count      = 1
+  count           = 1
   filename        = "/run/tmp/secrets/terraform-020-chillbox/user_data_chillbox.sh"
   file_permission = "0500"
   content = templatefile("user_data_chillbox.sh.tftpl", {
@@ -75,7 +75,7 @@ resource "local_sensitive_file" "alpine_box_init" {
 }
 
 resource "digitalocean_record" "chillbox" {
-  count      = var.create_chillbox ? 1 : 0
+  count  = var.create_chillbox ? 1 : 0
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "@" : trimsuffix(var.sub_domain, ".")
   type   = "A"
@@ -90,7 +90,7 @@ resource "digitalocean_record" "site_domains" {
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
   name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "@" : regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]
 
-  type   = "A"
-  value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
-  ttl    = var.dns_ttl
+  type  = "A"
+  value = one(digitalocean_droplet.chillbox[*].ipv4_address)
+  ttl   = var.dns_ttl
 }
