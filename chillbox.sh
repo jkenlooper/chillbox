@@ -111,16 +111,21 @@ init_and_source_chillbox_config() {
     fingerprint_sha256_accept_list=""
 
     pub_ssh_key_urls=""
-    printf "\n%s\n" "Use the public ssh key from your GitHub username? [y/n]"
+    printf "\n%s\n" "Use the public ssh key from a GitHub username? [y/n]"
     read -r fetch_pub_ssh_from_gh
     if [ "$fetch_pub_ssh_from_gh" = "y" ]; then
       printf "\n%s\n" "Enter GitHub username:"
       read -r gh_username
-      wget "https://github.com/${gh_username}.keys" -O - \
+      # No official documentation of this URL from GitHub; linking to this
+      # StackOverflow answer.
+      # What is the public URL for the Github public keys
+      # https://stackoverflow.com/a/16158737
+      gh_public_ssh_key_url="https://github.com/${gh_username}.keys"
+      wget "$gh_public_ssh_key_url" -O - \
         | while read -r pub_ssh_key; do
               fingerprint_sha256_accept_list="${fingerprint_sha256_accept_list}$(printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")")"
           done
-      pub_ssh_key_urls="https://github.com/${gh_username}.keys"
+      pub_ssh_key_urls="$gh_public_ssh_key_url"
     fi
 
     pub_ssh_key_files=""
@@ -142,7 +147,6 @@ export SITES_ARTIFACT_URL="example"
 
 # The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
 # public ssh keys that will be added to the deployed chillbox server.
-# https://github.com/your-github-username.keys
 export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files"
 
 # Only include the public ssh keys that match the fingerprint in the accept
@@ -297,7 +301,11 @@ if [ "$sub_command" = "interactive" ] || \
   [ "$sub_command" = "plan" ] || \
   [ "$sub_command" = "apply" ] || \
   [ "$sub_command" = "destroy" ]; then
+
+  # Only need to update the public ssh keys if there is a chance that the
+  # chillbox server will be modified.
   update_ssh_keys_auto_tfvars
+
   printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 

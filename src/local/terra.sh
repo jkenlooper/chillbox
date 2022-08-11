@@ -30,7 +30,7 @@ chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_
 chillbox_build_artifact_vars_file="$chillbox_state_home/build-artifacts-vars"
 dist_sites_dir="$chillbox_state_home/sites"
 site_domains_file="$chillbox_state_home/site_domains.auto.tfvars.json"
-ssh_keys_file="$chillbox_state_home/ssh_keys.auto.tfvars.json"
+ssh_keys_file="$chillbox_state_home/developer-public-ssh-keys.auto.tfvars.json"
 
 export INFRA_IMAGE="chillbox-terraform-010-infra:latest"
 export INFRA_CONTAINER="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"
@@ -143,6 +143,7 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
+    --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
     --mount "type=bind,src=$chillbox_dist_file,dst=/usr/local/src/chillbox-terraform/dist/$CHILLBOX_ARTIFACT,readonly=true" \
     --mount "type=bind,src=$chillbox_state_home/$SITES_MANIFEST,dst=/usr/local/src/chillbox-terraform/dist/$SITES_MANIFEST,readonly=true" \
