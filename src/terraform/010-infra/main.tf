@@ -28,13 +28,13 @@ resource "random_uuid" "immutable" {}
 resource "random_uuid" "artifact" {}
 
 resource "digitalocean_spaces_bucket" "artifact" {
-  name   = substr("chillbox-artifact-${lower(var.environment)}-${lower(var.chillbox_instance)}-${random_uuid.artifact.result}", 0, 63)
+  name   = "${substr("chillbox-artifact-${lower(var.environment)}-${lower(var.chillbox_instance)}-${replace(random_uuid.artifact.result, "-", "")}", 0, 60)}cb"
   region = var.bucket_region
   acl    = "private"
 }
 
 resource "digitalocean_spaces_bucket" "immutable" {
-  name   = substr("chillbox-immutable-${lower(var.environment)}-${lower(var.chillbox_instance)}-${random_uuid.immutable.result}", 0, 63)
+  name   = "${substr("chillbox-immutable-${lower(var.environment)}-${lower(var.chillbox_instance)}-${replace(random_uuid.immutable.result, "-", "")}", 0, 60)}cb"
   region = var.bucket_region
   acl    = "public-read"
 }

@@ -21,14 +21,14 @@ test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." >> "$LOG_FILE" &
 # Extract and set shell variables from JSON input
 SITES_ARTIFACT=""
 CHILLBOX_ARTIFACT=""
-SITES_MANIFEST=""
+sites_manifest_file=""
 immutable_bucket_name=""
 artifact_bucket_name=""
 endpoint_url=""
 eval "$(jq -r '@sh "
   SITES_ARTIFACT=\(.sites_artifact)
   CHILLBOX_ARTIFACT=\(.chillbox_artifact)
-  SITES_MANIFEST=\(.sites_manifest)
+  sites_manifest_file=\(.sites_manifest)
   immutable_bucket_name=\(.immutable_bucket_name)
   artifact_bucket_name=\(.artifact_bucket_name)
   endpoint_url=\(.endpoint_url)
@@ -37,7 +37,7 @@ eval "$(jq -r '@sh "
   echo "INFO $0: set shell variables from JSON stdin"
   echo "  SITES_ARTIFACT=$SITES_ARTIFACT"
   echo "  CHILLBOX_ARTIFACT=$CHILLBOX_ARTIFACT"
-  echo "  SITES_MANIFEST=$SITES_MANIFEST"
+  echo "  sites_manifest_file=$sites_manifest_file"
   echo "  immutable_bucket_name=$immutable_bucket_name"
   echo "  artifact_bucket_name=$artifact_bucket_name"
   echo "  endpoint_url=$endpoint_url"
@@ -64,7 +64,7 @@ else
   echo "INFO $0: No changes to existing site artifact: $SITES_ARTIFACT" >> "$LOG_FILE"
 fi
 
-jq -r '.[]' "$SITES_MANIFEST" \
+jq -r '.[]' "$sites_manifest_file" \
   | while read -r artifact_file; do
     test -n "${artifact_file}" || continue
     slugname="$(dirname "$artifact_file")"
@@ -88,7 +88,7 @@ jq -r '.[]' "$SITES_MANIFEST" \
 jq --null-input \
   --arg sites_artifact "$SITES_ARTIFACT" \
   --arg chillbox_artifact "$CHILLBOX_ARTIFACT" \
-  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$SITES_MANIFEST")" \
+  --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$sites_manifest_file")" \
   '{
     sites_artifact:$sites_artifact,
     chillbox_artifact:$chillbox_artifact,

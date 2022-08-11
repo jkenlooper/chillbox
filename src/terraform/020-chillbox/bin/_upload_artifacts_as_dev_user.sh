@@ -54,6 +54,8 @@ immutable_bucket_name=\(.immutable_bucket_name)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' chillbox_sites.auto.tfvars.json)"
 
+sites_manifest_file="$(realpath "./dist/$SITES_MANIFEST")"
+
 if [ "$terraform_command" != "destroy" ] && [ "$SKIP_UPLOAD" != "y" ]; then
   jq \
     --arg jq_immutable_bucket_name "$immutable_bucket_name" \
@@ -61,7 +63,7 @@ if [ "$terraform_command" != "destroy" ] && [ "$SKIP_UPLOAD" != "y" ]; then
     --arg jq_endpoint_url "$endpoint_url" \
     --arg jq_sites_artifact "$SITES_ARTIFACT" \
     --arg jq_chillbox_artifact "$CHILLBOX_ARTIFACT" \
-    --arg jq_sites_manifest "$SITES_MANIFEST" \
+    --arg jq_sites_manifest "$sites_manifest_file" \
     --null-input '{
       sites_artifact: $jq_sites_artifact,
       chillbox_artifact: $jq_chillbox_artifact,
