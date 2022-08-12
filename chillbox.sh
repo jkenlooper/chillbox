@@ -103,11 +103,6 @@ init_and_source_chillbox_config() {
       exit 2
     fi
 
-    test -f "$chillbox_config_home/terraform-010-infra.private.auto.tfvars" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
-    test -f "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars"
-
     fingerprint_sha256_accept_list=""
 
     pub_ssh_key_urls=""
@@ -163,13 +158,41 @@ HERE
 
   # shellcheck source=/dev/null
   . "${env_config}"
+
+  if [ ! -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" ] || [ ! -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" ]; then
+    test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
+      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
+    test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
+      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+    printf "\n%s\n" "Example configuration files have been created. The files shown below should be updated using your text editor ($EDITOR)."
+    printf "\n\n#### %s\n\n" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
+    cat "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
+    printf "\n\n#### %s\n\n" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+    cat "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+    printf "\n\n%s\n" "Edit these now with the below command? [y/n]"
+    printf "\n%s\n" "$EDITOR $TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE $TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+    read -r confirm_edit_conf_files
+    if [ "$confirm_edit_conf_files" = "y" ]; then
+      "$EDITOR" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+    else
+      printf "\n\n%s\n" "Paused script to allow editing the configuration files in a different editor. Resume $script_name now? [y/n]"
+      read -r resume_script
+      if [ "$resume_script" != "y" ]; then
+        exit 0
+      fi
+    fi
+  fi
 }
 
 create_example_site_tar_gz() {
   printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
-  test "${confirm_using_example_sites_artifact}" = "y" || (echo "Exiting" && exit 2)
+  if [ "${confirm_using_example_sites_artifact}" != "y" ]; then
+    echo "Update the SITES_ARTIFACT_URL variable in $env_config to not be set to 'example'."
+    echo "Exiting"
+    exit 2
+  fi
   echo "INFO $script_name: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_example_sites_dir"' EXIT
