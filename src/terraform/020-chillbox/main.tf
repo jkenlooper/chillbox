@@ -23,9 +23,10 @@ resource "digitalocean_project" "chillbox" {
   ])
 }
 
+# https://docs.digitalocean.com/products/networking/vpc/concepts/plan-your-network/
 resource "digitalocean_vpc" "chillbox" {
   name        = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}"
-  description = "ChillBox network for ${var.chillbox_instance} ${var.environment}"
+  description = "${var.chillbox_instance} ${var.environment}"
   region      = var.region
   ip_range    = var.vpc_ip_range
 }

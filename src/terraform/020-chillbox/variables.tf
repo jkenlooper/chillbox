@@ -130,7 +130,7 @@ variable "project_version" {
 
 variable "chillbox_droplet_size" {
   type    = string
-  default = "s-1vcpu-1gb"
+  default = "s-1vcpu-512mb-10gb"
 }
 
 variable "region" {
@@ -140,7 +140,8 @@ variable "region" {
 
 variable "vpc_ip_range" {
   type    = string
-  default = "192.168.136.0/24"
+  default = "192.168.136.0/28"
+  description = "Plan your network https://docs.digitalocean.com/products/networking/vpc/concepts/plan-your-network/"
 }
 
 variable "site_domains" {

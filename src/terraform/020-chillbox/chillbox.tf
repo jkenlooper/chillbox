@@ -32,7 +32,7 @@ resource "digitalocean_droplet" "chillbox" {
   image      = digitalocean_custom_image.alpine.id
   region     = var.region
   vpc_uuid   = digitalocean_vpc.chillbox.id
-  ssh_keys   = [digitalocean_ssh_key.chillbox[*].fingerprint]
+  ssh_keys   = [for ssh_key in digitalocean_ssh_key.chillbox: ssh_key.id]
   tags       = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
   monitoring = false
   lifecycle {
@@ -47,8 +47,8 @@ resource "digitalocean_droplet" "chillbox" {
 }
 
 resource "digitalocean_ssh_key" "chillbox" {
-  for_each   = var.create_chillbox ? toset(var.developer_public_ssh_keys) : []
-  name       = "Chillbox ${each.key}"
+  for_each   = var.create_chillbox ? zipmap([for ssh_key in var.developer_public_ssh_keys: md5(ssh_key)], var.developer_public_ssh_keys) : {}
+  name       = "Chillbox ${var.chillbox_instance} ${var.environment} ${each.key}"
   public_key = each.value
 }
 

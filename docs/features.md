@@ -9,11 +9,11 @@ This is a list of notable features that have currently been implemented.
 - Supported language handlers for services
   - [Flask] (Python 3)
   - [Chill] with dynamic or static deployment (Python 3)
-- Website services run on [Alpine Linux] and don't use systemd
-- Shell scripts are POSIX compliant and mostly have unit tests with Bats-Core
+- Website services run on [Alpine Linux] and don't use [systemd]
+- Shell scripts are [POSIX] compliant and mostly have unit tests with [Bats-core] (Bash Automated Testing System)
 - A JSON Schema has been defined for the site.json files a website uses for configuration.
 - No remote build pipeline, all builds happen on the local host machine
-- Terraform has been isolated inside containers on the local host machine and the state files are encrypted on data volumes
+- [Terraform] has been isolated inside containers on the local host machine and the state files are encrypted on data volumes
 - Deployment to [DigitalOcean] cloud hosting provider
 
 
@@ -86,3 +86,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [Bats-core]: https://github.com/bats-core/bats-core#readme
 [shellcheck]: https://www.shellcheck.net/
 [GeoDNS]: https://en.wikipedia.org/wiki/GeoDNS
+[systemd]: https://systemd.io/
