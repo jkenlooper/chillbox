@@ -27,8 +27,8 @@ chillbox_artifact="${tf_chillbox_artifact}"
 s3_endpoint_url="${tf_s3_endpoint_url}"
 # shellcheck disable=SC2154
 chillbox_server_name="${tf_chillbox_server_name}"
-# shellcheck disable=SC2154
-chillbox_gpg_key_name="${tf_chillbox_hostname_prefix}-$(hostname -i)"
+
+chillbox_gpg_key_name="$(hostname -s)"
 
 tmp_bootstrap_dir="$(mktemp -d)"
 tmp_chillbox_artifact=$(mktemp)

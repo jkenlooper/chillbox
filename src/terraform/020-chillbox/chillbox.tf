@@ -26,8 +26,8 @@ resource "digitalocean_custom_image" "alpine" {
 }
 
 resource "digitalocean_droplet" "chillbox" {
-  count      = var.create_chillbox ? 1 : 0
-  name       = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}"
+  count      = var.chillbox_count
+  name       = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}"
   size       = var.chillbox_droplet_size
   image      = digitalocean_custom_image.alpine.id
   region     = var.region
@@ -36,7 +36,7 @@ resource "digitalocean_droplet" "chillbox" {
   tags       = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
   monitoring = false
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     ignore_changes = [
       image,
       user_data,
@@ -47,7 +47,7 @@ resource "digitalocean_droplet" "chillbox" {
 }
 
 resource "digitalocean_ssh_key" "chillbox" {
-  for_each   = var.create_chillbox ? zipmap([for ssh_key in var.developer_public_ssh_keys: md5(ssh_key)], var.developer_public_ssh_keys) : {}
+  for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys: md5(ssh_key)], var.developer_public_ssh_keys)
   name       = "Chillbox ${var.chillbox_instance} ${var.environment} ${each.key}"
   public_key = each.value
 }
@@ -70,12 +70,11 @@ resource "local_sensitive_file" "alpine_box_init" {
     # No slash at the end of this s3_endpoint_url
     tf_s3_endpoint_url : var.s3_endpoint_url,
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
-    tf_chillbox_hostname_prefix : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}",
   })
 }
 
 resource "digitalocean_record" "chillbox" {
-  count  = var.create_chillbox ? 1 : 0
+  count  = var.chillbox_count
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "@" : trimsuffix(var.sub_domain, ".")
   type   = "A"
@@ -84,7 +83,8 @@ resource "digitalocean_record" "chillbox" {
 }
 
 resource "digitalocean_record" "site_domains" {
-  for_each = var.create_chillbox ? toset(var.site_domains) : []
+  #for_each = var.chillbox_count > 0 ? toset(var.site_domains) : []
+  for_each = false ? toset(var.site_domains) : []
 
   # https://regex101.com/r/pgPLQ5/1
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]

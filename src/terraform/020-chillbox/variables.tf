@@ -178,10 +178,15 @@ variable "dns_ttl" {
   }
 }
 
-variable "create_chillbox" {
-  default     = true
-  description = "Create the chillbox droplet."
-  type        = bool
+variable "chillbox_count" {
+  default     = 1
+  description = "Chillbox server count."
+  type        = number
+  validation {
+    # TODO Future feature is to support scaling out with a load balancer.
+    condition = can(var.chillbox_count <= 1)
+    error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
+  }
 }
 variable "sites_artifact" {
   default     = ""
