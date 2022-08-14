@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.4.1
 
-# UPKEEP due: "2022-08-12" label: "hashicorp/terraform base image" interval: "+4 months"
-# docker pull hashicorp/terraform:1.2.0-alpha-20220328
+# UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
+# docker pull hashicorp/terraform:1.2.7
 # docker image ls --digests hashicorp/terraform
-FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
+FROM hashicorp/terraform:1.2.7@sha256:8e4d010fc675dbae1eb6eee07b8fb4895b04d144152d2ef5ad39724857857ccb
 
 WORKDIR /usr/local/src/artifact-modules
 

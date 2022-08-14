@@ -49,13 +49,13 @@ trap cleanup EXIT
 
 apk update
 
-# UPKEEP due: "2022-07-12" label: "Update aws-cli-install gist" interval: "+3 months"
+# UPKEEP due: "2022-11-14" label: "Update aws-cli-install gist" interval: "+3 months"
 # https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
 # Need to use aws-cli version 2 and not version 1 that is currently available
 # with apk.
 apk add -q --no-progress zip
 wget -O "$tmp_aws_cli_install_zip" \
-  https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/6fc68ea9f4cbbb815141feccf6266ca91f6f5e9f.zip
+  https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/0951e80d092960cf27f893aaa12d5ed754dc3bed.zip
 cd "$tmp_aws_install_dir"
 unzip -j "$tmp_aws_cli_install_zip"
 chmod +x install-aws-cli.sh

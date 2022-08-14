@@ -84,6 +84,7 @@ resource "digitalocean_record" "chillbox" {
 
 resource "digitalocean_record" "site_domains" {
   #for_each = var.chillbox_count > 0 ? toset(var.site_domains) : []
+  # TODO Should only opt-in to manage DNS records here?
   for_each = false ? toset(var.site_domains) : []
 
   # https://regex101.com/r/pgPLQ5/1

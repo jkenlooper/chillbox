@@ -14,7 +14,7 @@ test "${LETS_ENCRYPT_SERVER}" = "letsencrypt" \
   || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable should be either letsencrypt or letsencrypt_test" && exit 1)
 echo "INFO $0: Using LETS_ENCRYPT_SERVER '${LETS_ENCRYPT_SERVER}'"
 
-# UPKEEP due: "2022-07-18" label: "Update acme.sh version" interval: "+3 months"
+# UPKEEP due: "2022-11-14" label: "Update acme.sh version" interval: "+3 months"
 # https://github.com/acmesh-official/acme.sh/releases
 acme_sh_version="3.0.4"
 acme_sh_checksum="919987ac026366d245fa2730edf1212deafb051129811f35b482a30af9b0034a802baa218a35048e030795127cfeae03b4c3d4f12e580cd82edbacdd72e588e7"

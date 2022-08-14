@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.4.1
 
-# UPKEEP due: "2022-08-12" label: "hashicorp/terraform base image" interval: "+4 months"
-# docker pull hashicorp/terraform:1.2.0-alpha-20220328
+# UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
+# docker pull hashicorp/terraform:1.2.7
 # docker image ls --digests hashicorp/terraform
-FROM hashicorp/terraform:1.2.0-alpha-20220328@sha256:94c01aed14a10ef34fad8d8c7913dd605813076ecc824284377d7f1375aa596c
+FROM hashicorp/terraform:1.2.7@sha256:8e4d010fc675dbae1eb6eee07b8fb4895b04d144152d2ef5ad39724857857ccb
 
 WORKDIR /usr/local/src/chillbox-terraform
 
@@ -42,11 +42,11 @@ INSTALL
 
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
 set -o errexit
-# UPKEEP due: "2022-10-08" label: "Alpine Linux custom image" interval: "+3 months"
+# UPKEEP due: "2022-11-14" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-07-08-2149/alpine-virt-image-2022-07-08-2149.qcow2.bz2"
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-08-14-1528/alpine-virt-image-2022-08-14-1528.qcow2.bz2"
 echo "INFO: Using alpine custom image $alpine_custom_image"
-alpine_custom_image_checksum="01e227af78ded78a10440cbb6f6adf86aa9c2581525d5e4f59cb2b5df4b9060dc35e13fb410a48d7e79f2ed7ee9c354263dbfc8bcfb8c375f19611d23801dd96"
+alpine_custom_image_checksum="3a37457517fe456930901d7794666f1e25b5bd78b663c61e86975127a1e49b9b7d0e55f4d34efc66bc093af998065ce3c329a79fe38144696a7551324c968575"
 echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
 
 set -o errexit
