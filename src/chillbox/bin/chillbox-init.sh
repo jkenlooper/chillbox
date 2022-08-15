@@ -153,7 +153,7 @@ passwd --expire dev
 # public keys added. This handles a locally provisioned box.
 if [ ! -e /root/.ssh/authorized_keys ]; then
   mkdir -p /root/.ssh
-  echo -e "$developer_public_ssh_keys" > /root/.ssh/authorized_keys
+  printf '%b' "$developer_public_ssh_keys" > /root/.ssh/authorized_keys
   chown -R root:root /root/.ssh
   chmod -R 700 /root/.ssh
   chmod -R 644 /root/.ssh/authorized_keys

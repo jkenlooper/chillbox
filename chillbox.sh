@@ -103,7 +103,7 @@ init_and_source_chillbox_config() {
       exit 2
     fi
 
-    fingerprint_sha256_accept_list=""
+    fingerprint_sha256_accept_list_tmp="$(mktemp)"
 
     pub_ssh_key_urls=""
     printf "\n%s\n" "Use the public ssh key from a GitHub username? [y/n]"
@@ -118,7 +118,7 @@ init_and_source_chillbox_config() {
       gh_public_ssh_key_url="https://github.com/${gh_username}.keys"
       wget "$gh_public_ssh_key_url" -O - \
         | while read -r pub_ssh_key; do
-              fingerprint_sha256_accept_list="${fingerprint_sha256_accept_list}$(printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")")"
+              printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
           done
       pub_ssh_key_urls="$gh_public_ssh_key_url"
     fi
@@ -128,10 +128,12 @@ init_and_source_chillbox_config() {
       printf "\n%s\n" "Use the public ssh key from $HOME/.ssh/id_rsa.pub ? [y/n]"
       read -r fetch_pub_ssh_from_home
       if [ "$fetch_pub_ssh_from_home" = "y" ]; then
-        fingerprint_sha256_accept_list="${fingerprint_sha256_accept_list}$(printf "%s\n" "$(ssh-keygen -l -E sha256 -f $HOME/.ssh/id_rsa.pub || echo "")")"
+        printf "%s\n" "$(ssh-keygen -l -E sha256 -f "$HOME/.ssh/id_rsa.pub" || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
         pub_ssh_key_files="$HOME/.ssh/id_rsa.pub"
       fi
     fi
+    fingerprint_sha256_accept_list="$(cat "$fingerprint_sha256_accept_list_tmp")"
+    rm -f "$fingerprint_sha256_accept_list_tmp"
 
     cat <<HERE > "$env_config"
 # Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
