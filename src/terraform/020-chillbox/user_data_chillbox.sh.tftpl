@@ -76,6 +76,7 @@ aws \
 
 tar x -f "$tmp_chillbox_artifact" -C "$tmp_bootstrap_dir" bin/chillbox-init.sh
 
+now_iso_seconds="$(date -Iseconds)"
 DEVELOPER_PUBLIC_SSH_KEYS="$developer_public_ssh_keys" \
 ACCESS_KEY_ID="$access_key_id" \
 SECRET_ACCESS_KEY="$secret_access_key" \
@@ -89,4 +90,5 @@ CHILLBOX_ARTIFACT="$chillbox_artifact" \
 S3_ENDPOINT_URL="$s3_endpoint_url" \
 CHILLBOX_SERVER_NAME="$chillbox_server_name" \
 CHILLBOX_GPG_KEY_NAME="$chillbox_gpg_key_name" \
-  "$tmp_bootstrap_dir/bin/chillbox-init.sh"
+"$tmp_bootstrap_dir/bin/chillbox-init.sh" > "/var/log/chillbox-init/$now_iso_seconds.log" 2>&1 || (cat "/var/log/chillbox-init/$now_iso_seconds.log" && exit 1)
+cat "/var/log/chillbox-init/$now_iso_seconds.log"
