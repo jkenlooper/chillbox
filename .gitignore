@@ -12,3 +12,4 @@
 !/tests/fixtures/example-chillbox-config/test/terraform-020-chillbox/example-private.auto.tfvars
 
 /dist
+/build/MANIFEST

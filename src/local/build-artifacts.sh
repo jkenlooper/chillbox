@@ -10,19 +10,18 @@ script_name="$(basename "$0")"
 test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
-# chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 build_artifacts_logs_dir="${chillbox_state_dir}/build_artifacts_logs"
 mkdir -p "$build_artifacts_logs_dir"
 log_timestamp="$(date -I)"
-LOG_FILE="${build_artifacts_logs_dir}/${log_timestamp}.log"
-printf "\n\n\n%s\n" "### START ###" >> "$LOG_FILE"
-date >> "$LOG_FILE"
+log_file="${build_artifacts_logs_dir}/${log_timestamp}.log"
+printf "\n\n\n%s\n" "### START ###" >> "$log_file"
+date >> "$log_file"
 
 showlog () {
   # Terraform external data will need to echo to stderr to show the message to
   # the user.
-  >&2 echo "INFO $0: See log file: $LOG_FILE for further details."
+  >&2 echo "INFO $0: See log file: $log_file for further details."
 }
 trap showlog EXIT
 
@@ -38,11 +37,12 @@ eval "$(jq -r '@sh "
 {
   echo "set shell variables from JSON stdin"
   echo "  sites_artifact_url=$sites_artifact_url"
-} >> "$LOG_FILE"
+} >> "$log_file"
 
-chillbox_artifact_version="$(cat "$project_dir/src/chillbox/VERSION")"
+
+chillbox_artifact_version="$(make --silent --directory="$project_dir" inspect.VERSION)"
 chillbox_artifact="chillbox.$chillbox_artifact_version.tar.gz"
-echo "chillbox_artifact: $chillbox_artifact" >> "$LOG_FILE"
+echo "chillbox_artifact: $chillbox_artifact" >> "$log_file"
 
 chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$chillbox_artifact"
 
@@ -50,7 +50,7 @@ sites_manifest_json="sites.manifest.json"
 sites_manifest_json_file="$chillbox_state_dir/$sites_manifest_json"
 
 sites_artifact="$(basename "${sites_artifact_url}")"
-echo "sites_artifact=$sites_artifact" >> "$LOG_FILE"
+echo "sites_artifact=$sites_artifact" >> "$log_file"
 
 sites_artifact_file="$chillbox_state_dir/$sites_artifact"
 mkdir -p "$chillbox_state_dir"
@@ -65,12 +65,12 @@ if [ ! -f "$chillbox_dist_file" ]; then
     bin \
     VERSION
 else
-  echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$LOG_FILE"
+  echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$log_file"
 fi
 
 # Download or copy over the sites artifact file
 if [ -f "$sites_artifact_file" ]; then
-  echo "Sites artifact file already exists: $sites_artifact_file" >> "$LOG_FILE"
+  echo "Sites artifact file already exists: $sites_artifact_file" >> "$log_file"
 
 else
   # Reset the verified sites marker file since the sites artifact file doesn't
@@ -82,18 +82,18 @@ else
   first_char_of_sites_artifact_url="$(printf '%.1s' "$sites_artifact_url")"
   is_downloadable="$(printf '%.4s' "$sites_artifact_url")"
   if [ "$first_char_of_sites_artifact_url" = "/" ]; then
-    cp -v "$sites_artifact_url" "$sites_artifact_file" >> "$LOG_FILE"
+    cp -v "$sites_artifact_url" "$sites_artifact_file" >> "$log_file"
   elif [ "$is_downloadable" = "http" ]; then
     if [ -n "$has_wget" ]; then
-      wget -a "$LOG_FILE" -O "$sites_artifact_file" "$sites_artifact_url"
+      wget -a "$log_file" -O "$sites_artifact_file" "$sites_artifact_url"
     elif [ -n "$has_curl" ]; then
-      curl --location --output "$sites_artifact_file" --silent --show-error "$sites_artifact_url" >> "$LOG_FILE"
+      curl --location --output "$sites_artifact_file" --silent --show-error "$sites_artifact_url" >> "$log_file"
     else
-      echo "ERROR $script_name: No wget or curl commands found." >> "$LOG_FILE"
+      echo "ERROR $script_name: No wget or curl commands found." >> "$log_file"
       exit 1
     fi
   else
-    echo "ERROR $script_name: not supported sites artifact url: '$sites_artifact_url'" >> "$LOG_FILE"
+    echo "ERROR $script_name: not supported sites artifact url: '$sites_artifact_url'" >> "$log_file"
     exit 1
   fi
 
@@ -104,12 +104,12 @@ else
 
   sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 
-  echo "$sites" >> "$LOG_FILE"
+  echo "$sites" >> "$log_file"
 
   for site_json in $sites; do
     cd "$tmp_sites_dir"
     slugname="$(basename "$site_json" .site.json)"
-    echo "$slugname" >> "$LOG_FILE"
+    echo "$slugname" >> "$log_file"
 
     release="$(jq -r '.release' "$site_json")"
 
@@ -117,18 +117,18 @@ else
     is_downloadable="$(printf '%.4s' "$release")"
     release_filename="$(basename "$release")"
     if [ "$first_char_of_release_url" = "/" ]; then
-      cp -v "$release" "$tmp_sites_dir/" >> "$LOG_FILE"
+      cp -v "$release" "$tmp_sites_dir/" >> "$log_file"
     elif [ "$is_downloadable" = "http" ]; then
       if [ -n "$has_wget" ]; then
-        wget -a "$LOG_FILE" -O "$tmp_sites_dir/$release_filename" "$release"
+        wget -a "$log_file" -O "$tmp_sites_dir/$release_filename" "$release"
       elif [ -n "$has_curl" ]; then
-        curl --location --output "$tmp_sites_dir/$release_filename" --silent --show-error "$release" >> "$LOG_FILE"
+        curl --location --output "$tmp_sites_dir/$release_filename" --silent --show-error "$release" >> "$log_file"
       else
-        echo "ERROR $script_name: No wget or curl commands found." >> "$LOG_FILE"
+        echo "ERROR $script_name: No wget or curl commands found." >> "$log_file"
         exit 1
       fi
     else
-      echo "ERROR $script_name: not supported release url: '$release'" >> "$LOG_FILE"
+      echo "ERROR $script_name: not supported release url: '$release'" >> "$log_file"
       exit 1
     fi
 
@@ -139,10 +139,10 @@ else
     mkdir -p "$tmp_dir_for_version/$slugname"
     tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir_for_version/$slugname" --strip-components=1
     chmod --recursive u+rw "$tmp_dir_for_version"
-    echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$LOG_FILE"
+    echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$log_file"
     # Fails if no version can be determined for the site.
     version="$(make --silent -C "$tmp_dir_for_version/$slugname" inspect.VERSION || jq -r -e '.version' "$site_json")"
-    echo "$slugname version: $version" >> "$LOG_FILE"
+    echo "$slugname version: $version" >> "$log_file"
     rm -rf "$tmp_dir_for_version"
     cp "$site_json" "$site_json.original"
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
@@ -152,11 +152,11 @@ else
     dist_immutable_archive_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.immutable.tar.gz"
     dist_artifact_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.artifact.tar.gz"
     if [ -f "$dist_immutable_archive_file" ] && [ -f "$dist_artifact_file" ]; then
-      echo "Skipping the 'make' command for $slugname" >> "$LOG_FILE"
+      echo "Skipping the 'make' command for $slugname" >> "$log_file"
       continue
     fi
     find "${chillbox_state_dir}/sites/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
-      || echo "No existing archive files to delete for ${slugname}" >> "$LOG_FILE"
+      || echo "No existing archive files to delete for ${slugname}" >> "$log_file"
 
     tmp_dir="$(mktemp -d)"
     mkdir -p "$tmp_dir/$slugname"
@@ -164,14 +164,14 @@ else
     chmod --recursive u+rw "$tmp_dir"
 
     cd "$tmp_dir/$slugname"
-    echo "Running the 'make' command for $slugname" >> "$LOG_FILE"
-    make >> "$LOG_FILE"
+    echo "Running the 'make' command for $slugname" >> "$log_file"
+    make >> "$log_file"
 
     immutable_archive_file=$tmp_dir/$slugname/$slugname-$version.immutable.tar.gz
-    test -f "$immutable_archive_file" || (echo "No file at $immutable_archive_file" >> "$LOG_FILE" && exit 1)
+    test -f "$immutable_archive_file" || (echo "No file at $immutable_archive_file" >> "$log_file" && exit 1)
 
     artifact_file="$tmp_dir/$slugname/$slugname-$version.artifact.tar.gz"
-    test -f "$artifact_file" || (echo "No file at $artifact_file" >> "$LOG_FILE" && exit 1)
+    test -f "$artifact_file" || (echo "No file at $artifact_file" >> "$log_file" && exit 1)
 
     test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"
     mkdir -p "$(dirname "$dist_immutable_archive_file")"
@@ -182,7 +182,7 @@ else
 
   done
 
-  echo "sites_artifact=$sites_artifact" >> "$LOG_FILE"
+  echo "sites_artifact=$sites_artifact" >> "$log_file"
 
   # Make a sites manifest json file
   cd "$tmp_sites_dir"
