@@ -15,8 +15,8 @@ mkdir -p $TMPDIR/$slugname
 tmpname="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1 || printf '')"
 
 mkdir -p $TMPDIR/$slugname/example
-touch $TMPDIR/$slugname/example/file1.txt
-touch $TMPDIR/$slugname/example/file2.txt
+echo "file 1 example" > $TMPDIR/$slugname/example/file1.txt
+echo "file 2 example" > $TMPDIR/$slugname/example/file2.txt
 
 tar c \
   -C "$TMPDIR" \

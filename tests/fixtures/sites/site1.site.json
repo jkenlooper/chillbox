@@ -5,9 +5,9 @@
     "owner": "site1@example.test",
     "technical": "site1@example.test"
   },
-  "server_name": "site1.example.test",
+  "server_name": "site1.example.chill.box",
   "domain_list": [
-    "site1.example.test"
+    "site1.example.chill.box"
   ],
   "env": [
     {
@@ -39,12 +39,9 @@
       "value": "http://localhost:8084"
     },
     {
-     "name": "SITE1_IMMUTABLE__DESIGN_TOKENS",
-     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/design-tokens/"
-    },
-    {
      "name": "SITE1_IMMUTABLE__EXAMPLE",
-     "value": "$S3_ENDPOINT_URL/$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/"
+     "value": "$S3_ENDPOINT_URL$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/",
+    "TODO": "bucket-name.nyc3.digitaloceanspaces.com"
     }
   ],
   "crontab": [

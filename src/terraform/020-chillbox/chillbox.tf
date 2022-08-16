@@ -64,6 +64,7 @@ resource "local_sensitive_file" "alpine_box_init" {
     tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
     tf_tech_email : var.tech_email,
     tf_immutable_bucket_name : var.immutable_bucket_name,
+    tf_immutable_bucket_domain_name : "${var.immutable_bucket_name}.${var.bucket_region}.digitaloceanspaces.com",
     tf_artifact_bucket_name : var.artifact_bucket_name,
     tf_sites_artifact : var.sites_artifact,
     tf_chillbox_artifact : var.chillbox_artifact
@@ -74,7 +75,7 @@ resource "local_sensitive_file" "alpine_box_init" {
 }
 
 resource "digitalocean_record" "chillbox" {
-  count  = var.chillbox_count
+  count  = var.manage_dns_records ? var.chillbox_count : 0
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "@" : trimsuffix(var.sub_domain, ".")
   type   = "A"
@@ -83,13 +84,33 @@ resource "digitalocean_record" "chillbox" {
 }
 
 resource "digitalocean_record" "site_domains" {
-  #for_each = var.chillbox_count > 0 ? toset(var.site_domains) : []
-  # TODO Should only opt-in to manage DNS records here?
-  for_each = false ? toset(var.site_domains) : []
+  for_each = var.manage_dns_records ? var.chillbox_count > 0 ? toset(var.site_domains) : [] : []
 
   # https://regex101.com/r/pgPLQ5/1
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
   name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "@" : regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]
+
+  type  = "A"
+  value = one(digitalocean_droplet.chillbox[*].ipv4_address)
+  ttl   = var.dns_ttl
+}
+
+resource "digitalocean_record" "hostname_chillbox" {
+  count  = var.manage_hostname_dns_records ? var.chillbox_count : 0
+  domain = var.domain
+  name   = trimsuffix(var.sub_domain, ".") == "" ? "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}" : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.${trimsuffix(var.sub_domain, ".")}"
+  type   = "A"
+  value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
+  ttl    = var.dns_ttl
+}
+
+resource "digitalocean_record" "hostname_site_domains" {
+  for_each = var.manage_hostname_dns_records ? var.chillbox_count > 0 ? toset(var.site_domains) : [] : []
+
+  # https://regex101.com/r/pgPLQ5/1
+  domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
+
+  name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}" : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}.${regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]}"
 
   type  = "A"
   value = one(digitalocean_droplet.chillbox[*].ipv4_address)

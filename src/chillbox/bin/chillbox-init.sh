@@ -9,6 +9,7 @@ chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
 dev_user_passphrase="${DEV_USER_PASSPHRASE:-}"
 tech_email="${TECH_EMAIL:-}"
 immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
+immutable_bucket_domain_name="${IMMUTABLE_BUCKET_DOMAIN_NAME:-}"
 artifact_bucket_name="${ARTIFACT_BUCKET_NAME:-}"
 sites_artifact="${SITES_ARTIFACT:-}"
 chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
@@ -72,6 +73,13 @@ if [ -z "$immutable_bucket_name" ]; then
   printf '\n%s\n' "Enter the immutable bucket name to use."
   read -r immutable_bucket_name
   test -n "$immutable_bucket_name" || (echo "No immutable bucket name set. Exiting" && exit 1)
+fi
+
+if [ -z "$immutable_bucket_domain_name" ]; then
+  printf '\n%s\n' "No IMMUTABLE_DOMAIN_BUCKET_NAME variable set."
+  printf '\n%s\n' "Enter the immutable bucket domain name to use."
+  read -r immutable_bucket_domain_name
+  test -n "$immutable_bucket_domain_name" || (echo "No immutable bucket domain name set. Exiting" && exit 1)
 fi
 
 if [ -z "$artifact_bucket_name" ]; then
@@ -210,6 +218,7 @@ LETS_ENCRYPT_SERVER=""
 cat <<ENVFILE > /home/dev/.env
 export AWS_PROFILE=chillbox_object_storage
 export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
+export IMMUTABLE_BUCKET_DOMAIN_NAME="${immutable_bucket_domain_name}"
 export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"
 export S3_ARTIFACT_ENDPOINT_URL="${s3_endpoint_url}"

@@ -18,6 +18,8 @@ tech_email="${tf_tech_email}"
 # shellcheck disable=SC2154
 immutable_bucket_name="${tf_immutable_bucket_name}"
 # shellcheck disable=SC2154
+immutable_bucket_domain_name="${tf_immutable_bucket_domain_name}"
+# shellcheck disable=SC2154
 artifact_bucket_name="${tf_artifact_bucket_name}"
 # shellcheck disable=SC2154
 sites_artifact="${tf_sites_artifact}"
@@ -37,8 +39,6 @@ tmp_aws_cli_install_zip="$(mktemp)"
 tmp_aws_install_dir="$(mktemp -d)"
 
 cleanup() {
-  echo "Shredding /var/lib/cloud/instance/user-data.txt"
-  shred -fu /var/lib/cloud/instance/user-data.txt
   shred -fu "$tmp_cred_csv"
   rm -rf "$tmp_bootstrap_dir"
   rm -f "$tmp_chillbox_artifact"
@@ -77,6 +77,9 @@ aws \
 tar x -f "$tmp_chillbox_artifact" -C "$tmp_bootstrap_dir" bin/chillbox-init.sh
 
 now_iso_seconds="$(date -Iseconds)"
+chillbox_init_log="/var/log/chillbox-init/$now_iso_seconds.log"
+mkdir -p "$(dirname "$chillbox_init_log")"
+
 DEVELOPER_PUBLIC_SSH_KEYS="$developer_public_ssh_keys" \
 ACCESS_KEY_ID="$access_key_id" \
 SECRET_ACCESS_KEY="$secret_access_key" \
@@ -84,11 +87,12 @@ CHILLBOX_GPG_PASSPHRASE="$chillbox_gpg_passphrase" \
 DEV_USER_PASSPHRASE="$dev_user_passphrase" \
 TECH_EMAIL="$tech_email" \
 IMMUTABLE_BUCKET_NAME="$immutable_bucket_name" \
+IMMUTABLE_BUCKET_DOMAIN_NAME="$immutable_bucket_domain_name" \
 ARTIFACT_BUCKET_NAME="$artifact_bucket_name" \
 SITES_ARTIFACT="$sites_artifact" \
 CHILLBOX_ARTIFACT="$chillbox_artifact" \
 S3_ENDPOINT_URL="$s3_endpoint_url" \
 CHILLBOX_SERVER_NAME="$chillbox_server_name" \
 CHILLBOX_GPG_KEY_NAME="$chillbox_gpg_key_name" \
-"$tmp_bootstrap_dir/bin/chillbox-init.sh" > "/var/log/chillbox-init/$now_iso_seconds.log" 2>&1 || (cat "/var/log/chillbox-init/$now_iso_seconds.log" && exit 1)
-cat "/var/log/chillbox-init/$now_iso_seconds.log"
+"$tmp_bootstrap_dir/bin/chillbox-init.sh" > "$chillbox_init_log" 2>&1 || (cat "$chillbox_init_log" && exit 1)
+cat "$chillbox_init_log"

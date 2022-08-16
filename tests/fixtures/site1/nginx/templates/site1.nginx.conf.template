@@ -1,7 +1,11 @@
 server {
   listen ${SITE1_SERVER_PORT};
 
-  server_name ${SITE1_SERVER_NAME};
+  # Use special wildcard server_name by prefixing with '.' so
+  # [chillbox-hostname].${SITE1_SERVER_NAME} will also match.
+  # https://nginx.org/en/docs/http/server_names.html
+  server_name .${SITE1_SERVER_NAME};
+
   proxy_cookie_domain ${SITE1_API} ${SITE1_SERVER_NAME};
   proxy_set_header Host ${SITE1_SERVER_NAME}:${SITE1_SERVER_PORT};
 
@@ -54,7 +58,7 @@ server {
     proxy_cache var_cache_nginx;
     proxy_cache_valid ${SITE1_PROXY_CACHE_VALID};
     add_header X-Proxy-Cache $upstream_cache_status;
-    proxy_pass ${SITE1_IMMUTABLE__DESIGN_TOKENS};
+    proxy_pass ${SITE1_IMMUTABLE__EXAMPLE};
   }
 
   location ~* ^/(robots|humans).txt$ {

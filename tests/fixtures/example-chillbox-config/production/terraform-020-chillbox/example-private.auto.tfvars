@@ -5,8 +5,9 @@ project_description = "Infrastructure for hosting websites that use Chill."
 
 tech_email        = "tech@example.test"
 
-domain = "example.test"
-sub_domain = "production."
+# Change 'chill.box' to a domain that you own
+domain = "chill.box"
+sub_domain = "production.example."
 
 # Example of other common things to put here:
 #

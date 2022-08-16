@@ -168,6 +168,16 @@ variable "sub_domain" {
   }
 }
 
+variable "manage_dns_records" {
+  description = "Create DNS records for the chillbox and site domains to use."
+  default = false
+  type = bool
+}
+variable "manage_hostname_dns_records" {
+  description = "Create DNS records specific to the chillbox hostname for chillbox and site domains to use. Each record will be prefixed with the hostname of the server."
+  default = true
+  type = bool
+}
 variable "dns_ttl" {
   description = "DNS TTL to use for droplets. Minimum is 30 seconds. It is not recommended to use a value higher than 86400 (24 hours)."
   default     = 3600
