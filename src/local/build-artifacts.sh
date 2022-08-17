@@ -21,7 +21,7 @@ date >> "$log_file"
 showlog () {
   # Terraform external data will need to echo to stderr to show the message to
   # the user.
-  >&2 echo "INFO $0: See log file: $log_file for further details."
+  >&2 echo "INFO $script_name: Updated log file $log_file"
 }
 trap showlog EXIT
 
@@ -208,13 +208,15 @@ fi
 
 # Output the json
 jq --null-input \
-  --arg sites_artifact "$sites_artifact" \
+  --arg jq_sites_artifact "$sites_artifact" \
   --arg jq_chillbox_artifact "$chillbox_artifact" \
   --arg jq_sites_manifest "$sites_manifest_json" \
+  --arg jq_log_file "$log_file" \
   --argjson sites_immutable_and_artifacts "$(jq -r -c '.' "$sites_manifest_json_file")" \
   '{
-    sites_artifact:$sites_artifact,
+    sites_artifact:$jq_sites_artifact,
     chillbox_artifact:$jq_chillbox_artifact,
     sites_manifest:$jq_sites_manifest,
-    sites:$sites_immutable_and_artifacts
+    sites:$sites_immutable_and_artifacts,
+    log_file:$jq_log_file
   }'

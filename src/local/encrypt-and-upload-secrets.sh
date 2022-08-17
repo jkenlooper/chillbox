@@ -54,7 +54,7 @@ chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_
 infra_container="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"
 
 chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/build-artifacts-vars"
-test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found. Should run the ./chillbox.sh script first to build artifacts." && exit 1)
 
 SITES_ARTIFACT=""
 SITES_MANIFEST=""
@@ -63,11 +63,11 @@ SITES_MANIFEST=""
 
 sites_artifact_file="$chillbox_state_home/$SITES_ARTIFACT"
 test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
-test -e "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at '$sites_artifact_file'." && exit 1)
+test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at '$sites_artifact_file'." && exit 1)
 
 sites_manifest_file="$chillbox_state_home/$SITES_MANIFEST"
 test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
-test -e "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
+test -f "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest file found at '$sites_manifest_file'." && exit 1)
 
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
@@ -158,7 +158,7 @@ for site_json in $site_json_files; do
     tmp_service_dir="$(mktemp -d)"
     tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
 
-    test -e "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
+    test -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 
     service_image_name="$slugname-$version-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE"
     tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
@@ -166,7 +166,6 @@ for site_json in $site_json_files; do
     service_persistent_dir="/var/lib/$slugname-$service_handler"
     chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
 
-    set -x
     docker image rm "$service_image_name" || printf ""
     export DOCKER_BUILDKIT=1
     docker build \

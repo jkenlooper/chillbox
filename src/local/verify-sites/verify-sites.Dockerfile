@@ -27,9 +27,6 @@ python3 -m venv .
 
 DEPENDENCIES
 
-
-# The site.schema.json is at the top level of the project so it's easier to
-# refer to.
 COPY site.schema.json ./
 COPY check-json.py ./
 COPY verify-sites-artifact.sh ./

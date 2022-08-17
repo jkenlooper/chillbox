@@ -2,9 +2,47 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
+usage() {
+  cat <<HERE
+
+Wrapper around the terraform command. Sets credentials needed to deploy by prompting to decrypt the credentials file if it hasn't been decrypted yet.
+
+Usage:
+  $script_name -h
+  $script_name <sub-command>
+
+Options:
+  -h                  Show this help message.
+
+Sub commands:
+  plan        - Passed to the Terraform command
+  apply       - Passed to the Terraform command
+  destroy     - Passed to the Terraform command
+
+HERE
+}
+
+while getopts "h" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
 terraform_command=$1
+if [ -z "$terraform_command" ]; then
+  usage
+  echo "ERROR $script_name: Must supply a sub command."
+  exit 1
+fi
 if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
-  echo "ERROR $0: This command ($terraform_command) is not supported in this script."
+  usage
+  echo "ERROR $script_name: This command ($terraform_command) is not supported in this script."
   exit 1
 fi
 
@@ -28,13 +66,13 @@ mkdir -p "$data_volume_terraform_020_chillbox"
 chown -R dev:dev "$data_volume_terraform_020_chillbox"
 chmod -R 0700 "$data_volume_terraform_020_chillbox"
 
-echo "INFO $0: Executing _init_tfstate_with_push.sh"
+echo "INFO $script_name: Executing _init_tfstate_with_push.sh"
 _init_tfstate_with_push.sh
 
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 decrypted_credentials_tfvars_file="${secure_tmp_secrets_dir}/credentials.tfvars.json"
 if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
-  echo "INFO $0: Decrypting file ${encrypted_credentials_tfvars_file} to ${decrypted_credentials_tfvars_file}"
+  echo "INFO $script_name: Decrypting file ${encrypted_credentials_tfvars_file} to ${decrypted_credentials_tfvars_file}"
   set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"${encrypted_credentials_tfvars_file}\" \"${decrypted_credentials_tfvars_file}\""

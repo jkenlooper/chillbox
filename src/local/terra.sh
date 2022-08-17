@@ -13,7 +13,7 @@ fi
 project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 terraform_infra_dir="$project_dir/src/terraform/010-infra"
 terraform_chillbox_dir="$project_dir/src/terraform/020-chillbox"
-chillbox_artifact_version="$(cat "$project_dir/src/chillbox/VERSION")"
+chillbox_artifact_version="$(make --silent -C "$project_dir" inspect.VERSION)"
 
 SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
@@ -83,7 +83,6 @@ cleanup_run_tmp_secrets() {
 }
 trap cleanup_run_tmp_secrets EXIT
 
-echo "infra container $INFRA_CONTAINER"
 docker run \
   -i --tty \
   --name "${INFRA_CONTAINER}" \
@@ -106,6 +105,7 @@ docker_run_infra_container() {
   if [ "$terraform_command" != "interactive" ]; then
     set -- doterra.sh "$terraform_command"
   else
+    printf "\n\n%b\n" "INFO $0: Using 'interactive' sub command.\nUse the 'doterra.sh [apply | plan | destroy]' command inside the container to perform 'terraform [apply | plan | destroy]' commands."
     set -- sh
   fi
   docker run \

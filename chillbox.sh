@@ -245,6 +245,7 @@ build_artifacts() {
   SITES_ARTIFACT=""
   CHILLBOX_ARTIFACT=""
   SITES_MANIFEST=""
+  build_artifacts_log_file=""
   eval "$(jq \
     --arg jq_sites_artifact_url "$SITES_ARTIFACT_URL" \
     --null-input '{
@@ -253,7 +254,10 @@ build_artifacts() {
       export SITES_ARTIFACT=\(.sites_artifact)
       export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
       export SITES_MANIFEST=\(.sites_manifest)
+      export build_artifacts_log_file=\(.log_file)
       "')"
+  echo "See build artifacts log file: $build_artifacts_log_file"
+
   test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)
   test -n "${CHILLBOX_ARTIFACT}" || (echo "ERROR $script_name: The CHILLBOX_ARTIFACT variable is empty." && exit 1)
   test -n "${SITES_MANIFEST}" || (echo "ERROR $script_name: The SITES_MANIFEST variable is empty." && exit 1)
