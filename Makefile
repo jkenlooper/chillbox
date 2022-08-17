@@ -9,7 +9,7 @@ project_dir := $(dir $(mkfile_path))
 
 VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)
 
-objects := dist/chillbox-cli-$(VERSION).tar.gz
+objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
 manifest_files := $(shell find . -type f -not -path './.git/*' -not -path './.github/*' -not -name '.gitignore' -not -path './build/MANIFEST' -not -path './dist/chillbox-cli-$(VERSION).tar.gz')
 
 # For debugging what is set in variables
@@ -26,7 +26,7 @@ all: $(objects)
 # Remove any created files which were created by the `make all` recipe.
 .PHONY: clean
 clean:
-	rm $(objects)
+	rm -f $(objects)
 
 .PHONY: dist
 dist: dist/chillbox-cli-$(VERSION).tar.gz

@@ -4,26 +4,27 @@ set -o errexit
 
 slugname=site1
 
-projectdir=$(dirname $(dirname $(realpath $0)))
+# projectdir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 # archive file path should be absolute
-ARCHIVE=$(realpath $1)
-echo $ARCHIVE | grep -q "\.tar\.gz$" || (echo "First arg should be an archive file ending with .tar.gz" && exit 1)
+archive="$(realpath "$1")"
+echo "$archive" | grep -q "\.tar\.gz$" || (echo "First arg should be an archive file ending with .tar.gz" && exit 1)
 
-TMPDIR=$(mktemp -d)
-mkdir -p $TMPDIR/$slugname
-tmpname="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1 || printf '')"
+tmpdir="$(mktemp -d)"
+mkdir -p "$tmpdir/$slugname"
 
-mkdir -p $TMPDIR/$slugname/example
-echo "file 1 example" > $TMPDIR/$slugname/example/file1.txt
-echo "file 2 example" > $TMPDIR/$slugname/example/file2.txt
+mkdir -p "$tmpdir/$slugname/example"
+echo "file 1 example" > "$tmpdir/$slugname/example/file1.txt"
+echo "file 2 example" > "$tmpdir/$slugname/example/file2.txt"
 
+archive_dir="$(dirname "$archive")"
+mkdir -p "$archive_dir"
 tar c \
-  -C "$TMPDIR" \
+  -C "$tmpdir" \
   -h \
   -z \
-  -f "${ARCHIVE}" \
-  $slugname
+  -f "${archive}" \
+  "$slugname"
 
 # Clean up
-rm -rf "${TMPDIR}"
+rm -rf "${tmpdir}"

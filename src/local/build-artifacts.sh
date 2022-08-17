@@ -107,7 +107,6 @@ else
   echo "$sites" >> "$log_file"
 
   for site_json in $sites; do
-    cd "$tmp_sites_dir"
     slugname="$(basename "$site_json" .site.json)"
     echo "$slugname" >> "$log_file"
 
@@ -152,7 +151,12 @@ else
     dist_immutable_archive_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.immutable.tar.gz"
     dist_artifact_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.artifact.tar.gz"
     if [ -f "$dist_immutable_archive_file" ] && [ -f "$dist_artifact_file" ]; then
-      echo "Skipping the 'make' command for $slugname" >> "$log_file"
+      {
+      echo "The immutable archive file and site artifact file already exist:"
+      echo "  $dist_immutable_archive_file"
+      echo "  $dist_artifact_file"
+      echo "Skipping the 'make' command for $slugname"
+      } >> "$log_file"
       continue
     fi
     find "${chillbox_state_dir}/sites/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
@@ -163,9 +167,8 @@ else
     tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir/$slugname" --strip-components=1
     chmod --recursive u+rw "$tmp_dir"
 
-    cd "$tmp_dir/$slugname"
-    echo "Running the 'make' command for $slugname" >> "$log_file"
-    make >> "$log_file"
+    echo "Running the 'make' command for $slugname which should make $slugname-$version.immutable.tar.gz and $slugname-$version.artifact.tar.gz" >> "$log_file"
+    make -C "$tmp_dir/$slugname" >> "$log_file"
 
     immutable_archive_file=$tmp_dir/$slugname/$slugname-$version.immutable.tar.gz
     test -f "$immutable_archive_file" || (echo "No file at $immutable_archive_file" >> "$log_file" && exit 1)
@@ -173,6 +176,7 @@ else
     artifact_file="$tmp_dir/$slugname/$slugname-$version.artifact.tar.gz"
     test -f "$artifact_file" || (echo "No file at $artifact_file" >> "$log_file" && exit 1)
 
+    echo "Saving the built files in the chillbox state directory for the $slugname site to avoid rebuilding the same version next time." >> "$log_file"
     test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"
     mkdir -p "$(dirname "$dist_immutable_archive_file")"
     mv "$immutable_archive_file" "$dist_immutable_archive_file"
@@ -182,14 +186,10 @@ else
 
   done
 
-  echo "sites_artifact=$sites_artifact" >> "$log_file"
-
-  # Make a sites manifest json file
-  cd "$tmp_sites_dir"
+  echo "Making a sites manifest json file at $sites_manifest_json_file" >> "$log_file"
   tmp_file_list=$(mktemp)
-  sites=$(find sites -type f -name '*.site.json')
+  sites=$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')
   for site_json in $sites; do
-    cd "$tmp_sites_dir"
     slugname="$(basename "$site_json" .site.json)"
     version="$(jq -r '.version' "$site_json")"
     echo "$slugname/$slugname-$version.immutable.tar.gz" >> "$tmp_file_list"

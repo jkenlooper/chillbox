@@ -15,7 +15,7 @@ docker run -it --rm \
   --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
   --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
   --entrypoint="sh" \
-  "$CHILLBOX_BATS_IMAGE" -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
+  "$CHILLBOX_BATS_IMAGE" -c "find . \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck -f quiet {} +" \
   || \
     (docker run -it --rm \
       --mount "type=bind,src=${project_dir}/build,dst=/code/build,readonly=true" \
@@ -23,6 +23,6 @@ docker run -it --rm \
       --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
       --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
       --entrypoint="sh" \
-      "$CHILLBOX_BATS_IMAGE" -c "find . ! -path './tests/*' \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck {} +" && exit 1)
+      "$CHILLBOX_BATS_IMAGE" -c "find . \( -name '*.sh' -o -name '*.sh.tftpl' \) -exec shellcheck {} +" && exit 1)
 
 echo "Passed shellcheck."

@@ -40,8 +40,7 @@
     },
     {
      "name": "SITE1_IMMUTABLE__EXAMPLE",
-     "value": "$S3_ENDPOINT_URL$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/",
-    "TODO": "bucket-name.nyc3.digitaloceanspaces.com"
+     "value": "$S3_ENDPOINT_URL$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/"
     }
   ],
   "crontab": [

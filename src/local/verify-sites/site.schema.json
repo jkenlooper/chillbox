@@ -24,7 +24,7 @@
     "version": {
       "type": "string",
       "title": "Version of the site",
-      "description": "The value is replaced here with the contents of the VERSION file if it exists otherwise will default to today's date if this field is not set."
+      "description": "The value is replaced here with the output of the 'make inspect.VERSION' command if that has been defined."
     },
     "contact": {
       "type": "object",

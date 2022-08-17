@@ -4,38 +4,40 @@ set -o errexit
 
 slugname=site1
 
-projectdir=$(dirname $(dirname $(realpath $0)))
+projectdir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 # archive file path should be absolute
-ARCHIVE=$(realpath $1)
-echo $ARCHIVE | grep -q "\.tar\.gz$" || (echo "First arg should be an archive file ending with .tar.gz" && exit 1)
+archive="$(realpath "$1")"
+echo "$archive" | grep -q "\.tar\.gz$" || (echo "First arg should be an archive file ending with .tar.gz" && exit 1)
 
-TMPDIR=$(mktemp -d)
-mkdir -p $TMPDIR/$slugname
+tmpdir="$(mktemp -d)"
+mkdir -p "$tmpdir/$slugname"
 
-cd $projectdir/chill
-mkdir -p $TMPDIR/$slugname/chill
-cp -R documents queries templates chill-data.yaml site.cfg VERSION $TMPDIR/$slugname/chill/
+cd "$projectdir/chill"
+mkdir -p "$tmpdir/$slugname/chill"
+cp -R documents queries templates chill-data.yaml site.cfg VERSION "$tmpdir/$slugname/chill/"
 
-cd $projectdir/llama
-mkdir -p $TMPDIR/$slugname/llama
-cp -R documents queries templates chill-data.yaml site.cfg VERSION $TMPDIR/$slugname/llama/
+cd "$projectdir/llama"
+mkdir -p "$tmpdir/$slugname/llama"
+cp -R documents queries templates chill-data.yaml site.cfg VERSION "$tmpdir/$slugname/llama/"
 
-cd $projectdir/api
-mkdir -p $TMPDIR/$slugname/api
-cp -R api-bridge.secrets.Dockerfile $TMPDIR/$slugname/api/
-cp -R pyproject.toml README.md MANIFEST.in requirements.txt setup.cfg setup.py src $TMPDIR/$slugname/api/
+cd "$projectdir/api"
+mkdir -p "$tmpdir/$slugname/api"
+cp -R api-bridge.secrets.Dockerfile "$tmpdir/$slugname/api/"
+cp -R pyproject.toml README.md MANIFEST.in requirements.txt setup.cfg setup.py src "$tmpdir/$slugname/api/"
 
-cd $projectdir/nginx
-mkdir -p $TMPDIR/$slugname/nginx
-cp -R root templates $TMPDIR/$slugname/nginx/
+cd "$projectdir/nginx"
+mkdir -p "$tmpdir/$slugname/nginx"
+cp -R root templates "$tmpdir/$slugname/nginx/"
 
-cd "$TMPDIR"
+cd "$tmpdir"
+archive_dir="$(dirname "$archive")"
+mkdir -p "$archive_dir"
 tar c \
   -h \
   -z \
-  -f "${ARCHIVE}" \
-  $slugname
+  -f "${archive}" \
+  "$slugname"
 
 # Clean up
-rm -rf "${TMPDIR}"
+rm -rf "${tmpdir}"
