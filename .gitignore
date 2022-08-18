@@ -11,5 +11,7 @@
 !/tests/fixtures/example-chillbox-config/test/terraform-010-infra/example-private.auto.tfvars
 !/tests/fixtures/example-chillbox-config/test/terraform-020-chillbox/example-private.auto.tfvars
 
-/dist
+/dist/*
+!/dist/.gitkeep
+!/dist/README.md
 /build/MANIFEST

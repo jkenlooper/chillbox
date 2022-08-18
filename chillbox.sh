@@ -75,6 +75,7 @@ check_for_required_commands() {
     docker \
     jq \
     make \
+    md5sum \
     tar \
     ; do
     command -v "$required_command" > /dev/null || (echo "ERROR $script_name: Requires '$required_command' command." && exit 1)
@@ -256,6 +257,7 @@ build_artifacts() {
       export SITES_MANIFEST=\(.sites_manifest)
       export build_artifacts_log_file=\(.log_file)
       "')"
+  test -n "$build_artifacts_log_file" || (echo "ERROR $script_name: See the log file." && exit 1)
   echo "See build artifacts log file: $build_artifacts_log_file"
 
   test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: The SITES_ARTIFACT variable is empty." && exit 1)

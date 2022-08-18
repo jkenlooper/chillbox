@@ -75,7 +75,7 @@ if [ -f "$sites_artifact_file" ]; then
 else
   # Reset the verified sites marker file since the sites artifact file doesn't
   # exist.
-  rm -f "$chillbox_state_dir/.verified_sites_artifact"
+  rm -f "$chillbox_state_dir/verified_sites_artifact/$sites_artifact"
 
   # Support using a local sites artifact if the first character is a '/';
   # otherwise it should be a downloadable URL.
@@ -167,14 +167,14 @@ else
     tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir/$slugname" --strip-components=1
     chmod --recursive u+rw "$tmp_dir"
 
-    echo "Running the 'make' command for $slugname which should make $slugname-$version.immutable.tar.gz and $slugname-$version.artifact.tar.gz" >> "$log_file"
+    echo "Running the 'make' command for $slugname which should make dist/immutable.tar.gz and dist/artifact.tar.gz" >> "$log_file"
     make -C "$tmp_dir/$slugname" >> "$log_file"
 
-    immutable_archive_file=$tmp_dir/$slugname/$slugname-$version.immutable.tar.gz
-    test -f "$immutable_archive_file" || (echo "No file at $immutable_archive_file" >> "$log_file" && exit 1)
+    immutable_archive_file="$tmp_dir/$slugname/dist/immutable.tar.gz"
+    test -f "$immutable_archive_file" || (echo "ERROR $script_name: No file at $immutable_archive_file" >> "$log_file" && exit 1)
 
-    artifact_file="$tmp_dir/$slugname/$slugname-$version.artifact.tar.gz"
-    test -f "$artifact_file" || (echo "No file at $artifact_file" >> "$log_file" && exit 1)
+    artifact_file="$tmp_dir/$slugname/dist/artifact.tar.gz"
+    test -f "$artifact_file" || (echo "ERROR $script_name: No file at $artifact_file" >> "$log_file" && exit 1)
 
     echo "Saving the built files in the chillbox state directory for the $slugname site to avoid rebuilding the same version next time." >> "$log_file"
     test ! -f "$dist_immutable_archive_file" || rm -f "$dist_immutable_archive_file"
@@ -183,6 +183,9 @@ else
     test ! -f "$dist_artifact_file" || rm -f "$dist_artifact_file"
     mkdir -p "$(dirname "$dist_artifact_file")"
     mv "$artifact_file" "$dist_artifact_file"
+
+    # Clean up
+    rm -rf "$tmp_dir"
 
   done
 

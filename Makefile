@@ -7,10 +7,12 @@ SHELL := bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 
-VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)
+manifest_files := $(shell find . -type f -not -path './.git/*' -not -path './.github/*' -not -name '.gitignore' -not -path './build/MANIFEST' -not -path './dist/*' | sort)
+
+# The version string includes the build metadata
+VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell cat $(manifest_files) | md5sum - | cut -d' ' -f1)
 
 objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
-manifest_files := $(shell find . -type f -not -path './.git/*' -not -path './.github/*' -not -name '.gitignore' -not -path './build/MANIFEST' -not -path './dist/chillbox-cli-$(VERSION).tar.gz')
 
 # For debugging what is set in variables
 inspect.%:

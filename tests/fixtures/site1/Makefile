@@ -9,7 +9,10 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 slugname := site1
 
-VERSION := $(shell cat chill/VERSION)
+manifest_files := $(shell find . -type f -not -path './.git/*' -not -path './.github/*' -not -name '.gitignore' -not -path './dist/*' | sort)
+
+# The version string includes the build metadata
+VERSION := $(shell cat chill/VERSION)+$(shell cat $(manifest_files) | md5sum - | cut -d' ' -f1)
 
 # For debugging what is set in variables
 inspect.%:
@@ -19,15 +22,15 @@ inspect.%:
 # Use $* to get the stem
 FORCE:
 
-objects := $(slugname)-$(VERSION).artifact.tar.gz $(slugname)-$(VERSION).immutable.tar.gz
+objects := dist/artifact.tar.gz dist/immutable.tar.gz
 
 .PHONY: all
 all: $(objects)
 
-$(slugname)-$(VERSION).artifact.tar.gz: bin/artifact.sh chill/VERSION
+dist/artifact.tar.gz: bin/artifact.sh
 	./$< $(abspath $@)
 
-$(slugname)-$(VERSION).immutable.tar.gz: bin/immutable.sh chill/VERSION
+dist/immutable.tar.gz: bin/immutable.sh
 	./$< $(abspath $@)
 
 .PHONY: clean
