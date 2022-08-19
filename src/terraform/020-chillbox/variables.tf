@@ -139,8 +139,8 @@ variable "region" {
 }
 
 variable "vpc_ip_range" {
-  type    = string
-  default = "192.168.136.0/28"
+  type        = string
+  default     = "192.168.136.0/28"
   description = "Plan your network https://docs.digitalocean.com/products/networking/vpc/concepts/plan-your-network/"
 }
 
@@ -170,13 +170,13 @@ variable "sub_domain" {
 
 variable "manage_dns_records" {
   description = "Create DNS records for the chillbox and site domains to use."
-  default = false
-  type = bool
+  default     = false
+  type        = bool
 }
 variable "manage_hostname_dns_records" {
   description = "Create DNS records specific to the chillbox hostname for chillbox and site domains to use. Each record will be prefixed with the hostname of the server."
-  default = true
-  type = bool
+  default     = true
+  type        = bool
 }
 variable "dns_ttl" {
   description = "DNS TTL to use for droplets. Minimum is 30 seconds. It is not recommended to use a value higher than 86400 (24 hours)."
@@ -194,7 +194,7 @@ variable "chillbox_count" {
   type        = number
   validation {
     # TODO Future feature is to support scaling out with a load balancer.
-    condition = can(var.chillbox_count <= 1)
+    condition     = can(var.chillbox_count <= 1)
     error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
   }
 }

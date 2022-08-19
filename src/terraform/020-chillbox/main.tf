@@ -14,7 +14,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_project" "chillbox" {
-  name        = "ChillBox - ${var.chillbox_instance} ${var.environment} ${var.project_version}"
+  name        = "ChillBox - ${var.chillbox_instance} ${var.environment} ${regex("(^[^+]+)\\+?", var.project_version)[0]}"
   description = var.project_version
   purpose     = "Website Hosting"
   environment = var.project_environment

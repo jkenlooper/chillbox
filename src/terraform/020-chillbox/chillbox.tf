@@ -32,7 +32,7 @@ resource "digitalocean_droplet" "chillbox" {
   image      = digitalocean_custom_image.alpine.id
   region     = var.region
   vpc_uuid   = digitalocean_vpc.chillbox.id
-  ssh_keys   = [for ssh_key in digitalocean_ssh_key.chillbox: ssh_key.id]
+  ssh_keys   = [for ssh_key in digitalocean_ssh_key.chillbox : ssh_key.id]
   tags       = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
   monitoring = false
   lifecycle {
@@ -47,7 +47,7 @@ resource "digitalocean_droplet" "chillbox" {
 }
 
 resource "digitalocean_ssh_key" "chillbox" {
-  for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys: md5(ssh_key)], var.developer_public_ssh_keys)
+  for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys : md5(ssh_key)], var.developer_public_ssh_keys)
   name       = "Chillbox ${var.chillbox_instance} ${var.environment} ${each.key}"
   public_key = each.value
 }
@@ -110,7 +110,7 @@ resource "digitalocean_record" "hostname_site_domains" {
   # https://regex101.com/r/pgPLQ5/1
   domain = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[1]
 
-  name   = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}" : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}.${regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]}"
+  name = regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0] == "" ? "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}" : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}.${regex("^(.*?)\\.?([[:alnum:]]+\\.[[:alnum:]]+)$", each.value)[0]}"
 
   type  = "A"
   value = one(digitalocean_droplet.chillbox[*].ipv4_address)

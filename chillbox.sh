@@ -340,6 +340,9 @@ if [ "$sub_command" = "interactive" ] || \
   printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 
+  # TODO Run a src/local/ansible.sh script to run Ansible playbooks for the
+  # server.
+
 elif [ "$sub_command" = "clean" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command."
   "$project_dir/src/local/clean.sh" -h

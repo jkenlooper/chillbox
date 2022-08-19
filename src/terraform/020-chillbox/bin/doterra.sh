@@ -99,3 +99,13 @@ trap sync_encrypted_tfstate EXIT
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-020-chillbox/output.json\""
+
+if [ "$terraform_command" = "apply" ]; then
+  cat <<HERE
+INFO $script_name: If initially deploying a new chillbox server.
+  Log file for the user data script will be on the server at:
+    /var/log/chillbox-init/*.log
+  The output variables from terraform are in this json file and may contain sensitive values:
+    /var/lib/terraform-020-chillbox/output.json
+HERE
+fi

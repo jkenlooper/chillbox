@@ -110,7 +110,7 @@ else
     slugname="$(basename "$site_json" .site.json)"
     echo "$slugname" >> "$log_file"
 
-    release="$(jq -r '.release' "$site_json")"
+    release="$(jq -r --exit-status '.release' "$site_json")"
 
     first_char_of_release_url="$(printf '%.1s' "$release")"
     is_downloadable="$(printf '%.4s' "$release")"
@@ -140,7 +140,7 @@ else
     chmod --recursive u+rw "$tmp_dir_for_version"
     echo "Running the 'make inspect.VERSION' command for $slugname and falling back on version set in site json file." >> "$log_file"
     # Fails if no version can be determined for the site.
-    version="$(make --silent -C "$tmp_dir_for_version/$slugname" inspect.VERSION || jq -r -e '.version' "$site_json")"
+    version="$(make --silent -C "$tmp_dir_for_version/$slugname" inspect.VERSION || jq -r --exit-status '.version' "$site_json")"
     echo "$slugname version: $version" >> "$log_file"
     rm -rf "$tmp_dir_for_version"
     cp "$site_json" "$site_json.original"

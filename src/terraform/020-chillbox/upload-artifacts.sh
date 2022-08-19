@@ -44,7 +44,10 @@ eval "$(jq -r '@sh "
 } >> "$LOG_FILE"
 
 # Upload chillbox artifact file
-chillbox_artifact_exists="" # TODO
+chillbox_artifact_exists="$(aws \
+  --endpoint-url "$endpoint_url" \
+  s3 ls \
+  "s3://${artifact_bucket_name}/chillbox/$CHILLBOX_ARTIFACT" 2>> "$LOG_FILE" || printf "")"
 if [ -z "$chillbox_artifact_exists" ]; then
   aws \
     --endpoint-url "$endpoint_url" \
@@ -54,7 +57,10 @@ else
   echo "INFO $0: No changes to existing chillbox artifact: $CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 fi
 # Upload site artifact file
-sites_artifact_exists="" # TODO
+sites_artifact_exists="$(aws \
+  --endpoint-url "$endpoint_url" \
+  s3 ls \
+  "s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT" 2>> "$LOG_FILE" || printf "")"
 if [ -z "$sites_artifact_exists" ]; then
   aws \
     --endpoint-url "$endpoint_url" \
@@ -70,10 +76,10 @@ jq -r '.[]' "$sites_manifest_file" \
     slugname="$(dirname "$artifact_file")"
     artifact="$(basename "$artifact_file")"
 
-    artifact_exists=$(aws \
+    artifact_exists="$(aws \
       --endpoint-url "$endpoint_url" \
       s3 ls \
-      "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" || printf '')
+      "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" 2>> "$LOG_FILE" || printf "")"
     if [ -z "$artifact_exists" ]; then
       echo "INFO $0: Uploading artifact: $artifact_file" >> "$LOG_FILE"
       aws \

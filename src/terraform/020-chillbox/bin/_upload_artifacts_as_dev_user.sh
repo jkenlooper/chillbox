@@ -73,4 +73,4 @@ if [ "$terraform_command" != "destroy" ] && [ "$SKIP_UPLOAD" != "y" ]; then
       endpoint_url: $jq_endpoint_url,
     }' | ./upload-artifacts.sh || (echo "ERROR $0: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
 fi
-
+cat "${LOG_FILE}"
