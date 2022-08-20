@@ -14,9 +14,14 @@ VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell cat $(manife
 
 objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
 
-# For debugging what is set in variables
+# Verify version string compiles with semver.org, output it for chillbox to use.
+inspect.VERSION:
+	@printf "%s" '$(VERSION)' | grep -q -P '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$$' - || (printf "\n%s\n" "ERROR Invalid version string '$(VERSION)' See https://semver.org" >&2 && exit 1)
+	@printf "%s" '$(VERSION)'
+
+# For debugging what is set in variables.
 inspect.%:
-	@echo $($*)
+	@printf "%s" '$($*)'
 
 # Always run.  Useful when target is like targetname.% .
 # Use $* to get the stem
