@@ -1,6 +1,0 @@
---- !ChillNode
-name: home
-route: /
-template: home.html.jinja2
-value:
-  pagetitle: Site1 Example

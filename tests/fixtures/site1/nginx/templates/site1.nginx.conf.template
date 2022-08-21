@@ -28,15 +28,26 @@ server {
     }
     # The frozen directory doesn't exist when developing or when not serving the
     # frozen site. Fallback on the @chill proxy for dynamic sites.
-    root /usr/local/src/site1/chill/frozen;
+    root /usr/local/src/site1/chill-static-example/frozen;
     add_header Cache-Control "public,no-cache";
-    ssi on;
-    try_files $uri $uri/index.html @chill;
+    try_files $uri $uri/index.html @chill-static-example;
   }
-  location @chill {
+  location @chill-static-example {
     add_header Cache-Control "public,no-cache";
-    ssi on;
-    proxy_pass ${SITE1_CHILL};
+    proxy_pass ${SITE1_CHILL_STATIC};
+  }
+
+  location /dynamic/ {
+    limit_except GET {
+      deny all;
+    }
+    root /usr/local/src/site1/chill-dynamic-example/frozen;
+    add_header Cache-Control "public,no-cache";
+    try_files $uri $uri/index.html @chill-dynamic-example;
+  }
+  location @chill-dynamic-example {
+    add_header Cache-Control "public,no-cache";
+    proxy_pass ${SITE1_CHILL_DYNAMIC};
   }
 
   location /api/ {

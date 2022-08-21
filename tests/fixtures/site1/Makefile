@@ -11,7 +11,7 @@ slugname := site1
 project_files := $(shell find . -type f -not -path './.git/*' -not -path './dist/*' | sort)
 
 # The version string includes the build metadata
-VERSION := $(shell cat chill/VERSION)+$(shell cat $(project_files) | md5sum - | cut -d' ' -f1)
+VERSION := $(shell cat VERSION)+$(shell cat $(project_files) | md5sum - | cut -d' ' -f1)
 
 # Verify version string compiles with semver.org, output it for chillbox to use.
 inspect.VERSION:
