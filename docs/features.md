@@ -6,10 +6,18 @@
 
 This is a list of notable features that have currently been implemented.
 
+- Not coupled to Source Control Management ([SCM]) software. 
+    - A site is deployed via a site configuration file.
+    - Each site configuration defines a 'release' tar.gz file which contains the
+        source code for the site. The release tar.gz file can be referenced
+        locally via absolute file path or downloaded from a URL.
+    - Deployments will effectively skip already deployed sites based on the
+        version string of the site.
 - Supported language handlers for services
   - [Flask] (Python 3)
   - [Chill] with dynamic or static deployment (Python 3)
 - Website services run on [Alpine Linux] and don't use [systemd]
+  - [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].
 - Shell scripts are [POSIX] compliant and mostly have unit tests with [Bats-core] (Bash Automated Testing System)
 - A JSON Schema has been defined for the site.json files a website uses for configuration.
 - No remote build pipeline, all builds happen on the local host machine
@@ -87,3 +95,5 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [shellcheck]: https://www.shellcheck.net/
 [GeoDNS]: https://en.wikipedia.org/wiki/GeoDNS
 [systemd]: https://systemd.io/
+[SCM]: https://en.wikipedia.org/wiki/Version_control
+[s6]: https://skarnet.org/software/s6/
