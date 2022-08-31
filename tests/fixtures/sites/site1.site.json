@@ -11,40 +11,50 @@
   ],
   "env": [
     {
-      "name": "SITE1_SERVER_NAME",
-      "value": "$server_name"
+      "name": "TESTSITE2",
+      "value": "site2test"
     },
     {
-      "name": "SITE1_SERVER_PORT",
-      "value": "$server_port"
-    },
-    {
-      "name": "SITE1_PROXY_INTERCEPT_ERRORS",
+      "name": "PROXY_INTERCEPT_ERRORS",
       "value": "on"
     },
     {
-      "name": "SITE1_VERSION",
-      "value": "$version"
-    },
-    {
-      "name": "SITE1_PROXY_CACHE_VALID",
+      "name": "PROXY_CACHE_VALID",
       "value": "1y"
     },
     {
-      "name": "SITE1_CHILL_STATIC",
+      "name": "CHILL_STATIC",
       "value": "http://localhost:5000"
     },
     {
-      "name": "SITE1_CHILL_DYNAMIC",
+      "name": "CHILL_DYNAMIC",
       "value": "http://localhost:5001"
     },
     {
-      "name": "SITE1_API",
+      "name": "API",
       "value": "http://localhost:8084"
     },
     {
-     "name": "SITE1_IMMUTABLE__EXAMPLE",
-     "value": "$S3_ENDPOINT_URL$IMMUTABLE_BUCKET_NAME/$slugname/$version/example/"
+      "name": "IMMUTABLE__EXAMPLE",
+      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/$VERSION/immutable-example/"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE",
+      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/todo$IMMUTABLE_EXAMPLE_HASH/"
+    },
+    {
+      "name": "otherIMMUTABLE_EXAMPLE",
+      "value": "$(printf \"%s\" \"$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/todo\\$IMMUTABLE_EXAMPLE_HASH/\")"
+    },
+    {
+      "name": "frog",
+      "value": "$(echo hi)",
+      "1value": "ribbit\\'\"$(echo yo)\"\\'"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_HASH",
+      "value": "TODO-hash",
+      "cmd": "make --silent -C immutable-example inspect.HASH"
     }
   ],
   "crontab": [

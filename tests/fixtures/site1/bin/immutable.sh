@@ -13,9 +13,9 @@ echo "$archive" | grep -q "\.tar\.gz$" || (echo "First arg should be an archive 
 tmpdir="$(mktemp -d)"
 mkdir -p "$tmpdir/$slugname"
 
-mkdir -p "$tmpdir/$slugname/example"
-echo "file 1 example" > "$tmpdir/$slugname/example/file1.txt"
-echo "file 2 example" > "$tmpdir/$slugname/example/file2.txt"
+mkdir -p "$tmpdir/$slugname/immutable-example"
+echo "file 1 example" > "$tmpdir/$slugname/immutable-example/file1.txt"
+echo "file 2 example" > "$tmpdir/$slugname/immutable-example/file2.txt"
 
 archive_dir="$(dirname "$archive")"
 mkdir -p "$archive_dir"

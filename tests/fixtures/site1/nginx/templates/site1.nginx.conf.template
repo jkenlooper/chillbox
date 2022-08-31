@@ -1,52 +1,31 @@
 server {
-  listen ${SITE1_SERVER_PORT};
-
   # Use special wildcard server_name by prefixing with '.' so
   # [chillbox-hostname].${SITE1_SERVER_NAME} will also match.
   # https://nginx.org/en/docs/http/server_names.html
   server_name .${SITE1_SERVER_NAME};
 
-  proxy_cookie_domain ${SITE1_API} ${SITE1_SERVER_NAME};
-  proxy_set_header Host ${SITE1_SERVER_NAME}:${SITE1_SERVER_PORT};
-
   root /srv/site1/root;
   access_log /var/log/nginx/site1/access.log;
   error_log /var/log/nginx/site1/error.log;
-
-  # Intercepting of errors is only needed when developing.
-  proxy_intercept_errors ${SITE1_PROXY_INTERCEPT_ERRORS};
-
-  # Limit all server wide to this small amount. Override on a location level.
-  client_max_body_size 20k;
-
-  # Ignore query parameters for cache.
-  proxy_cache_key $scheme$proxy_host$uri;
 
   location / {
     limit_except GET {
       deny all;
     }
     # The frozen directory doesn't exist when developing or when not serving the
-    # frozen site. Fallback on the @chill proxy for dynamic sites.
+    # frozen site. Fallback on the @chill-static-example proxy for dynamic sites.
     root /usr/local/src/site1/chill-static-example/frozen;
-    add_header Cache-Control "public,no-cache";
     try_files $uri $uri/index.html @chill-static-example;
   }
   location @chill-static-example {
-    add_header Cache-Control "public,no-cache";
     proxy_pass ${SITE1_CHILL_STATIC};
   }
 
   location /dynamic/ {
-    limit_except GET {
-      deny all;
-    }
     root /usr/local/src/site1/chill-dynamic-example/frozen;
-    add_header Cache-Control "public,no-cache";
     try_files $uri $uri/index.html @chill-dynamic-example;
   }
   location @chill-dynamic-example {
-    add_header Cache-Control "public,no-cache";
     proxy_pass ${SITE1_CHILL_DYNAMIC};
   }
 
@@ -55,28 +34,20 @@ server {
     proxy_redirect default;
   }
 
+  # For SSL cert validation
   location /.well-known/ {
-    limit_except GET {
-      deny all;
-    }
     root /srv/site1/;
   }
 
-  location /example/${SITE1_VERSION}/ {
-    limit_except GET {
-      deny all;
-    }
-    proxy_cache var_cache_nginx;
-    proxy_cache_valid ${SITE1_PROXY_CACHE_VALID};
-    add_header X-Proxy-Cache $upstream_cache_status;
+  # Use the site version as part of the route for cache-busting.
+  location /immutable-example/${SITE1_VERSION}/ {
+    # Set proxy_ssl_verify in case this request is being passed with https
+    proxy_ssl_verify on;
+
     proxy_pass ${SITE1_IMMUTABLE__EXAMPLE};
   }
 
   location ~* ^/(robots|humans).txt$ {
-    limit_except GET {
-      deny all;
-    }
-    add_header Cache-Control "public,max-age=86400";
     try_files $uri =404;
   }
 

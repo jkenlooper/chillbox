@@ -92,7 +92,7 @@ for site_json in $sites; do
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${slugname}" "${version}"
 
   tmp_artifact="$(mktemp)"
-  export tmp_artifact
+  # export tmp_artifact
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp "s3://$ARTIFACT_BUCKET_NAME/${slugname}/artifacts/$slugname-$version.artifact.tar.gz" \
     "$tmp_artifact"
@@ -126,24 +126,19 @@ for site_json in $sites; do
 
   echo "INFO $0: Finished setting up services for $site_json"
 
-  eval "$(jq -r \
-      '.env[] | "export " + .name + "=" + .value' "/etc/chillbox/sites/$slugname.site.json" \
-        | envsubst "$(xargs < /etc/chillbox/env_names)")"
-
-  site_env_names=$(jq -r '.env[] | "$" + .name' "/etc/chillbox/sites/$slugname.site.json" | xargs)
-  site_env_names="$(xargs < /etc/chillbox/env_names) $site_env_names"
-
   # Set crontab
   tmpcrontab=$(mktemp)
   # TODO Should preserve any existing crontab entries?
   #      crontab -u $slugname -l || printf '' > $tmpcrontab
   # Append all crontab entries, use envsubst replacements
+
   jq -r '.crontab // [] | .[]' "/etc/chillbox/sites/$slugname.site.json"  \
-    | envsubst "${site_env_names}" \
+    | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$slugname.site.json" \
     | while read -r crontab_entry; do
         test -n "${crontab_entry}" || continue
         echo "${crontab_entry}" >> "$tmpcrontab"
       done
+
   crontab -u "$slugname" - < "$tmpcrontab"
   rm -f "$tmpcrontab"
 
