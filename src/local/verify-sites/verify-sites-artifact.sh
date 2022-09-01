@@ -36,4 +36,6 @@ for site_json in $sites; do
       || (echo "ERROR $script_name: Failed site schema for $site_json_file" && exit 1)
 
   # TODO Extract each file listed in the sites manifest and verify
+  # required files:
+  # - nginx/nginx.conf ?
 done

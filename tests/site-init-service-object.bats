@@ -4,21 +4,23 @@ source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 
 setup_file() {
   test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
-  export slugname="site1"
+  export SLUGNAME="site1"
 
-  adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
+  adduser -D -h /dev/null -H "$SLUGNAME" || printf "Ignoring adduser error"
 
   tmp_dir=$(mktemp -d)
   export tmp_artifact=$tmp_dir/site1-artifact.tar.gz
   "${BATS_TEST_DIRNAME}"/fixtures/site1/bin/artifact.sh $tmp_artifact
 
   export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
+  mkdir -p /etc/chillbox/sites
+  cp -f "${BATS_TEST_DIRNAME}/fixtures/sites/site1.site.json" /etc/chillbox/sites/
 
-  export slugdir="$tmp_dir/usr/local/src/$slugname"
+  export slugdir="$tmp_dir/usr/local/src/$SLUGNAME"
   mkdir -p "$slugdir"
 
-  mkdir -p /run/tmp/chillbox_secrets/$slugname
-  touch /run/tmp/chillbox_secrets/$slugname/api.cfg
+  mkdir -p /run/tmp/chillbox_secrets/$SLUGNAME
+  touch /run/tmp/chillbox_secrets/$SLUGNAME/api.cfg
 
   export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
@@ -26,13 +28,19 @@ setup_file() {
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
   export CHILLBOX_GPG_KEY_NAME="chillbox-test"
 
-  "${BATS_TEST_DIRNAME}"/../bin/create-env_names-file.sh
+  export CHILLBOX_SERVER_NAME="chillbox"
+  export CHILLBOX_SERVER_PORT="80"
+  export IMMUTABLE_BUCKET_DOMAIN_NAME="https://chum.bucket.test"
+  export SLUGNAME="site1"
+  export VERSION="1.2.3"
+  export SERVER_NAME="chillbox-test"
+  export SERVER_PORT="80"
 }
 teardown_file() {
-  rm -f /etc/chillbox/env_names
   test -d "$tmp_dir" && rm -rf $tmp_dir
+  rm -f /etc/chillbox/sites/site1.site.json
 
-  rm -rf /run/tmp/chillbox_secrets/$slugname
+  rm -rf /run/tmp/chillbox_secrets/$SLUGNAME
 }
 
 setup() {
@@ -84,10 +92,12 @@ teardown() {
   rm -rf  "/var/lib/site1"
 	rm -f $slugdir/api.service_handler.json
 	rm -f $slugdir/chill.service_handler.json
-	rm -rf /var/lib/${slugname}/api
-	rm -rf /var/lib/${slugname}/chill
-	rm -rf /etc/services.d/${slugname}-api
-	rm -rf /etc/services.d/${slugname}-chill
+	rm -rf /var/lib/${SLUGNAME}/api
+	rm -rf /var/lib/${SLUGNAME}/chill-static-example
+	rm -rf /var/lib/${SLUGNAME}/chill-dynamic-example
+	rm -rf /etc/services.d/${SLUGNAME}-api
+	rm -rf /etc/services.d/${SLUGNAME}-chill-static-example
+	rm -rf /etc/services.d/${SLUGNAME}-chill-dynamic-example
 
   rm -f $BATS_RUN_TMPDIR/python
   rm -f /usr/local/bin/chill
@@ -111,55 +121,55 @@ main() {
 
 @test "fail when service_obj is empty" {
   service_obj=""
-  run main "${service_obj}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when tmp_artifact is empty" {
   export tmp_artifact=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
-@test "fail when slugname is empty" {
-  export slugname=""
-  run main "${service_obj}" "${tmp_artifact}"
+@test "fail when SLUGNAME is empty" {
+  export SLUGNAME=""
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when slugdir is empty" {
   export slugdir=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when S3_ARTIFACT_ENDPOINT_URL is empty" {
   export S3_ARTIFACT_ENDPOINT_URL=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when S3_ENDPOINT_URL is empty" {
   export S3_ENDPOINT_URL=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when ARTIFACT_BUCKET_NAME is empty" {
   export ARTIFACT_BUCKET_NAME=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when IMMUTABLE_BUCKET_NAME is empty" {
   export IMMUTABLE_BUCKET_NAME=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
 @test "fail when CHILLBOX_GPG_KEY_NAME is empty" {
   export CHILLBOX_GPG_KEY_NAME=""
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }
 
@@ -180,7 +190,7 @@ main() {
     && echo "# Creates a mock flask symbolic link: $slugdir/$service_handler/.venv/bin/flask to $(readlink $slugdir/$service_handler/.venv/bin/flask)" >&3
 
   # Act
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
 
   # Assert
   assert_success
@@ -193,12 +203,12 @@ main() {
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /var/lib/${slugname}/${service_handler} directory" >&3
-  test -d "/var/lib/${slugname}/${service_handler}"
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /var/lib/${SLUGNAME}/${service_handler} directory" >&3
+  test -d "/var/lib/${SLUGNAME}/${service_handler}"
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${slugname}-${service_name}/run command" >&3
-  test -d "/etc/services.d/${slugname}-${service_name}"
-  test -f "/etc/services.d/${slugname}-${service_name}/run"
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${SLUGNAME}-${service_name}/run command" >&3
+  test -d "/etc/services.d/${SLUGNAME}-${service_name}"
+  test -f "/etc/services.d/${SLUGNAME}-${service_name}/run"
 }
 
 
@@ -206,11 +216,11 @@ main() {
   # Arrange
   export service_obj="$(jq -c '.services[1]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
-  export service_handler=chill
+  export service_handler=chill-static-example
   export service_name=chillstatic
 
   # Act
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
 
   # Assert
   assert_success
@@ -221,20 +231,20 @@ main() {
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${slugname}-${service_name}/run command" >&3
-  test ! -d "/etc/services.d/${slugname}-${service_name}"
-  test ! -f "/etc/services.d/${slugname}-${service_name}/run"
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${SLUGNAME}-${service_name}/run command" >&3
+  test ! -d "/etc/services.d/${SLUGNAME}-${service_name}"
+  test ! -f "/etc/services.d/${SLUGNAME}-${service_name}/run"
 }
 
 @test "pass when service lang template is chill and freeze is false" {
   # Arrange
   export service_obj="$(jq -c '.services[2]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Match up with site1.site.json
-  export service_handler=llama
-  export service_name=chillllama
+  export service_handler=chill-dynamic-example
+  export service_name=chilldynamic
 
   # Act
-  run main "${service_obj}" "${tmp_artifact}"
+  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
 
   # Assert
   assert_success
@@ -245,7 +255,7 @@ main() {
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a $service_handler.service_handler.json" >&3
   test -f $slugdir/$service_handler.service_handler.json
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${slugname}-${service_name}/run command" >&3
-  test -d "/etc/services.d/${slugname}-${service_name}"
-  test -f "/etc/services.d/${slugname}-${service_name}/run"
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a /etc/services.d/${SLUGNAME}-${service_name}/run command" >&3
+  test -d "/etc/services.d/${SLUGNAME}-${service_name}"
+  test -f "/etc/services.d/${SLUGNAME}-${service_name}/run"
 }

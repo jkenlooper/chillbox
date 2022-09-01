@@ -282,9 +282,6 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
  CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" \
    /etc/chillbox/bin/generate-chillbox-key.sh
 
-## RUN_CHILLBOX_ENV_NAMES
-/etc/chillbox/bin/create-env_names-file.sh
-
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
 
@@ -301,9 +298,6 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 n
 
 /etc/chillbox/bin/site-init.sh
 /etc/chillbox/bin/reload-templates.sh
-
-## RUN DEV_USER
-chown dev /etc/chillbox/env_names
 
 ## acme.sh certs
 /etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh "$LETS_ENCRYPT_SERVER" || echo "ERROR (ignored): Failed to run issue-and-install-letsencrypt-certs.sh"

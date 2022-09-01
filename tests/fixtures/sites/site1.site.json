@@ -48,13 +48,11 @@
     },
     {
       "name": "frog",
-      "value": "$(echo hi)",
-      "1value": "ribbit\\'\"$(echo yo)\"\\'"
+      "value": "$(echo hi)"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_HASH",
-      "value": "TODO-hash",
-      "cmd": "make --silent -C immutable-example inspect.HASH"
+      "value": "TODO-hash"
     }
   ],
   "crontab": [
@@ -68,10 +66,6 @@
       "secrets_config": "api-bridge.secrets.cfg",
       "secrets_export_dockerfile": "api-bridge.secrets.Dockerfile",
       "environment": [
-        {
-          "name": "SERVER_NAME",
-          "value": "$server_name"
-        },
         {
           "name": "PORT",
           "value": "8084"

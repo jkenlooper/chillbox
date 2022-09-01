@@ -73,8 +73,7 @@
         "title": "Name/value",
         "description": "",
         "required": [
-          "name",
-          "value"
+          "name"
         ],
         "properties": {
           "name": {
@@ -85,7 +84,12 @@
           "value": {
             "type": "string",
             "title": "The value schema",
-            "description": ""
+            "description": "An optional value to set."
+          },
+          "cmd": {
+            "type": "string",
+            "title": "The command for the value",
+            "description": "An optional command to use to fill in the value at build time."
           }
         },
         "additionalProperties": false

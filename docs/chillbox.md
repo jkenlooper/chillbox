@@ -7,7 +7,6 @@ chillbox artifact
         - bin/install-service-dependencies.sh
         - bin/install-acme.sh
         - bin/generate-chillbox-key.sh
-        - bin/create-env_names-file.sh
         - bin/init-nginx.sh
         - bin/site-init.sh
             - bin/upload-immutable-files-from-artifact.sh

@@ -4,16 +4,34 @@ source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 
 setup_file() {
   test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
-  export slugname="site1"
+  export SLUGNAME="site1"
 
   tmp_dir=$(mktemp -d)
 
-  export slugdir="$tmp_dir/usr/local/src/$slugname"
+  export slugdir="$tmp_dir/usr/local/src/$SLUGNAME"
   mkdir -p "$slugdir"
+
+  mkdir -p /etc/chillbox/sites
+  cp -f "${BATS_TEST_DIRNAME}/fixtures/sites/site1.site.json" /etc/chillbox/sites/
+
+  export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
+  export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
+  export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
+  export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
+  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
+
+  export CHILLBOX_SERVER_NAME="chillbox"
+  export CHILLBOX_SERVER_PORT="80"
+  export IMMUTABLE_BUCKET_DOMAIN_NAME="https://chum.bucket.test"
+  export SLUGNAME="site1"
+  export VERSION="1.2.3"
+  export SERVER_NAME="chillbox-test"
+  export SERVER_PORT="80"
 }
 
 teardown_file() {
   test -d "$tmp_dir" && rm -rf $tmp_dir
+  rm -f /etc/chillbox/sites/site1.site.json
 }
 
 setup() {
@@ -46,7 +64,7 @@ teardown() {
 	rm -f $slugdir/api.service_handler.json
 	rm -f $slugdir/api.service_handler.json.bak
   rm -f $slugdir/api.bak.tar.gz
-  rm -f /var/lib/${slugname}/secrets/api.cfg.bak
+  rm -f /var/lib/${SLUGNAME}/secrets/api.cfg.bak
 
   rm -f $BATS_RUN_TMPDIR/rc-service
   rm -f $BATS_RUN_TMPDIR/rc-update
@@ -56,8 +74,8 @@ main() {
   "${BATS_TEST_DIRNAME}"/../bin/stop-site-services.sh $@
 }
 
-@test "fail when slugname is empty" {
-  export slugname=""
+@test "fail when SLUGNAME is empty" {
+  export SLUGNAME=""
   run main
   assert_failure
 }

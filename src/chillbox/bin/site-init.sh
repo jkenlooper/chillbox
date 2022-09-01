@@ -60,60 +60,60 @@ else
   adduser -D -h /dev/null -H "nginx" || printf "Ignoring adduser error"
 fi
 
-export server_port="$CHILLBOX_SERVER_PORT"
+export SERVER_PORT="$CHILLBOX_SERVER_PORT"
 current_working_dir=/usr/local/src
 bin_dir="$(dirname "$0")"
 sites="$(find /etc/chillbox/sites -type f -name '*.site.json')"
 for site_json in $sites; do
-  slugname="$(basename "$site_json" .site.json)"
-  export slugname
-  server_name="$(jq -r '.server_name' "$site_json")"
-  export server_name
-  echo "INFO $0: $slugname"
-  echo "INFO $0: server_name=$server_name"
+  SLUGNAME="$(basename "$site_json" .site.json)"
+  export SLUGNAME
+  SERVER_NAME="$(jq -r '.server_name' "$site_json")"
+  export SERVER_NAME
+  echo "INFO $0: $SLUGNAME"
+  echo "INFO $0: SERVER_NAME=$SERVER_NAME"
   cd "$current_working_dir"
 
   # no home, or password for user
-  adduser -D -h /dev/null -H "$slugname" || printf "Ignoring adduser error"
+  adduser -D -h /dev/null -H "$SLUGNAME" || printf "Ignoring adduser error"
 
-  version="$(jq -r '.version' "$site_json")"
-  export version
+  VERSION="$(jq -r '.version' "$site_json")"
+  export VERSION
 
   deployed_version=""
-  if [ -e "/srv/chillbox/$slugname/version.txt" ]; then
-    deployed_version="$(cat "/srv/chillbox/$slugname/version.txt")"
+  if [ -e "/srv/chillbox/$SLUGNAME/version.txt" ]; then
+    deployed_version="$(cat "/srv/chillbox/$SLUGNAME/version.txt")"
   fi
-  if [ "$version" = "$deployed_version" ]; then
-    echo "INFO $0: Versions match for $slugname site."
+  if [ "$VERSION" = "$deployed_version" ]; then
+    echo "INFO $0: Versions match for $SLUGNAME site."
     continue
   fi
 
   # A version.txt file is also added to the immutable bucket to allow skipping.
-  "$bin_dir/upload-immutable-files-from-artifact.sh" "${slugname}" "${version}"
+  "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
 
   tmp_artifact="$(mktemp)"
   # export tmp_artifact
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp "s3://$ARTIFACT_BUCKET_NAME/${slugname}/artifacts/$slugname-$version.artifact.tar.gz" \
+    s3 cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
     "$tmp_artifact"
 
 
-  export slugdir="$current_working_dir/$slugname"
+  slugdir="$current_working_dir/$SLUGNAME"
   mkdir -p "$slugdir"
-  chown -R "$slugname":"$slugname" "$slugdir"
+  chown -R "$SLUGNAME":"$SLUGNAME" "$slugdir"
 
-  "$bin_dir/stop-site-services.sh" "${slugname}" "${slugdir}"
+  "$bin_dir/stop-site-services.sh" "${SLUGNAME}" "${slugdir}"
 
-  "$bin_dir/site-init-nginx-service.sh" "${tmp_artifact}"
+  "$bin_dir/site-init-nginx-service.sh" "${tmp_artifact}" "${slugdir}"
 
   # init services
-  jq -c '.services // [] | .[]' "/etc/chillbox/sites/$slugname.site.json" \
+  jq -c '.services // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \
     | while read -r service_obj; do
         test -n "${service_obj}" || continue
 
         cd "$current_working_dir"
 
-        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
+        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
 
       done
   rm -f "$tmp_artifact"
@@ -129,37 +129,37 @@ for site_json in $sites; do
   # Set crontab
   tmpcrontab=$(mktemp)
   # TODO Should preserve any existing crontab entries?
-  #      crontab -u $slugname -l || printf '' > $tmpcrontab
+  #      crontab -u $SLUGNAME -l || printf '' > $tmpcrontab
   # Append all crontab entries, use envsubst replacements
 
-  jq -r '.crontab // [] | .[]' "/etc/chillbox/sites/$slugname.site.json"  \
-    | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$slugname.site.json" \
+  jq -r '.crontab // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json"  \
+    | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
     | while read -r crontab_entry; do
         test -n "${crontab_entry}" || continue
         echo "${crontab_entry}" >> "$tmpcrontab"
       done
 
-  crontab -u "$slugname" - < "$tmpcrontab"
+  crontab -u "$SLUGNAME" - < "$tmpcrontab"
   rm -f "$tmpcrontab"
 
   cd "$slugdir"
   # install site root dir
   mkdir -p "$slugdir/nginx/root"
-  rm -rf "/srv/$slugname"
-  mkdir -p "/srv/$slugname"
-  mv "$slugdir/nginx/root" "/srv/$slugname/"
-  chown -R nginx "/srv/$slugname/"
+  rm -rf "/srv/$SLUGNAME"
+  mkdir -p "/srv/$SLUGNAME"
+  mv "$slugdir/nginx/root" "/srv/$SLUGNAME/"
+  chown -R nginx "/srv/$SLUGNAME/"
   mkdir -p "/var/log/nginx/"
-  rm -rf "/var/log/nginx/$slugname/"
-  mkdir -p "/var/log/nginx/$slugname/"
-  chown -R nginx "/var/log/nginx/$slugname/"
-  # Install nginx templates that start with slugname
+  rm -rf "/var/log/nginx/$SLUGNAME/"
+  mkdir -p "/var/log/nginx/$SLUGNAME/"
+  chown -R nginx "/var/log/nginx/$SLUGNAME/"
+  # Install nginx templates that start with SLUGNAME
   mkdir -p /etc/chillbox/templates/
-  find "$slugdir/nginx/templates/" -name "$slugname*.nginx.conf.template" -exec mv {} /etc/chillbox/templates/ \;
+  find "$slugdir/nginx/templates/" -name "$SLUGNAME*.nginx.conf.template" -exec mv {} /etc/chillbox/templates/ \;
   rm -rf "$slugdir/nginx"
   # Set version
-  mkdir -p "/srv/chillbox/$slugname"
-  chown -R nginx "/srv/chillbox/$slugname/"
-  echo "$version" > "/srv/chillbox/$slugname/version.txt"
+  mkdir -p "/srv/chillbox/$SLUGNAME"
+  chown -R nginx "/srv/chillbox/$SLUGNAME/"
+  echo "$VERSION" > "/srv/chillbox/$SLUGNAME/version.txt"
 
 done

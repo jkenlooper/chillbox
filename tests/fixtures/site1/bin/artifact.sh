@@ -13,13 +13,13 @@ echo "$archive" | grep -q "\.tar\.gz$" || (echo "First arg should be an archive 
 tmpdir="$(mktemp -d)"
 mkdir -p "$tmpdir/$slugname"
 
-cd "$projectdir/chill"
-mkdir -p "$tmpdir/$slugname/chill"
-cp -R documents queries templates chill-data.yaml site.cfg VERSION "$tmpdir/$slugname/chill/"
+cd "$projectdir/chill-static-example"
+mkdir -p "$tmpdir/$slugname/chill-static-example"
+cp -R documents queries templates chill-data.yaml site.cfg "$tmpdir/$slugname/chill-static-example/"
 
-cd "$projectdir/llama"
-mkdir -p "$tmpdir/$slugname/llama"
-cp -R documents queries templates chill-data.yaml site.cfg VERSION "$tmpdir/$slugname/llama/"
+cd "$projectdir/chill-dynamic-example"
+mkdir -p "$tmpdir/$slugname/chill-dynamic-example"
+cp -R documents queries templates chill-data.yaml site.cfg "$tmpdir/$slugname/chill-dynamic-example/"
 
 cd "$projectdir/api"
 mkdir -p "$tmpdir/$slugname/api"
