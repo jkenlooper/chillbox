@@ -5,6 +5,43 @@ set -o errexit
 project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 script_name="$(basename "$0")"
 
+usage() {
+  cat <<HERE
+
+Build artifacts by processing the provided sites artifact file.
+
+Usage:
+  $script_name -h
+  $script_name -s <sites-artifact> -o <output-file>
+
+Options:
+  -h                  Show this help message.
+
+  -s <sites-artifact> An absolute path or URL to a sites artifact file.
+
+  -o <output-file>    The output file will have environment variables that should be evaluated.
+
+HERE
+}
+
+sites_artifact_url=""
+output_file=""
+while getopts "hs:o:" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    s) sites_artifact_url=$OPTARG ;;
+    o) output_file=$OPTARG ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+test -n "$sites_artifact_url" || (echo "ERROR $script_name: No sites-artifact set" >&2 && usage && exit 1)
+test -n "$output_file" || (echo "ERROR $script_name: No output-file set" >&2 && usage && exit 1)
+test -f "$output_file" || (echo "ERROR $script_name: The output-file ($output_file) is not a file" >&2 && usage && exit 1)
+
 # Need to use a log file for stdout since the stdout could be parsed as JSON by
 # terraform external data source.
 test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
@@ -28,17 +65,7 @@ trap showlog EXIT
 has_wget="$(command -v wget || echo "")"
 has_curl="$(command -v curl || echo "")"
 
-# Extract and set shell variables from JSON input
-sites_artifact_url=""
-eval "$(jq -r '@sh "
-  sites_artifact_url=\(.sites_artifact_url)
-  "')"
-
-{
-  echo "set shell variables from JSON stdin"
-  echo "  sites_artifact_url=$sites_artifact_url"
-} >> "$log_file"
-
+echo "Sites artifact is at $sites_artifact_url" >> "$log_file"
 
 chillbox_artifact_version="$(make --silent --directory="$project_dir" inspect.VERSION)"
 chillbox_artifact="chillbox.$chillbox_artifact_version.tar.gz"
@@ -147,6 +174,47 @@ else
     jq --arg jq_version "$version" '.version |= $jq_version' < "$site_json.original" > "$site_json"
     rm "$site_json.original"
 
+    (
+      # Sub shell for handling of the 'cd' to the slugname directory. This
+      # allows custom 'cmd's in the site.json work relatively to the project
+      # root directory.
+      tmp_dir_for_env_cmd="$(mktemp -d)"
+      mkdir -p "$tmp_dir_for_env_cmd/$slugname"
+      tar x -f "$tmp_sites_dir/$release_filename" -C "$tmp_dir_for_env_cmd/$slugname" --strip-components=1
+      chmod --recursive u+rw "$tmp_dir_for_env_cmd"
+      cd "$tmp_dir_for_env_cmd/$slugname"
+      tmp_eval="$(mktemp)"
+      # Warning! The '.cmd' value is executed on the host here. The content in
+      # the site.json should be trusted, but it is a little safer to confirm
+      # with the user first.
+      jq -r \
+        '.env[] | select(.cmd != null) | .name + "=\"$(" + .cmd + ")\"; export " + .name' \
+        "$site_json" > "$tmp_eval"
+      if [ -n "$(cat "$tmp_eval" | xargs)" ]; then
+        printf "\n\n---###\n\n"
+        cat "$tmp_eval"
+        printf "\n\n---###\n\n"
+        printf "%s\n" "Execute the above commands so the matching env fields from $site_json can be updated? [y/n]"
+        read -r eval_cmd_confirm
+        if [ "$eval_cmd_confirm" = "y" ]; then
+          eval "$(cat "$tmp_eval")"
+          cp "$site_json" "$site_json.original"
+          jq \
+            '(.env[] | select(.cmd != null)) |= . + {name: .name, value: $ENV[.name]}' < "$site_json.original" > "$site_json"
+          rm "$site_json.original"
+          jq '.env' "$site_json"
+          printf "%s\n" "The env from the $site_json has been updated and is shown above. Continue with build? [y/n]"
+          read -r continue_build_confirm
+          if [ "$continue_build_confirm" != "y" ]; then
+            echo "Exiting build since the updated env in $site_json did not pass review."
+            exit 1
+          fi
+        fi
+        rm -f "$tmp_eval"
+      fi
+      rm -rf "$tmp_dir_for_env_cmd"
+    )
+
     mkdir -p "${chillbox_state_dir}/sites/${slugname}"
     dist_immutable_archive_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.immutable.tar.gz"
     dist_artifact_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.artifact.tar.gz"
@@ -222,4 +290,4 @@ jq --null-input \
     sites_manifest:$jq_sites_manifest,
     sites:$sites_immutable_and_artifacts,
     log_file:$jq_log_file
-  }'
+  }' > "$output_file"

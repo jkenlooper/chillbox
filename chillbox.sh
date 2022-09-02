@@ -247,16 +247,16 @@ build_artifacts() {
   CHILLBOX_ARTIFACT=""
   SITES_MANIFEST=""
   build_artifacts_log_file=""
-  eval "$(jq \
-    --arg jq_sites_artifact_url "$SITES_ARTIFACT_URL" \
-    --null-input '{
-      sites_artifact_url: $jq_sites_artifact_url,
-  }' | "${project_dir}/src/local/build-artifacts.sh" | jq -r '@sh "
+  output_env="$(mktemp)"
+  "${project_dir}/src/local/build-artifacts.sh" -s "$SITES_ARTIFACT_URL" -o "$output_env"
+  eval "$(jq -r '@sh "
       export SITES_ARTIFACT=\(.sites_artifact)
       export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
       export SITES_MANIFEST=\(.sites_manifest)
       export build_artifacts_log_file=\(.log_file)
-      "')"
+      "' "$output_env")"
+  rm -f "$output_env"
+
   test -n "$build_artifacts_log_file" || (echo "ERROR $script_name: See the log file." && exit 1)
   echo "See build artifacts log file: $build_artifacts_log_file"
 

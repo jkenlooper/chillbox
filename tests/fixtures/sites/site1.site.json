@@ -40,19 +40,12 @@
     },
     {
       "name": "IMMUTABLE_EXAMPLE",
-      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/todo$IMMUTABLE_EXAMPLE_HASH/"
-    },
-    {
-      "name": "otherIMMUTABLE_EXAMPLE",
-      "value": "$(printf \"%s\" \"$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/todo\\$IMMUTABLE_EXAMPLE_HASH/\")"
-    },
-    {
-      "name": "frog",
-      "value": "$(echo hi)"
+      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_HASH",
-      "value": "TODO-hash"
+      "value": "replaced-with-cmd-to-get-hash",
+      "cmd": "cat ./Makefile | md5sum - | cut -d' ' -f1"
     }
   ],
   "crontab": [
