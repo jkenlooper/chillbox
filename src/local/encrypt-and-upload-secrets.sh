@@ -195,7 +195,7 @@ for site_json in $site_json_files; do
       --name "$tmp_container_name-sleeper" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE,dst=$service_persistent_dir" \
       "$sleeper_image"
-    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/" "$encrypted_secret_service_dir/"
+    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/." "$encrypted_secret_service_dir/"
     docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
     docker rm "$tmp_container_name-sleeper" || printf ""
 

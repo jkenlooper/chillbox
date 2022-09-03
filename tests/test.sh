@@ -67,7 +67,7 @@ if [ "${CONFIRM}" = "y" ]; then
     break
   done
   tmp_sites_dir=$(mktemp -d)
-  docker cp chillbox:/etc/chillbox/sites "$tmp_sites_dir/sites"
+  docker cp chillbox:/etc/chillbox/sites/. "$tmp_sites_dir/sites/"
   cd "$tmp_sites_dir"
   sites=$(find sites -type f -name '*.site.json')
   for site_json in $sites; do
