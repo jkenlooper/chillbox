@@ -1,14 +1,3 @@
-resource "random_string" "initial_dev_user_password" {
-  length      = 16
-  special     = false
-  lower       = true
-  upper       = true
-  number      = true
-  min_lower   = 3
-  min_upper   = 3
-  min_numeric = 3
-}
-
 resource "digitalocean_spaces_bucket_object" "alpine_custom_image" {
   region = var.bucket_region
   bucket = var.artifact_bucket_name
@@ -43,35 +32,13 @@ resource "digitalocean_droplet" "chillbox" {
       ssh_keys,
     ]
   }
-  user_data = one(local_sensitive_file.alpine_box_init[*].content)
+  user_data = file("/var/lib/terraform-010-infra/user_data_chillbox.sh.encrypted")
 }
 
 resource "digitalocean_ssh_key" "chillbox" {
   for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys : md5(ssh_key)], var.developer_public_ssh_keys)
   name       = "Chillbox ${var.chillbox_instance} ${var.environment} ${each.key}"
   public_key = each.value
-}
-
-resource "local_sensitive_file" "alpine_box_init" {
-  count           = 1
-  filename        = "/run/tmp/secrets/terraform-020-chillbox/user_data_chillbox.sh"
-  file_permission = "0500"
-  content = templatefile("user_data_chillbox.sh.tftpl", {
-    tf_developer_public_ssh_keys : "%{for public_ssh_key in var.developer_public_ssh_keys} ${public_ssh_key}\n %{endfor}",
-    tf_access_key_id : var.do_chillbox_spaces_access_key_id,
-    tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
-    tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
-    tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
-    tf_tech_email : var.tech_email,
-    tf_immutable_bucket_name : var.immutable_bucket_name,
-    tf_immutable_bucket_domain_name : "${var.immutable_bucket_name}.${var.bucket_region}.digitaloceanspaces.com",
-    tf_artifact_bucket_name : var.artifact_bucket_name,
-    tf_sites_artifact : var.sites_artifact,
-    tf_chillbox_artifact : var.chillbox_artifact
-    # No slash at the end of this s3_endpoint_url
-    tf_s3_endpoint_url : var.s3_endpoint_url,
-    tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
-  })
 }
 
 resource "digitalocean_record" "chillbox" {

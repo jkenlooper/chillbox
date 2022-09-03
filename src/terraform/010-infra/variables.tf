@@ -73,3 +73,47 @@ variable "project_version" {
   default     = "0"
   description = "Appended to the end of the DigitialOcean project name."
 }
+
+variable "developer_public_ssh_keys" {
+  description = "The public SSH keys that will be added to the deployed chillbox server."
+  type        = list(string)
+  nullable    = false
+  validation {
+    condition     = length(var.developer_public_ssh_keys) != 0
+    error_message = "Must have at least one public ssh key in the list."
+  }
+}
+
+variable "tech_email" {
+  type        = string
+  description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
+}
+
+variable "sites_artifact" {
+  default     = ""
+  description = "The sites artifact file."
+  type        = string
+}
+variable "chillbox_artifact" {
+  default     = ""
+  description = "The chillbox artifact file."
+  type        = string
+}
+variable "domain" {
+  default     = "example.com"
+  description = "The domain that will be used when creating new DNS records."
+  type        = string
+  validation {
+    condition     = can(regex("[a-zA-Z0-9_][a-zA-Z0-9._-]+[a-zA-Z0-9_]\\.[a-zA-Z0-9]+", var.domain))
+    error_message = "The domain must be a valid domain."
+  }
+}
+variable "sub_domain" {
+  default     = "chillbox."
+  description = "The sub domain name that will be combined with the 'domain' variable to make the FQDN. Should be blank or end with a period."
+  type        = string
+  validation {
+    condition     = can(regex("|[a-zA-Z0-9_][a-zA-Z0-9._-]+[a-zA-Z0-9_]\\.", var.sub_domain))
+    error_message = "The sub domain must be blank or be a valid sub domain label. The last character should be a '.' since it will be prepended to the domain variable."
+  }
+}

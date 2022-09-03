@@ -39,6 +39,58 @@ resource "digitalocean_spaces_bucket" "immutable" {
   acl    = "public-read"
 }
 
+resource "random_string" "initial_dev_user_password" {
+  length      = 16
+  special     = false
+  lower       = true
+  upper       = true
+  min_lower   = 3
+  min_upper   = 3
+  min_numeric = 3
+}
+
+resource "random_string" "user_data_password" {
+  length      = 128
+  special     = false
+  lower       = true
+  upper       = true
+  min_lower   = 13
+  min_upper   = 13
+  min_numeric = 13
+}
+
+resource "local_sensitive_file" "alpine_box_init" {
+  filename        = "/run/tmp/secrets/terraform-010-infra/user_data_chillbox.sh"
+  file_permission = "0500"
+  content = templatefile("user_data_chillbox.sh.tftpl", {
+    tf_developer_public_ssh_keys : "%{for public_ssh_key in var.developer_public_ssh_keys} ${public_ssh_key}\n %{endfor}",
+    tf_access_key_id : var.do_chillbox_spaces_access_key_id,
+    tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
+    tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
+    tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
+    tf_tech_email : var.tech_email,
+    tf_immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,
+    tf_immutable_bucket_domain_name : "${digitalocean_spaces_bucket.immutable.name}.${var.bucket_region}.digitaloceanspaces.com",
+    tf_artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,
+    tf_sites_artifact : var.sites_artifact,
+    tf_chillbox_artifact : var.chillbox_artifact
+    # TODO No slash at the end of this s3_endpoint_url ?
+    tf_s3_endpoint_url : "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/",
+    tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
+  })
+}
+
+
+resource "null_resource" "user_data_encrypted" {
+  triggers = {
+    user_data = "${local_sensitive_file.alpine_box_init.id}"
+  }
+
+  provisioner "local-exec" {
+    command = "openssl enc -aes-256-cbc -e -md sha512 -pbkdf2 -a -iter 100000 -salt -pass 'pass:${random_string.user_data_password.result}' -in '${local_sensitive_file.alpine_box_init.filename}' -out '/var/lib/terraform-010-infra/user_data_chillbox.sh.encrypted'"
+  }
+}
+
 # outputs.tf
 output "s3_endpoint_url" {
   value       = "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/"
@@ -51,4 +103,28 @@ output "immutable_bucket_name" {
 output "artifact_bucket_name" {
   value       = digitalocean_spaces_bucket.artifact.name
   description = "Artifact bucket name is used to store artifact files."
+}
+
+output "user_data_password" {
+  value       = random_string.user_data_password.result
+  sensitive   = true
+  description = "The password used to encrypt the user-data."
+}
+
+output "tech_email" {
+  value       = var.tech_email
+  description = "Tech email."
+}
+output "domain" {
+  value       = var.domain
+  description = "Domain name."
+}
+output "sub_domain" {
+  value       = var.sub_domain
+  description = "Sub domain name."
+}
+output "initial_dev_user_password" {
+  value       = random_string.initial_dev_user_password.result
+  sensitive   = true
+  description = "Initial dev user password. This will require it to be changed on first login."
 }

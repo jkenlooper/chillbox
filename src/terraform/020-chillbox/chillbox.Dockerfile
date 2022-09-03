@@ -102,7 +102,6 @@ COPY --chown=dev:dev 020-chillbox/chillbox.tf .
 COPY --chown=dev:dev 020-chillbox/variables.tf .
 COPY --chown=dev:dev 020-chillbox/main.tf .
 COPY --chown=dev:dev 020-chillbox/outputs.tf .
-COPY --chown=dev:dev 020-chillbox/user_data_chillbox.sh.tftpl .
 COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT

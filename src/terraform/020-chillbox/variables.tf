@@ -198,6 +198,15 @@ variable "chillbox_count" {
     error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
   }
 }
+variable "user_data_password" {
+  type = string
+  description = "User-data password."
+}
+variable "initial_dev_user_password" {
+  type = string
+  description = "Initial dev user password."
+}
+
 variable "sites_artifact" {
   default     = ""
   description = "The sites artifact file."

@@ -12,7 +12,7 @@
 
 !/030-artifact-modules/extract-terraform-artifact-modules.sh
 
-!/020-chillbox/user_data_chillbox.sh.tftpl
+!/010-infra/user_data_chillbox.sh.tftpl
 
 !/bin/*
 !/010-infra/bin/*

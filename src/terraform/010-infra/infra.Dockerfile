@@ -13,6 +13,7 @@ apk add \
   vim \
   mandoc man-pages \
   coreutils \
+  openssl \
   gnupg \
   gnupg-dirmngr
 
@@ -46,6 +47,7 @@ SETUP
 
 COPY --chown=dev:dev 010-infra/variables.tf ./
 COPY --chown=dev:dev 010-infra/main.tf ./
+COPY --chown=dev:dev 010-infra/user_data_chillbox.sh.tftpl .
 COPY --chown=dev:dev 010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
 set -o errexit

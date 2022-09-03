@@ -3,12 +3,6 @@
 
 project_description = "Infrastructure for hosting websites that use Chill."
 
-tech_email        = "tech@example.test"
-
-# Change 'chill.box' to a domain that you own
-domain = "chill.box"
-sub_domain = "development.example."
-
 # Example of other common things to put here:
 #
 # chillbox_droplet_size = "s-1vcpu-512mb-10gb"
