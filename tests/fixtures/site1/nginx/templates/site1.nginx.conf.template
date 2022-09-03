@@ -2,9 +2,6 @@ server {
   # Use special wildcard server_name by prefixing with '.' so
   # [chillbox-hostname].${SERVER_NAME} will also match.
   # https://nginx.org/en/docs/http/server_names.html
-  # ${frong}
-  # test1 TESTSITE1=${TESTSITE1}
-  # test2 TESTSITE2=${TESTSITE2}
   server_name .${SERVER_NAME};
 
   root /srv/${SLUGNAME}/root;
@@ -43,12 +40,11 @@ server {
     root /srv/${SLUGNAME}/;
   }
 
-  # Use the site version as part of the route for cache-busting.
-  location /immutable-example/${VERSION}/ {
+  location ${IMMUTABLE_EXAMPLE_URI} {
     # Set proxy_ssl_verify in case this request is being passed with https
     proxy_ssl_verify on;
 
-    proxy_pass ${IMMUTABLE__EXAMPLE};
+    proxy_pass ${IMMUTABLE_EXAMPLE};
   }
 
   location ~* ^/(robots|humans).txt$ {

@@ -190,10 +190,11 @@ else
       jq -r \
         '.env[] | select(.cmd != null) | .name + "=\"$(" + .cmd + ")\"; export " + .name' \
         "$site_json" > "$tmp_eval"
-      if [ -n "$(cat "$tmp_eval" | xargs)" ]; then
-        printf "\n\n---###\n\n"
+      # Only need to prompt the user if a cmd was set.
+      if [ -n "$(sed 's/\s//g; /^$/d' "$tmp_eval")" ]; then
+        printf "\n\n--- ###\n\n"
         cat "$tmp_eval"
-        printf "\n\n---###\n\n"
+        printf "\n\n--- ###\n\n"
         printf "%s\n" "Execute the above commands so the matching env fields from $site_json can be updated? [y/n]"
         read -r eval_cmd_confirm
         if [ "$eval_cmd_confirm" = "y" ]; then

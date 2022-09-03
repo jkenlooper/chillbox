@@ -7,7 +7,7 @@ slugname=site1
 projectdir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 # Wouldn't normally use the Makefile for a hash, but this is just for testing.
-immutable_example_hash="$(cat "$projectdir/Makefile" | md5sum - | cut -d' ' -f1)"
+immutable_example_hash="$(md5sum "$projectdir/Makefile" | cut -d' ' -f1)"
 
 # archive file path should be absolute
 archive="$(realpath "$1")"

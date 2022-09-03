@@ -132,6 +132,7 @@ site_json_files="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 for site_json in $site_json_files; do
   slugname="$(basename "$site_json" .site.json)"
   version="$(jq -r '.version' "$site_json")"
+  no_metadata_version="$(printf "%s" "$version" | sed 's/+.*$//')"
 
   services="$(jq -c '.services // [] | .[]' "$site_json")"
   test -n "${services}" || continue
@@ -160,8 +161,8 @@ for site_json in $site_json_files; do
 
     test -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
 
-    service_image_name="$slugname-$version-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE"
-    tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$version-$service_handler"
+    service_image_name="$slugname-$no_metadata_version-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE"
+    tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$no_metadata_version-$service_handler"
     tmpfs_dir="/run/tmp/$service_image_name"
     service_persistent_dir="/var/lib/$slugname-$service_handler"
     chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"

@@ -11,18 +11,6 @@
   ],
   "env": [
     {
-      "name": "TESTSITE2",
-      "value": "site2test"
-    },
-    {
-      "name": "PROXY_INTERCEPT_ERRORS",
-      "value": "on"
-    },
-    {
-      "name": "PROXY_CACHE_VALID",
-      "value": "1y"
-    },
-    {
       "name": "CHILL_STATIC",
       "value": "http://localhost:5000"
     },
@@ -35,8 +23,8 @@
       "value": "http://localhost:8084"
     },
     {
-      "name": "IMMUTABLE__EXAMPLE",
-      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/$VERSION/immutable-example/"
+      "name": "IMMUTABLE_EXAMPLE_URI",
+      "value": "/immutable-example/v1/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
       "name": "IMMUTABLE_EXAMPLE",
@@ -45,7 +33,7 @@
     {
       "name": "IMMUTABLE_EXAMPLE_HASH",
       "value": "replaced-with-cmd-to-get-hash",
-      "cmd": "cat ./Makefile | md5sum - | cut -d' ' -f1"
+      "cmd": "md5sum ./Makefile | cut -d' ' -f1"
     }
   ],
   "crontab": [
