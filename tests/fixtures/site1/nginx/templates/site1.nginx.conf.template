@@ -29,7 +29,6 @@ server {
     proxy_pass ${CHILL_DYNAMIC};
   }
 
-  # TEST CHILL_STATIC and ${chill_static}
   location /api/ {
     proxy_pass ${API}/api/;
     proxy_redirect default;

@@ -27,7 +27,11 @@ fallback_nginx_conf() {
     mv "/etc/nginx/conf.d/$nginx_conf.bak" "/etc/nginx/conf.d/$nginx_conf"
     echo "INFO $script_name Please review failed configuration file /etc/nginx/conf.d/$nginx_conf.failed"
   else
-    rm -f "/etc/nginx/conf.d/$nginx_conf"
+    if [ -f "/etc/nginx/conf.d/$nginx_conf" ]; then
+      mv "/etc/nginx/conf.d/$nginx_conf" "/etc/nginx/conf.d/$nginx_conf.failed"
+      echo "INFO $script_name Please review failed configuration file /etc/nginx/conf.d/$nginx_conf.failed"
+      rm -f "/etc/nginx/conf.d/$nginx_conf"
+    fi
   fi
 }
 

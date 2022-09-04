@@ -28,7 +28,7 @@
     },
     {
       "name": "IMMUTABLE_EXAMPLE",
-      "value": "$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
+      "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_HASH",
