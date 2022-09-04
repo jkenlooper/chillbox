@@ -63,7 +63,14 @@ variable "sites_manifest" {
   description = "The sites manifest."
   default     = "dist/sites.manifest.json"
 }
-
+variable "sites_artifact" {
+  description = "The sites artifact file."
+  type        = string
+}
+variable "chillbox_artifact" {
+  description = "The chillbox artifact file."
+  type        = string
+}
 
 variable "developer_ips" {
   description = "List of ips that will be allowed through the firewall on the SSH port."
@@ -205,15 +212,4 @@ variable "user_data_password" {
 variable "initial_dev_user_password" {
   type = string
   description = "Initial dev user password."
-}
-
-variable "sites_artifact" {
-  default     = ""
-  description = "The sites artifact file."
-  type        = string
-}
-variable "chillbox_artifact" {
-  default     = ""
-  description = "The chillbox artifact file."
-  type        = string
 }

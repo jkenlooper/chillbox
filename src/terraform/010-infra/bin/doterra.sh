@@ -74,6 +74,23 @@ if [ ! -f "${decrypted_credentials_tfvars_file}" ]; then
   set +x
 fi
 
+# Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
+# shellcheck disable=SC1091
+. /var/lib/chillbox-build-artifacts-vars
+
+jq \
+  --null-input \
+  --arg jq_sites_artifact "${SITES_ARTIFACT}" \
+  --arg jq_chillbox_artifact "${CHILLBOX_ARTIFACT}" \
+  --arg jq_sites_manifest "${SITES_MANIFEST}" \
+  '{
+  sites_artifact: $jq_sites_artifact,
+  chillbox_artifact: $jq_chillbox_artifact,
+  sites_manifest: $jq_sites_manifest,
+  }' \
+  > /usr/local/src/chillbox-terraform/chillbox_sites.auto.tfvars.json
+chown dev:dev /usr/local/src/chillbox-terraform/chillbox_sites.auto.tfvars.json
+
 # Need to update the encrypted tfstate with any potential changes that have
 # happened when the script exits.
 sync_encrypted_tfstate() {

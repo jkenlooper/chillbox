@@ -45,6 +45,9 @@ chown -R dev:dev /var/lib/terraform-010-infra
 chmod -R 0700 /var/lib/terraform-010-infra
 SETUP
 
+ARG SITES_ARTIFACT
+ENV SITES_ARTIFACT="$SITES_ARTIFACT"
+
 COPY --chown=dev:dev 010-infra/variables.tf ./
 COPY --chown=dev:dev 010-infra/main.tf ./
 COPY --chown=dev:dev 010-infra/user_data_chillbox.sh.tftpl .
@@ -63,6 +66,11 @@ su dev -c "terraform init"
 su dev -c "terraform workspace new chillbox"
 
 TERRAFORM_INIT
+
+ARG CHILLBOX_ARTIFACT
+ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
+ARG SITES_MANIFEST
+ENV SITES_MANIFEST="$SITES_MANIFEST"
 
 COPY --chown=dev:dev bin bin
 COPY --chown=dev:dev 010-infra/bin/ bin/

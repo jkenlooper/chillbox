@@ -19,6 +19,9 @@ export DOCKER_BUILDKIT=1
 set -x
 docker build \
   --progress=plain \
+  --build-arg SITES_ARTIFACT="$SITES_ARTIFACT" \
+  --build-arg CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT" \
+  --build-arg SITES_MANIFEST="$SITES_MANIFEST" \
   -t "$INFRA_IMAGE" \
   -f "${project_dir}/src/terraform/010-infra/infra.Dockerfile" \
   "${project_dir}/src/terraform" > "$build_tmp_log" 2>&1

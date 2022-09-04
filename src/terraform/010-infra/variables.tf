@@ -90,12 +90,10 @@ variable "tech_email" {
 }
 
 variable "sites_artifact" {
-  default     = ""
   description = "The sites artifact file."
   type        = string
 }
 variable "chillbox_artifact" {
-  default     = ""
   description = "The chillbox artifact file."
   type        = string
 }
