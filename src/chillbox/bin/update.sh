@@ -15,6 +15,4 @@ cd /usr/local/src/
 
 # TODO RUN NGINX_CONF ?
 /etc/chillbox/bin/reload-templates.sh
-nginx -t
-# TODO reload nginx service?
-rc-service nginx reload
+nginx -t && nginx -s reload

@@ -203,6 +203,7 @@ echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" 
     cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 chill serve
 PURR
+# TODO send the stdout to a file using s6-log
 
     chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
     command -v rc-update > /dev/null \

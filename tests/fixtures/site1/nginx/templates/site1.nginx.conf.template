@@ -12,20 +12,11 @@ server {
     limit_except GET {
       deny all;
     }
-    # The frozen directory doesn't exist when developing or when not serving the
-    # frozen site. Fallback on the @chill-static-example proxy for dynamic sites.
     root /usr/local/src/${SLUGNAME}/chill-static-example/frozen;
-    try_files $uri $uri/index.html @chill-static-example;
-  }
-  location @chill-static-example {
-    proxy_pass ${CHILL_STATIC};
+    try_files $uri $uri/index.html =404;
   }
 
-  location /dynamic/ {
-    root /usr/local/src/${SLUGNAME}/chill-dynamic-example/frozen;
-    try_files $uri $uri/index.html @chill-dynamic-example;
-  }
-  location @chill-dynamic-example {
+  location ${CHILL_DYNAMIC_PUBLIC_URL_PREFIX}/ {
     proxy_pass ${CHILL_DYNAMIC};
   }
 
@@ -40,9 +31,6 @@ server {
   }
 
   location ${IMMUTABLE_EXAMPLE_URI} {
-    # Set proxy_ssl_verify in case this request is being passed with https
-    proxy_ssl_verify on;
-
     proxy_pass ${IMMUTABLE_EXAMPLE};
   }
 

@@ -12,15 +12,31 @@
   "env": [
     {
       "name": "CHILL_STATIC",
-      "value": "http://localhost:5000"
+      "value": "http://localhost:$CHILL_STATIC_PORT"
+    },
+    {
+      "name": "CHILL_STATIC_PORT",
+      "value": "5000"
     },
     {
       "name": "CHILL_DYNAMIC",
-      "value": "http://localhost:5001"
+      "value": "http://localhost:$CHILL_DYNAMIC_PORT"
+    },
+    {
+      "name": "CHILL_DYNAMIC_PORT",
+      "value": "5001"
+    },
+    {
+      "name": "CHILL_DYNAMIC_PUBLIC_URL_PREFIX",
+      "value": "/dynamic"
     },
     {
       "name": "API",
-      "value": "http://localhost:8084"
+      "value": "http://localhost:$API_PORT"
+    },
+    {
+      "name": "API_PORT",
+      "value": "8084"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_URI",
@@ -49,7 +65,7 @@
       "environment": [
         {
           "name": "PORT",
-          "value": "8084"
+          "value": "$API_PORT"
         },
         {
           "name": "FLASK_APP",
@@ -72,7 +88,15 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "5000"
+          "value": "$CHILL_STATIC_PORT"
+        },
+        {
+          "name": "CHILL_DYNAMIC_PUBLIC_URL_PREFIX",
+          "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
+        },
+        {
+          "name": "IMMUTABLE_EXAMPLE_URI",
+          "value": "$IMMUTABLE_EXAMPLE_URI"
         }
       ]
     },
@@ -91,7 +115,15 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "5001"
+          "value": "$CHILL_DYNAMIC_PORT"
+        },
+        {
+          "name": "CHILL_PUBLIC_URL_PREFIX",
+          "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
+        },
+        {
+          "name": "IMMUTABLE_EXAMPLE_URI",
+          "value": "$IMMUTABLE_EXAMPLE_URI"
         }
       ]
     }

@@ -1,10 +1,15 @@
 <!doctype html>
 <html>
     <head>
-        <title>Chill</title>
+        <title>Chill Dynamic</title>
     </head>
     <body>
         <p>{{ homepage_content }}</p>
-        now {{ now.thetime }}
+        <p>now {{ now.thetime }}</p>
+        <nav>
+        <a href="{{ config.IMMUTABLE_EXAMPLE_URI }}file2.txt">file2.txt</a>
+        <a href="/">static</a>
+        <a href="/api/healthcheck">/api/healthcheck</a>
+        </nav>
     </body>
 </html>
