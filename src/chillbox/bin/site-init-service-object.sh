@@ -113,13 +113,11 @@ if [ "${service_lang_template}" = "flask" ]; then
 #!/sbin/openrc-run
 supervisor=s6
 name="${SLUGNAME}-${service_name}"
+procname="${SLUGNAME}-${service_name}"
 description="${SLUGNAME}-${service_name}"
-user="$SLUGNAME"
-group="dev"
 s6_service_path=/etc/services.d/${SLUGNAME}-${service_name}
 depend() {
-  need s6-svscan net localmount
-  after firewall
+  need s6-svscan
 }
 PURR
   chmod +x "/etc/init.d/${SLUGNAME}-${service_name}"
@@ -183,13 +181,11 @@ elif [ "${service_lang_template}" = "chill" ]; then
 #!/sbin/openrc-run
 supervisor=s6
 name="${SLUGNAME}-${service_name}"
+procname="${SLUGNAME}-${service_name}"
 description="${SLUGNAME}-${service_name}"
-user="$SLUGNAME"
-group="dev"
 s6_service_path=/etc/services.d/${SLUGNAME}-${service_name}
 depend() {
-  need s6-svscan net localmount
-  after firewall
+  need s6-svscan
 }
 PURR
     chmod +x "/etc/init.d/${SLUGNAME}-${service_name}"
