@@ -2,20 +2,22 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 tmp_artifact="$1"
 slugdir="$2"
 
-test -n "${tmp_artifact}" || (echo "ERROR $0: tmp_artifact variable is empty" && exit 1)
-test -f "${tmp_artifact}" || (echo "ERROR $0: The $tmp_artifact is not a file" && exit 1)
-echo "INFO $0: Using tmp_artifact '${tmp_artifact}'"
+test -n "${tmp_artifact}" || (echo "ERROR $script_name: tmp_artifact variable is empty" && exit 1)
+test -f "${tmp_artifact}" || (echo "ERROR $script_name: The $tmp_artifact is not a file" && exit 1)
+echo "INFO $script_name: Using tmp_artifact '${tmp_artifact}'"
 
-test -n "${SLUGNAME}" || (echo "ERROR $0: SLUGNAME variable is empty" && exit 1)
-echo "INFO $0: Using slugname '${SLUGNAME}'"
+test -n "${SLUGNAME}" || (echo "ERROR $script_name: SLUGNAME variable is empty" && exit 1)
+echo "INFO $script_name: Using slugname '${SLUGNAME}'"
 
-test -n "${slugdir}" || (echo "ERROR $0: slugdir variable is empty" && exit 1)
-test -d "${slugdir}" || (echo "ERROR $0: slugdir should be a directory" && exit 1)
-test -d "$(dirname "${slugdir}")" || (echo "ERROR $0: parent directory of slugdir should be a directory" && exit 1)
-echo "INFO $0: Using slugdir '${slugdir}'"
+test -n "${slugdir}" || (echo "ERROR $script_name: slugdir variable is empty" && exit 1)
+test -d "${slugdir}" || (echo "ERROR $script_name: slugdir should be a directory" && exit 1)
+test -d "$(dirname "${slugdir}")" || (echo "ERROR $script_name: parent directory of slugdir should be a directory" && exit 1)
+echo "INFO $script_name: Using slugdir '${slugdir}'"
 
 
 # Extract just the nginx directory from the tmp_artifact
@@ -25,4 +27,4 @@ test -e "$SLUGNAME/nginx" \
 rm -rf "$SLUGNAME/nginx"
 tar x -z -f "$tmp_artifact" "$SLUGNAME/nginx"
 chown -R "$SLUGNAME":"$SLUGNAME" "$slugdir"
-echo "INFO $0: Extracted nginx service for $SLUGNAME"
+echo "INFO $script_name: Extracted nginx service for $SLUGNAME"

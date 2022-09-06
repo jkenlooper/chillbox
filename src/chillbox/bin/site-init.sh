@@ -2,27 +2,29 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 sites_artifact_file=${1:-""}
 
 export SITES_ARTIFACT="${SITES_ARTIFACT}"
 if [ -z "${sites_artifact_file}" ]; then
-  test -n "${SITES_ARTIFACT}" || (echo "ERROR $0: SITES_ARTIFACT variable is empty" && exit 1)
-  echo "INFO $0: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
+  test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: SITES_ARTIFACT variable is empty" && exit 1)
+  echo "INFO $script_name: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 fi
 
 export S3_ARTIFACT_ENDPOINT_URL="${S3_ARTIFACT_ENDPOINT_URL}"
-test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $0: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
-echo "INFO $0: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
+test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $script_name: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
 
 export ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME}"
-test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $0: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
-echo "INFO $0: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
+test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
+echo "INFO $script_name: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
 
 export CHILLBOX_SERVER_PORT="${CHILLBOX_SERVER_PORT}"
-test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $0: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
-echo "INFO $0: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
+test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $script_name: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
+echo "INFO $script_name: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
 
-echo "INFO $0: Running site init"
+echo "INFO $script_name: Running site init"
 
 
 tmp_sites_artifact="$(mktemp)"
@@ -34,17 +36,16 @@ cleanup() {
 trap cleanup EXIT
 
 # TODO: make a backup directory of previous sites and then compare new sites to
-# find any sites that should be deleted. This would only be applicable to server
-# version; not docker version.
+# find any sites that should be deleted.
 if [ -z "${sites_artifact_file}" ]; then
-  echo "INFO $0: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
+  echo "INFO $script_name: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
   tmp_sites_artifact="$(mktemp)"
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
     "$tmp_sites_artifact"
 else
-  test -f "${sites_artifact_file}" || (echo "ERROR $0: No file found at ${sites_artifact_file}" && exit 1)
-  echo "INFO $0: Using sites artifact file $sites_artifact_file"
+  test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at ${sites_artifact_file}" && exit 1)
+  echo "INFO $script_name: Using sites artifact file $sites_artifact_file"
   cp "$sites_artifact_file" "$tmp_sites_artifact"
 fi
 mkdir -p /etc/chillbox/sites/
@@ -69,8 +70,8 @@ for site_json in $sites; do
   export SLUGNAME
   SERVER_NAME="$(jq -r '.server_name' "$site_json")"
   export SERVER_NAME
-  echo "INFO $0: $SLUGNAME"
-  echo "INFO $0: SERVER_NAME=$SERVER_NAME"
+  echo "INFO $script_name: $SLUGNAME"
+  echo "INFO $script_name: SERVER_NAME=$SERVER_NAME"
   cd "$current_working_dir"
 
   # no home, or password for user
@@ -84,7 +85,7 @@ for site_json in $sites; do
     deployed_version="$(cat "/srv/chillbox/$SLUGNAME/version.txt")"
   fi
   if [ "$VERSION" = "$deployed_version" ]; then
-    echo "INFO $0: Versions match for $SLUGNAME site."
+    echo "INFO $script_name: Versions match for $SLUGNAME site."
     continue
   fi
 
@@ -92,11 +93,9 @@ for site_json in $sites; do
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
 
   tmp_artifact="$(mktemp)"
-  # export tmp_artifact
   aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
     s3 cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
     "$tmp_artifact"
-
 
   slugdir="$current_working_dir/$SLUGNAME"
   mkdir -p "$slugdir"
@@ -124,7 +123,7 @@ for site_json in $sites; do
   # for services that have a defined secrets config file to not fully start at
   # this point.
 
-  echo "INFO $0: Finished setting up services for $site_json"
+  echo "INFO $script_name: Finished setting up services for $site_json"
 
   # Set crontab
   tmpcrontab=$(mktemp)
