@@ -3,11 +3,13 @@
 set -o errexit
 
 script_name="$(basename "$0")"
+script_dir="$(dirname "$0")"
 
 # UPKEEP due: "2023-02-07" label: "Deno javascript runtime" interval: "+5 months"
 # https://github.com/denoland/deno/releases
 deno_version="v1.25.1"
 
+install_deno() {
 tmp_zip="$(mktemp)"
 
 # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
@@ -27,3 +29,9 @@ deno_path_sanity_check="$(command -v deno)"
 test "$bin_dir/deno" = "$deno_path_sanity_check" || (echo "ERROR $script_name: deno in PATH is not the same as the downloaded one." && exit 1)
 
 deno --version
+}
+
+command -v deno || install_deno
+
+deno run --import-map="$script_dir/import-map.json" sm.js
+#deno compile --import-map="$script_dir/import-map.json" sm.js
