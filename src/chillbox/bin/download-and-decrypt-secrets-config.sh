@@ -2,7 +2,7 @@
 
 set -o errexit
 
-# $slugname/$service_handler/$service_secrets_config
+# $SLUGNAME/$service_handler/$service_secrets_config
 service_secrets_config_path="$1"
 test -n "$service_secrets_config_path" || (echo "ERROR $0: No arg passed in for service secrets config path. Exiting" && exit 1)
 
@@ -46,3 +46,5 @@ mkdir -p "$(dirname "$decrypted_file")"
 
 echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$service_secrets_config_path to ${decrypted_file}"
 gpg --quiet --decrypt "$tmp_encrypted_secret_config" > "${decrypted_file}"
+
+rm -f "$tmp_encrypted_secret_config"

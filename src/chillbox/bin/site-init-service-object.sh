@@ -70,7 +70,7 @@ if [ -n "$service_secrets_config" ]; then
   "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
 fi
 # Need to check if this secrets config file was successfully downloaded since it
-# might not exist yet.
+# might not exist yet. Secrets are added to the s3 bucket in a different process.
 if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file" ]; then
   echo "WARNING $script_name: No service secrets config file was able to be downloaded and decrypted."
 fi
@@ -206,7 +206,6 @@ fdmove -c 2 1
 chill serve
 } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
 PURR
-# TODO send the stdout to a file using s6-log
 
     chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
     command -v rc-update > /dev/null \

@@ -19,8 +19,8 @@ setup_file() {
   export slugdir="$tmp_dir/usr/local/src/$SLUGNAME"
   mkdir -p "$slugdir"
 
-  mkdir -p /run/tmp/chillbox_secrets/$SLUGNAME
-  touch /run/tmp/chillbox_secrets/$SLUGNAME/api.cfg
+  mkdir -p /run/tmp/chillbox_secrets/$SLUGNAME/api
+  touch /run/tmp/chillbox_secrets/$SLUGNAME/api/api-bridge.secrets.cfg
 
   export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
