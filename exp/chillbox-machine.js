@@ -9,54 +9,57 @@ const chillboxMachine = createMachine({
   },
   states: {
     show_environment: {
-      initial: "idle",
-      states: {
-        idle: {},
-      },
+      exit: [
+        "setExitcode"
+      ],
       invoke: {
         src: {
-          type: "execute_cmd",
-          cmd: "./show-environment.sh",
-          args: ["-a", "one"]
+          type: "Run command",
+          cmd: "test",
+          args: ["-f", "states.txt"]
         },
         id: "invoke-show-environment",
         onDone: {
           target: "check_args_and_environment_vars",
-          actions: assign({ exitcode: (context, event) => event.exitcode }),
           cond: "exit0"
         },
         onError: {
-          target: "failed"
+          target: "failed",
         }
+      },
+      on: {
+        SIGINT: { target: "stopped" }
       }
     },
     check_args_and_environment_vars: {
     },
-    failed: {}
+    failed: {},
+    stopped: {
+      type: "final"
+    }
   },
 },
   {
     actions: {
+      setExitcode: (context, event) => { assign({ exitcode: (context, event) => event.exitcode })},
     },
     guards: {
       exit0: (context, event) => {
         console.log("Guard exit0");
-        return event.data.exitcode === 0;
+        return event.data?.exitcode === 0;
       }
     },
     services: {
-      execute_cmd: (context, event, { src }) => new Promise((resolve, reject) => {
+      "Run command": (context, event, { src }) => new Promise((resolve, reject) => {
+        // Testing
         console.log("execute cmd ", src);
-        return resolve({exitcode: 0});
+        setTimeout(() => {
+          return resolve({exitcode: 0});
+        }, 5000);
       })
     }
   }
 );
 
-const testService = interpret(chillboxMachine).onTransition((state) => {
-  if (state.changed) {
-    console.log("state changed", state.value);
-  }
-});
+export { chillboxMachine };
 
-testService.start();

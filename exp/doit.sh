@@ -33,5 +33,14 @@ deno --version
 
 command -v deno || install_deno
 
-deno run --import-map="$script_dir/import-map.json" sm.js
-#deno compile --import-map="$script_dir/import-map.json" sm.js
+allow_read="$(printf "%s" "./states.txt
+./something
+doit.sh" | sed '/\S/!d; :a; N; $!ba; s/\n/,/g')"
+
+deno run \
+  --import-map="$script_dir/import-map.json" \
+  --allow-read="$allow_read" \
+  --allow-write="$HOME/.local/chillbox" \
+  --allow-run="docker,cat,test" \
+  --allow-env=HOME,XDG_STATE_HOME,XDG_CONFIG_HOME \
+  chillbox-service.js
