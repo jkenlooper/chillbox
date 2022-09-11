@@ -14,6 +14,7 @@ test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variab
 ls -al "$secure_tmp_secrets_dir"
 test -d "$secure_tmp_secrets_dir" || (echo "ERROR $0: The path '$secure_tmp_secrets_dir' is not a directory" && exit 1)
 
+#TODO Should not lump all these into a single file, but split them up individually so it is easier to replace them as needed.
 encrypted_credentials_tfvars_file=/var/lib/doterra/credentials.tfvars.json.asc
 
 

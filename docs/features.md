@@ -17,18 +17,27 @@ This is a list of notable features that have currently been implemented.
   - [Flask] (Python 3)
   - [Chill] with dynamic or static deployment (Python 3)
 - Website services run on [Alpine Linux] and don't use [systemd]
-  - [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].
+  - [OpenRC] and [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].
 - Shell scripts are [POSIX] compliant and mostly have unit tests with [Bats-core] (Bash Automated Testing System)
 - A JSON Schema has been defined for the site.json files a website uses for configuration.
 - No remote build pipeline, all builds happen on the local host machine
 - [Terraform] has been isolated inside containers on the local host machine and the state files are encrypted on data volumes
 - Deployment to [DigitalOcean] cloud hosting provider
+- The user-data script added to the deployed server is encrypted. Currently this
+    requires manually decrypting this user-data script on the server and then
+    executing the user-data script. This process will eventually be automated
+    with Ansible. Use the generated password that was created in the isolated
+    terraform container to decrypt it.
 
 
 ## Planned Features
 
 Upcoming list of features that will be implemented.
 
+- Ansible will be isolated to a container much like Terraform. It will be used
+    to initialize the chillbox server when first deploying. The Alpine Linux
+    image used for [DigitalOcean] does not include [cloud-init] and I see no
+    reason to have it.
 - All secrets are stored in a tmpfs file system when not encrypted
   - Restarting of the server will require user interaction (via Ansible) to decrypt secrets
 - Trigger running the update script via secured webhook in chillbox server
@@ -53,7 +62,7 @@ would be tempted to implement.
   - [Cloudflare Geo steering](https://developers.cloudflare.com/load-balancing/understand-basics/traffic-steering/steering-policies/geo-steering/)
 - Support other language handlers for services
   - [Rust]
-  - [Go] (maybe?)
+  - [Deno]
 - Batching large jobs by spinning up temporary resources
 - Support for running OpenFaaS functions with [faasd](https://docs.openfaas.com/deployment/faasd/)
 - Monitoring and ability to easily view logs without being on the server
@@ -97,3 +106,6 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [systemd]: https://systemd.io/
 [SCM]: https://en.wikipedia.org/wiki/Version_control
 [s6]: https://skarnet.org/software/s6/
+[OpenRC]: https://wiki.alpinelinux.org/wiki/OpenRC
+[Deno]: https://deno.land/
+[cloud-init]: https://cloud-init.io/

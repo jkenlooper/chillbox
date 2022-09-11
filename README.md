@@ -26,6 +26,31 @@ Please see the [Feature Roadmap](./docs/features.md) for a list of implemented a
 features.
 
 `TODO` _Add chillbox overview graphic_
+<!-- A bit out of scope, but the diagram generated from using XState could be
+shown here. See the experimental branch that is being used to further test this
+idea: experiment/statechart -->
+
+### Why?
+
+Hosting a website is becoming more and more complex. Complexity can come
+with a cost in a number of areas and some of those are not easily simplified.
+A Web Developer that needs to create and maintain a website should always be
+able to do that on their local machine and also deploy it to a server they
+manage. The tools needed to do that should be understood and simple enough to
+maintain. The complicated bits with their website should be their actual custom
+website code, not the infrastructure that it requires.
+
+The goals of keeping things simple and free from vendor lock-in are important
+because it is more maintainable this way in the long run.  Not every website
+needs to be able to scale out automatically when it gets a traffic spike. Having
+that capability comes with a high cost. A server can handle a lot of traffic
+(depending on the custom website code) and can be scaled up and down manually as
+needed. A company that does need to automatically scale out would probably also
+have their own infrastructure team that manages and maintains that. Chillbox is
+not designed ([Out of Scope Features](./docs/features.md#out-of-scope-features))
+for that capability on purpose.
+
+**Chillbox is designed for Web Developers that want to develop websites.**
 
 ---
 
