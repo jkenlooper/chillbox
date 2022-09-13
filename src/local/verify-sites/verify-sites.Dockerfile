@@ -18,7 +18,6 @@ apk add python3 python3-dev
 apk add mandoc man-pages docs
 apk add vim
 
-# TODO install
 mkdir -p /usr/local/src/verify-sites
 cd /usr/local/src/verify-sites
 python3 -m venv .

@@ -74,7 +74,6 @@ resource "local_sensitive_file" "alpine_box_init" {
     tf_artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,
     tf_sites_artifact : var.sites_artifact,
     tf_chillbox_artifact : var.chillbox_artifact
-    # TODO No slash at the end of this s3_endpoint_url ?
     tf_s3_endpoint_url : "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/",
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
   })
