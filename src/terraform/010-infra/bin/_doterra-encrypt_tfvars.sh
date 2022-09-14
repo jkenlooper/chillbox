@@ -34,6 +34,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
+mkdir -p "$(dirname "$encrypted_do_token")"
+mkdir -p "$(dirname "$encrypted_terraform_spaces")"
+mkdir -p "$(dirname "$encrypted_chillbox_spaces")"
+mkdir -p "$(dirname "$encrypted_chillbox_gpg_passphrase")"
+
 echo "Enter secrets that will be encrypted to the /var/lib/doterra/secrets/ directory."
 echo "Characters entered are not shown."
 
@@ -45,6 +50,7 @@ else
   read -r do_token
   stty echo
   secret_tfvars_json="${secure_tmp_secrets_dir}/secrets/do_token.tfvars.json"
+  mkdir -p "$(dirname "$secret_tfvars_json")"
   jq --null-input \
     --arg jq_do_token "$do_token" \
     '{
@@ -69,6 +75,7 @@ else
   read -r do_spaces_secret_access_key
   stty echo
   secret_tfvars_json="${secure_tmp_secrets_dir}/secrets/terraform_spaces.tfvars.json"
+  mkdir -p "$(dirname "$secret_tfvars_json")"
   jq --null-input \
   --arg jq_do_spaces_access_key_id "$do_spaces_access_key_id" \
   --arg jq_do_spaces_secret_access_key "$do_spaces_secret_access_key" \
@@ -95,6 +102,7 @@ else
   read -r do_chillbox_spaces_secret_access_key
   stty echo
   secret_tfvars_json="${secure_tmp_secrets_dir}/secrets/chillbox_spaces.tfvars.json"
+  mkdir -p "$(dirname "$secret_tfvars_json")"
   jq --null-input \
     --arg jq_do_chillbox_spaces_access_key_id "$do_chillbox_spaces_access_key_id" \
     --arg jq_do_chillbox_spaces_secret_access_key "$do_chillbox_spaces_secret_access_key" \
@@ -117,6 +125,7 @@ else
   read -r chillbox_gpg_passphrase
   stty echo
   secret_tfvars_json="${secure_tmp_secrets_dir}/secrets/chillbox_gpg_passphrase.tfvars.json"
+  mkdir -p "$(dirname "$secret_tfvars_json")"
   jq --null-input \
     --arg jq_chillbox_gpg_passphrase "$chillbox_gpg_passphrase" \
     '{
