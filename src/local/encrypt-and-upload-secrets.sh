@@ -186,14 +186,14 @@ for site_json in $site_json_files; do
       --rm \
       --name "$tmp_container_name" \
       --mount "type=tmpfs,dst=$tmpfs_dir" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
       --mount "type=bind,src=$gpg_pubkey_dir,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
       "$service_image_name"
 
     docker run \
       -d \
       --name "$tmp_container_name-sleeper" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$slugname-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
       "$sleeper_image"
     docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/." "$encrypted_secret_service_dir/"
     docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
