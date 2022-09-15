@@ -72,6 +72,8 @@ for site_json in $sites; do
   export SERVER_NAME
   echo "INFO $script_name: $SLUGNAME"
   echo "INFO $script_name: SERVER_NAME=$SERVER_NAME"
+
+  # TODO cd is needed?
   cd "$current_working_dir"
 
   # no home, or password for user
@@ -110,6 +112,7 @@ for site_json in $sites; do
     | while read -r service_obj; do
         test -n "${service_obj}" || continue
 
+        # TODO cd is needed?
         cd "$current_working_dir"
 
         "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"

@@ -23,11 +23,15 @@ def create_app(test_config=None):
         if has_secrets_config_file:
             # Follow OpenFaaS philosophy and don't set secrets in environment
             # variables. Read secrets from the file system.
-            # The SECRETS_CONFIG is usually
-            # /var/lib/site1/secrets/api.cfg
+            # The SECRETS_CONFIG is set like this:
+            # /run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config
             app.config.from_envvar('SECRETS_CONFIG', silent=False)
-            if not app.config.get('SALT'):
-                raise ValueError(f"No SALT set in {os.environ.get('SECRETS_CONFIG')}.")
+            if not app.config.get('ANSWER1'):
+                raise ValueError(f"No ANSWER1 set in {os.environ.get('SECRETS_CONFIG')}.")
+            if not app.config.get('ANSWER2'):
+                raise ValueError(f"No ANSWER2 set in {os.environ.get('SECRETS_CONFIG')}.")
+            if not app.config.get('ANSWER5'):
+                raise ValueError(f"No ANSWER5 set in {os.environ.get('SECRETS_CONFIG')}.")
 
     else:
         # load the test config if passed in

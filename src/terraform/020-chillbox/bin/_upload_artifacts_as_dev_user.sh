@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 terraform_command=$1
-decrypted_credentials_tfvars_file=$2
+decrypted_terraform_spaces=$2
 
 mkdir -p /run/tmp/secrets/logs
 chmod -R 0700 /run/tmp/secrets/logs
@@ -21,7 +21,7 @@ fi
 # Set the AWS credentials so upload-artifacts.sh can use them.
 tmp_cred_csv="/run/tmp/secrets/tmp_cred.csv"
 jq -r '"User Name, Access Key ID, Secret Access Key
-chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' "${decrypted_credentials_tfvars_file}" > "$tmp_cred_csv"
+chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' "${decrypted_terraform_spaces}" > "$tmp_cred_csv"
 aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=chillbox_object_storage
 shred -fu "$tmp_cred_csv" || rm -f "$tmp_cred_csv"

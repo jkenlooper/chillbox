@@ -50,6 +50,24 @@ else
   fi
 fi
 
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
+
+encrypted_secrets_file_list="$(find "$encrypted_secrets_dir" -type f)"
+if [ -z "$encrypted_secrets_file_list" ]; then
+  printf '\n%s\n' "No encrypted secrets found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+else
+  printf '\n%s\n' "The $0 script will delete the encrypted secrets in the directory '$encrypted_secrets_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+  printf '\n%s\n' "$encrypted_secrets_file_list"
+  printf '\n%s\n' "Delete the encrypted secrets in the $encrypted_secrets_dir directory? [y/n]"
+  read -r confirm
+  if [ "$confirm" = "y" ]; then
+    find "$encrypted_secrets_dir" -type f -delete
+  else
+    printf '\n%s\n' "Skipping deletion of encrypted secrets in $encrypted_secrets_dir directory."
+  fi
+fi
+
 env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/env"
 if [ -f "${env_config}" ]; then
   # shellcheck source=/dev/null
@@ -79,6 +97,7 @@ volume_list="$(docker volume list \
   --filter "name=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
+  --filter "name=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE" \
   --quiet)"
   test -n "$volume_list" || printf '\n%s\n' "WARNING $0: No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
 printf '\n%s\n' "$volume_list"

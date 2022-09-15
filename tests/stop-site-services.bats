@@ -64,7 +64,6 @@ teardown() {
 	rm -f $slugdir/api.service_handler.json
 	rm -f $slugdir/api.service_handler.json.bak
   rm -f $slugdir/api.bak.tar.gz
-  rm -f /var/lib/${SLUGNAME}/secrets/api.cfg.bak
 
   rm -f $BATS_RUN_TMPDIR/rc-service
   rm -f $BATS_RUN_TMPDIR/rc-update
