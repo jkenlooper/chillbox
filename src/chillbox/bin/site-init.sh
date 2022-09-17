@@ -54,7 +54,7 @@ tar x -z -f "$tmp_sites_artifact" -C /etc/chillbox/sites --strip-components 1 si
 
 # Most likely the nginx user has been added when the nginx package was
 # installed.
-if id -u nginx 2>&1 /dev/null; then
+if id -u nginx; then
   echo "nginx user already added."
 else
   echo "Adding nginx user."
