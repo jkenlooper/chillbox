@@ -46,7 +46,7 @@ fi
 printf '\n%s\n' "Run integration test with a deployment using Terraform? [y/n]"
 read -r CONFIRM
 if [ "${CONFIRM}" = "y" ]; then
-  ./chillbox.sh -w "test" -i "chillboxtest"
+  ./chillbox.sh -w "test" -i "chillboxtest" apply
   echo "Confirm that deployment worked. Destroy the deployed chillboxtest instance now? [y/n] "
   read -r CONFIRM
   if [ "${CONFIRM}" = "y" ]; then
