@@ -47,6 +47,6 @@ decrypted_file="/run/tmp/chillbox_secrets/$service_secrets_config_path"
 mkdir -p "$(dirname "$decrypted_file")"
 
 echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$service_secrets_config_dir/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_file_name to ${decrypted_file}"
-gpg --quiet --decrypt "$tmp_encrypted_secret_config" > "${decrypted_file}"
+su dev -c "gpg --quiet --decrypt '$tmp_encrypted_secret_config' > '${decrypted_file}'"
 
 rm -f "$tmp_encrypted_secret_config"
