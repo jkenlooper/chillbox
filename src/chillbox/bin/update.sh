@@ -17,9 +17,13 @@ set -o errexit
 # shellcheck disable=SC1091
 . /home/dev/.env
 
+export INTERACTIVE="yes"
+
 mkdir -p /usr/local/src/
 cd /usr/local/src/
 
+# TODO how to remove the version.txt so the update can happen and get new
+# secrets?
 /etc/chillbox/bin/site-init.sh
 
 /etc/chillbox/bin/reload-templates.sh

@@ -2,6 +2,8 @@
 
 set -o errexit
 
+export INTERACTIVE="${INTERACTIVE:-}"
+
 developer_public_ssh_keys="${DEVELOPER_PUBLIC_SSH_KEYS:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"
@@ -20,7 +22,7 @@ chillbox_gpg_key_name="${CHILLBOX_GPG_KEY_NAME:-}"
 if [ -z "$developer_public_ssh_keys" ]; then
   printf '\n%s\n' "No DEVELOPER_PUBLIC_SSH_KEYS variable set."
   printf '\n%s\n' "Enter a public ssh key that should have access."
-  read -r developer_public_ssh_keys
+  test -z "$INTERACTIVE" || read -r developer_public_ssh_keys
   test -n "$developer_public_ssh_keys" || (echo "No developer ssh key added. Exiting" && exit 1)
 fi
 
@@ -28,7 +30,7 @@ if [ -z "$access_key_id" ]; then
   printf '\n%s\n' "No ACCESS_KEY_ID variable set."
   printf '\n%s\n' "Enter the access key id for the S3 object storage being used. Characters entered are hidden."
   stty -echo
-  read -r access_key_id
+  test -z "$INTERACTIVE" || read -r access_key_id
   stty echo
   test -n "$access_key_id" || (echo "No access key id set. Exiting" && exit 1)
 fi
@@ -36,7 +38,7 @@ if [ -z "$secret_access_key" ]; then
   printf '\n%s\n' "No SECRET_ACCESS_KEY variable set."
   printf '\n%s\n' "Enter the secret access key for the S3 object storage being used. Characters entered are hidden."
   stty -echo
-  read -r secret_access_key
+  test -z "$INTERACTIVE" || read -r secret_access_key
   stty echo
   test -n "$secret_access_key" || (echo "No secret access key set. Exiting" && exit 1)
 fi
@@ -46,7 +48,7 @@ if [ -z "$chillbox_gpg_passphrase" ]; then
   printf '\n%s\n' "GPG key is created on the chillbox server; set the passphrase for it here."
   printf '\n%s\n' "Characters entered are hidden."
   stty -echo
-  read -r chillbox_gpg_passphrase
+  test -z "$INTERACTIVE" || read -r chillbox_gpg_passphrase
   stty echo
   test -n "$chillbox_gpg_passphrase" || (echo "No chillbox gpg passphrase set. Exiting" && exit 1)
 fi
@@ -56,7 +58,7 @@ if [ -z "$dev_user_passphrase" ]; then
   printf '\n%s\n' "Enter the initial passphrase for the new 'dev' user. The dev user will be prompted to change it on the first login."
   printf '\n%s\n' "Characters entered are hidden."
   stty -echo
-  read -r dev_user_passphrase
+  test -z "$INTERACTIVE" || read -r dev_user_passphrase
   stty echo
   test -n "$dev_user_passphrase" || (echo "No initial dev user passphrase set. Exiting" && exit 1)
 fi
@@ -64,63 +66,63 @@ fi
 if [ -z "$tech_email" ]; then
   printf '\n%s\n' "No TECH_EMAIL variable set."
   printf '\n%s\n' "Enter the contact email address to use for notifications."
-  read -r tech_email
+  test -z "$INTERACTIVE" || read -r tech_email
   test -n "$tech_email" || (echo "No tech email set. Exiting" && exit 1)
 fi
 
 if [ -z "$immutable_bucket_name" ]; then
   printf '\n%s\n' "No IMMUTABLE_BUCKET_NAME variable set."
   printf '\n%s\n' "Enter the immutable bucket name to use."
-  read -r immutable_bucket_name
+  test -z "$INTERACTIVE" || read -r immutable_bucket_name
   test -n "$immutable_bucket_name" || (echo "No immutable bucket name set. Exiting" && exit 1)
 fi
 
 if [ -z "$immutable_bucket_domain_name" ]; then
   printf '\n%s\n' "No IMMUTABLE_DOMAIN_BUCKET_NAME variable set."
   printf '\n%s\n' "Enter the immutable bucket domain name to use."
-  read -r immutable_bucket_domain_name
+  test -z "$INTERACTIVE" || read -r immutable_bucket_domain_name
   test -n "$immutable_bucket_domain_name" || (echo "No immutable bucket domain name set. Exiting" && exit 1)
 fi
 
 if [ -z "$artifact_bucket_name" ]; then
   printf '\n%s\n' "No ARTIFACT_BUCKET_NAME variable set."
   printf '\n%s\n' "Enter the artifact bucket name to use."
-  read -r artifact_bucket_name
+  test -z "$INTERACTIVE" || read -r artifact_bucket_name
   test -n "$artifact_bucket_name" || (echo "No artifact bucket name set. Exiting" && exit 1)
 fi
 
 if [ -z "$sites_artifact" ]; then
   printf '\n%s\n' "No SITES_ARTIFACT variable set."
   printf '\n%s\n' "Enter the sites artifact file to use."
-  read -r sites_artifact
+  test -z "$INTERACTIVE" || read -r sites_artifact
   test -n "$sites_artifact" || (echo "No sites artifact file set. Exiting" && exit 1)
 fi
 
 if [ -z "$chillbox_artifact" ]; then
   printf '\n%s\n' "No CHILLBOX_ARTIFACT variable set."
   printf '\n%s\n' "Enter the chillbox artifact file to use."
-  read -r chillbox_artifact
+  test -z "$INTERACTIVE" || read -r chillbox_artifact
   test -n "$chillbox_artifact" || (echo "No chillbox artifact file set. Exiting" && exit 1)
 fi
 
 if [ -z "$s3_endpoint_url" ]; then
   printf '\n%s\n' "No S3_ENDPOINT_URL variable set."
   printf '\n%s\n' "Enter the s3 endpoint URL to use."
-  read -r s3_endpoint_url
+  test -z "$INTERACTIVE" || read -r s3_endpoint_url
   test -n "$s3_endpoint_url" || (echo "No s3 endpoint URL set. Exiting" && exit 1)
 fi
 
 if [ -z "$chillbox_server_name" ]; then
   printf '\n%s\n' "No CHILLBOX_SERVER_NAME variable set."
   printf '\n%s\n' "Enter the chillbox server name to use which should be a fully qualified domain name."
-  read -r chillbox_server_name
+  test -z "$INTERACTIVE" || read -r chillbox_server_name
   test -n "$chillbox_server_name" || (echo "No chillbox server name set. Exiting" && exit 1)
 fi
 
 if [ -z "$chillbox_gpg_key_name" ]; then
   printf '\n%s\n' "No CHILLBOX_GPG_KEY_NAME variable set."
   printf '\n%s\n' "Enter the chillbox gpg key name to use (should be unique)."
-  read -r chillbox_gpg_key_name
+  test -z "$INTERACTIVE" || read -r chillbox_gpg_key_name
   test -n "$chillbox_gpg_key_name" || (echo "No chillbox gpg key name set. Exiting" && exit 1)
 fi
 

@@ -23,9 +23,14 @@ if [ -z "$chillbox_gpg_passphrase" ]; then
 fi
 test -n "$chillbox_gpg_passphrase" || (echo "ERROR $0: CHILLBOX_GPG_PASSPHRASE variable is empty" && exit 1)
 
-# Remove any existing gpg key first before creating new one.
-fingerprint="$(gpg --with-colons --keyid-format=none --list-keys "key_name" 2>/dev/null | awk -F: '/^fpr:/ { print $10 }' || echo '')"
-test -z "$fingerprint" || gpg --yes --batch --delete-secret-and-public-key "$fingerprint"
+# Remove any existing gpg key first before creating new one. There can be
+# multiple matches for a key name.
+fingerprint="$(gpg --with-colons --keyid-format=none --list-keys "$key_name" 2>/dev/null | awk -F: '/^fpr:/ { print $10 }' || echo '')"
+test -z "$fingerprint" || (
+  for f in $fingerprint; do
+    gpg --yes --batch --delete-secret-and-public-key "$f"
+  done
+  )
 
 # Use gpg batch generate key option so the passphrase for the gpg key can be set
 # without interaction.

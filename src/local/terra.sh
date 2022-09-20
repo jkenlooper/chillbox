@@ -95,7 +95,12 @@ docker run \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   --entrypoint="" \
-  "$INFRA_IMAGE" doterra-init.sh
+  "$INFRA_IMAGE" doterra-init.sh || (
+    exitcode="$?"
+    echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+    read -r docker_continue_confirm
+    test "$docker_continue_confirm" = "y" || exit $exitcode
+  )
 
 # TODO How to prevent updating the .terraform.lock.hcl file?
 #      Move this action to 'make'?
@@ -130,7 +135,12 @@ docker_run_infra_container() {
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
     --entrypoint="" \
-    "$INFRA_IMAGE" "$@"
+    "$INFRA_IMAGE" "$@" || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
 }
 docker_run_infra_container
 
@@ -148,7 +158,13 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$TERRAFORM_CHILLBOX_IMAGE" init
+  "$TERRAFORM_CHILLBOX_IMAGE" init || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
+
 docker cp "${TERRAFORM_CHILLBOX_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}"
 
@@ -187,6 +203,12 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=$dist_sites_dir,dst=/usr/local/src/chillbox-terraform/dist/sites,readonly=true" \
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
     --entrypoint="" \
-    "$TERRAFORM_CHILLBOX_IMAGE" "$@"
+    "$TERRAFORM_CHILLBOX_IMAGE" "$@" || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
+
 }
 docker_run_chillbox_container

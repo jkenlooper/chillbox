@@ -2,6 +2,8 @@
 
 set -o errexit
 
+bin_dir="$(dirname "$0")"
+
 # $SLUGNAME/$service_handler/$service_secrets_config
 service_secrets_config_path="$1"
 test -n "$service_secrets_config_path" || (echo "ERROR $0: No arg passed in for service secrets config path. Exiting" && exit 1)
@@ -45,8 +47,10 @@ aws \
 
 decrypted_file="/run/tmp/chillbox_secrets/$service_secrets_config_path"
 mkdir -p "$(dirname "$decrypted_file")"
-
-echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$service_secrets_config_dir/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_file_name to ${decrypted_file}"
-su dev -c "gpg --quiet --decrypt '$tmp_encrypted_secret_config' > '${decrypted_file}'"
+touch "$decrypted_file"
+chown dev:dev "$decrypted_file"
+chown dev:dev "$tmp_encrypted_secret_config"
+echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted_secrets/$service_secrets_config_dir/$CHILLBOX_GPG_KEY_NAME/$service_secrets_config_file_name to $decrypted_file"
+"$bin_dir/_dev_tty.sh" "gpg --quiet --decrypt '$tmp_encrypted_secret_config' > '$decrypted_file'"
 
 rm -f "$tmp_encrypted_secret_config"
