@@ -90,6 +90,7 @@ if [ ! -f "$chillbox_dist_file" ]; then
     nginx/nginx.conf \
     nginx/templates \
     bin \
+    keys \
     VERSION
 else
   echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$log_file"

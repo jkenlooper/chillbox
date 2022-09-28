@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "std/crypto": "https://deno.land/std@0.157.0/crypto/mod.ts?s=crypto"
+  }
+}

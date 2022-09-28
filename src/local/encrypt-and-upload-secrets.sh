@@ -96,12 +96,12 @@ docker build \
   -f "${project_dir}/src/local/secrets/s3-download-gpg_pubkeys.Dockerfile" \
   "${project_dir}/src/local/secrets"
 
-gpg_pubkey_dir="$(mktemp -d)"
+pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
 
 cleanup() {
   rm -rf "$tmp_sites_dir"
-  rm -rf "$gpg_pubkey_dir"
+  rm -rf "$pubkey_dir"
 }
 trap cleanup EXIT
 
@@ -114,15 +114,9 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=true" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
+  --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of gpg pubkeys."
-
-# TODO Remove temporary local gpg pubkeys
-echo "TODO: Adding temporary local gpg pubkey 'chillbox-temp-local'"
-gpg --yes --armor --output "$gpg_pubkey_dir/chillbox-temp-local.gpg" --export "chillbox-temp-local"
-echo "TODO: Adding temporary local gpg pubkey 'chillbox'"
-gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox"
+  "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
@@ -165,13 +159,13 @@ for site_json in $site_json_files; do
     tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$no_metadata_version-$service_handler"
     tmpfs_dir="/run/tmp/$service_image_name"
     service_persistent_dir="/var/lib/$slugname-$service_handler"
-    chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
+    chillbox_pubkey_dir="/var/lib/chillbox/public-keys"
 
     docker image rm "$service_image_name" || printf ""
     export DOCKER_BUILDKIT=1
     docker build \
       --build-arg SECRETS_CONFIG="$secrets_config" \
-      --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
+      --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_pubkey_dir" \
       --build-arg TMPFS_DIR="$tmpfs_dir" \
       --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
       --build-arg SLUGNAME="$slugname" \
@@ -187,7 +181,7 @@ for site_json in $site_json_files; do
       --name "$tmp_container_name" \
       --mount "type=tmpfs,dst=$tmpfs_dir" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
-      --mount "type=bind,src=$gpg_pubkey_dir,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
+      --mount "type=bind,src=$pubkey_dir,dst=$chillbox_pubkey_dir,readonly=true" \
       "$service_image_name"
 
     docker run \

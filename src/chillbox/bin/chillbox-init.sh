@@ -280,9 +280,13 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
- CHILLBOX_GPG_KEY_NAME="${chillbox_gpg_key_name}" \
- CHILLBOX_GPG_PASSPHRASE="${chillbox_gpg_passphrase}" \
-   /etc/chillbox/bin/generate-chillbox-key.sh
+## Compile deno scripts and install in the /etc/chillbox/bin directory.
+tmp_keys_dir="$(mktemp -d)"
+tar x -z -f "$tmp_chillbox_artifact" -C "$tmp_keys_dir" --strip-components 1 keys
+HOME=/home/dev make -C "$tmp_keys_dir"
+BINDIR=/etc/chillbox/bin make -C "$tmp_keys_dir" install
+
+/etc/chillbox/bin/generate-chillbox-key.sh
 
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
