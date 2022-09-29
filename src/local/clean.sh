@@ -51,7 +51,7 @@ else
 fi
 
 chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
-encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
+encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted-secrets}"
 
 encrypted_secrets_file_list="$(find "$encrypted_secrets_dir" -type f)"
 if [ -z "$encrypted_secrets_file_list" ]; then

@@ -1,5 +1,5 @@
 SHELL := sh
-.SHELLFLAGS := -eu -o pipefail -c
+.SHELLFLAGS := -eu -c
 .DEFAULT_GOAL := all
 .DELETE_ON_ERROR:
 .SUFFIXES:
@@ -8,7 +8,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 BINDIR ?= $(HOME)/.local/bin
 
-objects := bin/generate-new-chillbox-keys
+objects := bin/generate-new-chillbox-keys bin/decrypt-file
 
 # For debugging what is set in variables.
 inspect.%:
@@ -31,8 +31,10 @@ install: $(objects)
 	mkdir -p $(BINDIR)
 	install --owner=dev --group=dev --mode=0700 bin/generate-new-chillbox-keys $(BINDIR)
 
-bin/generate-new-chillbox-keys: import-map.json src/*.js
+bin:
 	mkdir -p bin
+
+bin/generate-new-chillbox-keys: import-map.json bin src/*.js
 	deno compile \
 		--allow-read="/home/dev/.local/share/chillbox/keys" \
 		--allow-write="/home/dev/.local/share/chillbox/keys" \
@@ -41,3 +43,15 @@ bin/generate-new-chillbox-keys: import-map.json src/*.js
 		--no-prompt \
 		--output $(abspath $@) \
 		src/generate-new-chillbox-keys.js
+
+# Only need to decrypt files and not encrypt them on the server.
+bin/decrypt-file: import-map.json bin src/*.js
+	deno compile \
+		--allow-read=/home/dev/.local/share/chillbox/keys,/tmp/ \
+		--allow-write=/run/tmp/chillbox_secrets/ \
+		--allow-run=hostname \
+		--import-map import-map.json \
+		--no-prompt \
+		--output $(abspath $@) \
+		src/decrypt-file.js
+

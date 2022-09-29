@@ -13,7 +13,6 @@ endpoint_url=\(.s3_endpoint_url)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' /var/lib/terraform-010-infra/output.json)"
 
-
 tmp_cred_csv="/run/tmp/secrets/tmp_cred.csv"
 jq -r '"User Name, Access Key ID, Secret Access Key
 chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' "${decrypted_terraform_spaces}" > "$tmp_cred_csv"
@@ -25,5 +24,5 @@ aws \
   --endpoint-url "$endpoint_url" \
   s3 cp \
   --recursive \
-  "/var/lib/encrypted-secrets" \
-  "s3://${artifact_bucket_name}/chillbox/encrypted-secrets"
+  "s3://${artifact_bucket_name}/chillbox/public-keys/" \
+  "/var/lib/chillbox/public-keys/"

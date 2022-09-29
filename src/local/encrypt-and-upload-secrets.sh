@@ -35,7 +35,7 @@ fi
 
 chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
-encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
+encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted-secrets}"
 
 # TODO what variables does this script need?
 # Allow setting defaults from an env file
@@ -118,6 +118,8 @@ docker run \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_download_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
 
+cp "$project_dir/src/local/secrets/encrypt-file.js" "$pubkey_dir"
+
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
 
@@ -136,7 +138,7 @@ for site_json in $site_json_files; do
     service_handler="$(echo "$service_obj" | jq -r '.handler')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
     test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
-    encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc"
+    encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}"
     encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
 
     mkdir -p "$encrypted_secret_service_dir"
@@ -181,14 +183,22 @@ for site_json in $site_json_files; do
       --mount "type=tmpfs,dst=$tmpfs_dir" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
       --mount "type=bind,src=$pubkey_dir,dst=$chillbox_pubkey_dir,readonly=true" \
-      "$service_image_name"
+      "$service_image_name" || (
+        exitcode="$?"
+        echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+        read -r docker_continue_confirm
+        test "$docker_continue_confirm" = "y" || exit $exitcode
+      )
 
     docker run \
       -d \
       --name "$tmp_container_name-sleeper" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
-      "$sleeper_image"
-    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/." "$encrypted_secret_service_dir/"
+      "$sleeper_image" || (
+        exitcode="$?"
+        echo "docker exited with $exitcode exitcode. Ignoring"
+      )
+    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted-secrets/." "$encrypted_secret_service_dir/" || echo "Ignore docker cp error."
     docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
     docker rm "$tmp_container_name-sleeper" || printf ""
 
@@ -216,6 +226,6 @@ docker run \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
+  --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted-secrets" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")

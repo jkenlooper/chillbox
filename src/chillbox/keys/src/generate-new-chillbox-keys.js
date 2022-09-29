@@ -2,7 +2,7 @@ import { crypto } from "std/crypto";
 
 import { secureKeysDataDir } from "./data-dir.js";
 
-const { generateKey, decrypt, encrypt, exportKey } = crypto.subtle;
+const { generateKey, exportKey } = crypto.subtle;
 const chillboxKeysDataDir = await secureKeysDataDir(Deno.args[0]);
 generateNewChillboxKey(chillboxKeysDataDir);
 
@@ -80,12 +80,3 @@ async function exportCryptoKey(pemFile, key) {
   // the generated key files.
   await Deno.chmod(pemFile, 0o400);
 }
-
-
-// import private key
-// decrypt
-// save file
-
-// import public key
-// encrypt
-// upload

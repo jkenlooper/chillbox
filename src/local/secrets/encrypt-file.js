@@ -1,5 +1,28 @@
-import { crypto } from "std/crypto";
-import { parse } from "std/flags";
+import { crypto } from "https://deno.land/std@0.157.0/crypto/mod.ts?s=crypto";
+import { parse } from "https://deno.land/std@0.158.0/flags/mod.ts?s=parse";
+import { info } from "https://deno.land/std@0.158.0/log/mod.ts?s=info";
+
+const usageMessage = `
+Encrypt a small (less than 382 bytes) file using a provided public key file in PEM format.
+
+Usage:
+  encrypt_file -h
+  encrypt_file <options> -
+  encrypt_file <options> <file>
+
+Options:
+  -h        Show this help message.
+
+  -k        A public key file in PEM format
+
+  -o        Path to output the encrypted file
+
+Args:
+  -         Encrypt what is passed to stdin
+
+  <file>    Encrypt the provided file
+
+`;
 
 const { encrypt, importKey } = crypto.subtle;
 
@@ -10,8 +33,8 @@ if (parsedArgs["h"] || parsedArgs["help"]) {
   usage();
 }
 
-const publicPemFile = parsedArgs["public-key-pem-file"];
-const outputFile = parsedArgs["output-file"];
+const publicPemFile = parsedArgs["k"];
+const outputFile = parsedArgs["o"];
 const unencryptedFile = parsedArgs._[0];
 
 const publicKey = await importPublicKey(publicPemFile);
@@ -36,7 +59,6 @@ async function importPublicKey(publicPemFile) {
   const pemHeader = "-----BEGIN PUBLIC KEY-----";
   const pemFooter = "-----END PUBLIC KEY-----";
   const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
-  console.log(pemContents);
   const binaryDerString = atob(pemContents);
   const binaryDer = str2ab(binaryDerString);
 
@@ -62,12 +84,12 @@ async function encryptFile(publicKey, file, outFile) {
   // Need to check the length of plaintext since this key is only meant for
   // small payloads.
   // https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
-  console.log("bytes", plaintext.byteLength);
   if (plaintext.byteLength > 382) {
     console.log("plaintext byte length is over the 382 byte limit allowed for the key.");
     Deno.exit(4);
   }
   // TODO Should include a symmetric key as payload instead to avoid the limit?
+  // See about wrapping the key used to encrypt the payload.
 
   const ciphertext = await encrypt({
     name: "RSA-OAEP"
@@ -79,7 +101,6 @@ async function encryptFile(publicKey, file, outFile) {
 }
 
 function usage() {
-  console.log("hi");
-  //const parsedArgs = parse(["--public-key-pem-file=publicKeyFile", "--output-file=outputFile", "./quux.txt"]);
+  info(usageMessage);
   Deno.exit();
 }

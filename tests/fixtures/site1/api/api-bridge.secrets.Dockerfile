@@ -11,6 +11,32 @@ set -o errexit
 apk update
 apk add sed attr grep coreutils jq
 
+# The deno executable requires glibc libraries and alpine linux is based on 'musl glibc'.
+# Thanks to https://github.com/aws/aws-cli/issues/4685#issuecomment-615872019
+GLIBC_VER=2.31-r0
+# install glibc compatibility for alpine
+apk add binutils
+tmp_glibc_dir="$(mktemp -d)"
+wget -q https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -O /etc/apk/keys/sgerrand.rsa.pub
+wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk -O "$tmp_glibc_dir/glibc-${GLIBC_VER}.apk"
+wget -q https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk -O "$tmp_glibc_dir/glibc-bin-${GLIBC_VER}.apk"
+apk add --no-cache \
+		 "$tmp_glibc_dir/glibc-${GLIBC_VER}.apk" \
+		 "$tmp_glibc_dir/glibc-bin-${GLIBC_VER}.apk"
+
+# UPKEEP due: "2023-02-07" label: "Deno javascript runtime" interval: "+5 months"
+# https://github.com/denoland/deno/releases
+deno_version="v1.26.0"
+# Encrypting files is done with the provided encrypt-file.js which can be run
+# with a deno runtime.
+tmp_zip="$(mktemp)"
+bin_dir="/usr/local/bin"
+wget -O "$tmp_zip" "https://github.com/denoland/deno/releases/download/$deno_version/deno-x86_64-unknown-linux-gnu.zip"
+mkdir -p "$bin_dir"
+unzip -o -d "$bin_dir" "$tmp_zip"
+rm -f "$tmp_zip"
+chmod +x "$bin_dir/deno"
+
 # Add other tools that are helpful when troubleshooting.
 apk add mandoc man-pages docs
 apk add vim
@@ -101,17 +127,16 @@ trap cleanup EXIT
 find "$CHILLBOX_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name '*.public.pem' \
   | while read -r chillbox_public_key_file; do
     key_name="$(basename "$chillbox_public_key_file" .public.pem)"
-    encrypted_secrets_config_file="$SERVICE_PERSISTENT_DIR/encrypted_secrets/$key_name/${SECRETS_CONFIG}.asc"
+    encrypted_secrets_config_file="$SERVICE_PERSISTENT_DIR/encrypted-secrets/$key_name/${SECRETS_CONFIG}"
     encrypted_secrets_config_dir="$(dirname "$encrypted_secrets_config_file")"
     mkdir -p "$encrypted_secrets_config_dir"
     rm -f "$encrypted_secrets_config_file"
-    # TODO
-    gpg --encrypt --recipient "${key_name}" --armor --output "$encrypted_secrets_config_file" \
-      --comment "Example site1 api secrets for bridge crossing" \
-      --comment "Date: $(date)" \
-      "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
+    deno run \
+      --allow-read="$chillbox_public_key_file,$TMPFS_DIR/secrets/$SECRETS_CONFIG" \
+      --allow-write="$encrypted_secrets_config_file" \
+      --no-prompt \
+      "$CHILLBOX_PUBKEY_DIR/encrypt-file.js" -k "$chillbox_public_key_file" -o "$encrypted_secrets_config_file" "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
   done
-
 
 HERE
 chmod +x /usr/local/src/api-secrets/secrets-prompt.sh
