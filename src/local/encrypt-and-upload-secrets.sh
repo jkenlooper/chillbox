@@ -86,14 +86,14 @@ docker build \
   -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
   "${project_dir}/src/local/secrets"
 
-s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys:latest"
-s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys"
-docker rm "${s3_download_gpg_pubkeys_container}" || printf ""
-docker image rm "$s3_download_gpg_pubkeys_image" || printf ""
+s3_download_pubkeys_image="chillbox-s3-download-pubkeys:latest"
+s3_download_pubkeys_container="chillbox-s3-download-pubkeys"
+docker rm "${s3_download_pubkeys_container}" || printf ""
+docker image rm "$s3_download_pubkeys_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  -t "$s3_download_gpg_pubkeys_image" \
-  -f "${project_dir}/src/local/secrets/s3-download-gpg_pubkeys.Dockerfile" \
+  -t "$s3_download_pubkeys_image" \
+  -f "${project_dir}/src/local/secrets/s3-download-pubkeys.Dockerfile" \
   "${project_dir}/src/local/secrets"
 
 pubkey_dir="$(mktemp -d)"
@@ -108,7 +108,7 @@ trap cleanup EXIT
 docker run \
   -i --tty \
   --rm \
-  --name "$s3_download_gpg_pubkeys_container" \
+  --name "$s3_download_pubkeys_container" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
@@ -116,11 +116,10 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
+  "$s3_download_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
-
 
 site_json_files="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 for site_json in $site_json_files; do
@@ -165,7 +164,7 @@ for site_json in $site_json_files; do
     export DOCKER_BUILDKIT=1
     docker build \
       --build-arg SECRETS_CONFIG="$secrets_config" \
-      --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_pubkey_dir" \
+      --build-arg CHILLBOX_PUBKEY_DIR="$chillbox_pubkey_dir" \
       --build-arg TMPFS_DIR="$tmpfs_dir" \
       --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
       --build-arg SLUGNAME="$slugname" \

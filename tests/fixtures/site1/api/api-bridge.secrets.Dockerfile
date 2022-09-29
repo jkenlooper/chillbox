@@ -9,7 +9,7 @@ WORKDIR /usr/local/src/api-secrets
 RUN <<DEPENDENCIES
 set -o errexit
 apk update
-apk add sed attr grep coreutils jq gnupg gnupg-dirmngr
+apk add sed attr grep coreutils jq
 
 # Add other tools that are helpful when troubleshooting.
 apk add mandoc man-pages docs
@@ -18,8 +18,8 @@ DEPENDENCIES
 
 ARG SECRETS_CONFIG=api-bridge.secrets.cfg
 ENV SECRETS_CONFIG=$SECRETS_CONFIG
-ARG CHILLBOX_GPG_PUBKEY_DIR
-ENV CHILLBOX_GPG_PUBKEY_DIR=$CHILLBOX_GPG_PUBKEY_DIR
+ARG CHILLBOX_PUBKEY_DIR
+ENV CHILLBOX_PUBKEY_DIR=$CHILLBOX_PUBKEY_DIR
 ARG SLUGNAME=slugname
 ENV SLUGNAME=$SLUGNAME
 ARG VERSION=version
@@ -39,17 +39,13 @@ cat <<'HERE' > /usr/local/src/api-secrets/secrets-prompt.sh
 set -o errexit
 set -o nounset
 
-test -e "$CHILLBOX_GPG_PUBKEY_DIR" || (echo "ERROR $0: No directory at $CHILLBOX_GPG_PUBKEY_DIR" && exit 1)
+test -e "$CHILLBOX_PUBKEY_DIR" || (echo "ERROR $0: No directory at $CHILLBOX_PUBKEY_DIR" && exit 1)
+pubkeys_list="$(find "$CHILLBOX_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name '*.public.pem')"
+test -n "$pubkeys_list" || (echo "ERROR $0: No chillbox public keys found at $CHILLBOX_PUBKEY_DIR" && exit 1)
 
 mkdir -p "$TMPFS_DIR/secrets/"
 mkdir -p "$SERVICE_PERSISTENT_DIR"
 
-find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.gpg'
-
-find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.gpg' \
-  | while read -r chillbox_gpg_key_file; do
-    gpg --import "$chillbox_gpg_key_file"
-  done
 
 printf "\n\n%s\n" "Stop."
 
@@ -101,15 +97,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Support multiple chillbox servers which will have their own gpg pubkeys.
-find "$CHILLBOX_GPG_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name 'chillbox*.gpg' \
-  | while read -r chillbox_gpg_key_file; do
-    gpg_key_name="$(basename "$chillbox_gpg_key_file" .gpg)"
-    encrypted_secrets_config_file="$SERVICE_PERSISTENT_DIR/encrypted_secrets/$gpg_key_name/${SECRETS_CONFIG}.asc"
+# Support multiple chillbox servers which will have their own pubkeys.
+find "$CHILLBOX_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name '*.public.pem' \
+  | while read -r chillbox_public_key_file; do
+    key_name="$(basename "$chillbox_public_key_file" .public.pem)"
+    encrypted_secrets_config_file="$SERVICE_PERSISTENT_DIR/encrypted_secrets/$key_name/${SECRETS_CONFIG}.asc"
     encrypted_secrets_config_dir="$(dirname "$encrypted_secrets_config_file")"
     mkdir -p "$encrypted_secrets_config_dir"
     rm -f "$encrypted_secrets_config_file"
-    gpg --encrypt --recipient "${gpg_key_name}" --armor --output "$encrypted_secrets_config_file" \
+    # TODO
+    gpg --encrypt --recipient "${key_name}" --armor --output "$encrypted_secrets_config_file" \
       --comment "Example site1 api secrets for bridge crossing" \
       --comment "Date: $(date)" \
       "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
