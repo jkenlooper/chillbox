@@ -23,8 +23,6 @@ decrypted_terraform_spaces="${secure_tmp_secrets_dir}/terraform_spaces.tfvars.js
 test -e "$decrypted_terraform_spaces" || (echo "ERROR $0: The decrypted secrets file at $decrypted_terraform_spaces does not exist." && exit 1)
 decrypted_chillbox_spaces="${secure_tmp_secrets_dir}/chillbox_spaces.tfvars.json"
 test -e "$decrypted_chillbox_spaces" || (echo "ERROR $0: The decrypted secrets file at $decrypted_chillbox_spaces does not exist." && exit 1)
-decrypted_chillbox_gpg_passphrase="${secure_tmp_secrets_dir}/chillbox_gpg_passphrase.tfvars.json"
-test -e "$decrypted_chillbox_gpg_passphrase" || (echo "ERROR $0: The decrypted secrets file at $decrypted_chillbox_gpg_passphrase does not exist." && exit 1)
 
 cd /usr/local/src/chillbox-terraform
 
@@ -37,5 +35,4 @@ terraform \
   "$terraform_command" \
   -var-file="${decrypted_do_token}" \
   -var-file="${decrypted_terraform_spaces}" \
-  -var-file="${decrypted_chillbox_spaces}" \
-  -var-file="${decrypted_chillbox_gpg_passphrase}"
+  -var-file="${decrypted_chillbox_spaces}"

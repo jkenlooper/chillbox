@@ -25,12 +25,6 @@ variable "do_chillbox_spaces_secret_access_key" {
   sensitive   = true
 }
 
-variable "chillbox_gpg_passphrase" {
-  type        = string
-  description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."
-  sensitive   = true
-}
-
 variable "bucket_region" {
   type        = string
   description = "Bucket region."
@@ -96,6 +90,11 @@ variable "sites_artifact" {
 variable "chillbox_artifact" {
   description = "The chillbox artifact file."
   type        = string
+}
+variable "sites_manifest" {
+  type        = string
+  description = "The sites manifest."
+  default     = "dist/sites.manifest.json"
 }
 variable "domain" {
   default     = "example.com"

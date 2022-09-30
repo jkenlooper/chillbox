@@ -66,7 +66,6 @@ resource "local_sensitive_file" "alpine_box_init" {
     tf_developer_public_ssh_keys : "%{for public_ssh_key in var.developer_public_ssh_keys} ${public_ssh_key}\n %{endfor}",
     tf_access_key_id : var.do_chillbox_spaces_access_key_id,
     tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
-    tf_chillbox_gpg_passphrase : var.chillbox_gpg_passphrase,
     tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
     tf_tech_email : var.tech_email,
     tf_immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,

@@ -18,7 +18,6 @@ setup_file() {
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
-  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
 
   export CHILLBOX_SERVER_NAME="chillbox"
   export CHILLBOX_SERVER_PORT="80"

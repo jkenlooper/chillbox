@@ -25,12 +25,6 @@ variable "do_chillbox_spaces_secret_access_key" {
   sensitive   = true
 }
 
-variable "chillbox_gpg_passphrase" {
-  type        = string
-  description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."
-  sensitive   = true
-}
-
 variable "tech_email" {
   type        = string
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."

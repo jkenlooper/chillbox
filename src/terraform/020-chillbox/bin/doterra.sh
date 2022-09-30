@@ -99,17 +99,6 @@ if [ ! -f "${decrypted_chillbox_spaces}" ]; then
   set +x
 fi
 
-encrypted_chillbox_gpg_passphrase=/var/lib/doterra/secrets/chillbox_gpg_passphrase.tfvars.json.asc
-decrypted_chillbox_gpg_passphrase="${secure_tmp_secrets_dir}/chillbox_gpg_passphrase.tfvars.json"
-if [ ! -f "${decrypted_chillbox_gpg_passphrase}" ]; then
-  echo "INFO $script_name: Decrypting file ${encrypted_chillbox_gpg_passphrase} to ${decrypted_chillbox_gpg_passphrase}"
-  set -x
-  _dev_tty.sh "
-    _decrypt_file_as_dev_user.sh \"${encrypted_chillbox_gpg_passphrase}\" \"${decrypted_chillbox_gpg_passphrase}\""
-  set +x
-fi
-
-
 su dev -c "
 _upload_artifacts_as_dev_user.sh \"$terraform_command\" \"$decrypted_terraform_spaces\"
 "

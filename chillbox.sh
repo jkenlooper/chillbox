@@ -119,7 +119,7 @@ init_and_source_chillbox_config() {
       gh_public_ssh_key_url="https://github.com/${gh_username}.keys"
       wget "$gh_public_ssh_key_url" -O - \
         | while read -r pub_ssh_key; do
-              printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
+              printf "%s\n" "$(echo "$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
           done
       pub_ssh_key_urls="$gh_public_ssh_key_url"
     fi

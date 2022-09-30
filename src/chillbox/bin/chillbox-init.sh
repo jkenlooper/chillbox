@@ -7,7 +7,6 @@ export INTERACTIVE="${INTERACTIVE:-}"
 developer_public_ssh_keys="${DEVELOPER_PUBLIC_SSH_KEYS:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"
-chillbox_gpg_passphrase="${CHILLBOX_GPG_PASSPHRASE:-}"
 dev_user_passphrase="${DEV_USER_PASSPHRASE:-}"
 tech_email="${TECH_EMAIL:-}"
 immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
@@ -17,7 +16,6 @@ sites_artifact="${SITES_ARTIFACT:-}"
 chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
 s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
-chillbox_gpg_key_name="${CHILLBOX_GPG_KEY_NAME:-}"
 
 if [ -z "$developer_public_ssh_keys" ]; then
   printf '\n%s\n' "No DEVELOPER_PUBLIC_SSH_KEYS variable set."
@@ -41,16 +39,6 @@ if [ -z "$secret_access_key" ]; then
   test -z "$INTERACTIVE" || read -r secret_access_key
   stty echo
   test -n "$secret_access_key" || (echo "No secret access key set. Exiting" && exit 1)
-fi
-
-if [ -z "$chillbox_gpg_passphrase" ]; then
-  printf '\n%s\n' "No CHILLBOX_GPG_PASSPHRASE variable set."
-  printf '\n%s\n' "GPG key is created on the chillbox server; set the passphrase for it here."
-  printf '\n%s\n' "Characters entered are hidden."
-  stty -echo
-  test -z "$INTERACTIVE" || read -r chillbox_gpg_passphrase
-  stty echo
-  test -n "$chillbox_gpg_passphrase" || (echo "No chillbox gpg passphrase set. Exiting" && exit 1)
 fi
 
 if [ -z "$dev_user_passphrase" ]; then
@@ -117,13 +105,6 @@ if [ -z "$chillbox_server_name" ]; then
   printf '\n%s\n' "Enter the chillbox server name to use which should be a fully qualified domain name."
   test -z "$INTERACTIVE" || read -r chillbox_server_name
   test -n "$chillbox_server_name" || (echo "No chillbox server name set. Exiting" && exit 1)
-fi
-
-if [ -z "$chillbox_gpg_key_name" ]; then
-  printf '\n%s\n' "No CHILLBOX_GPG_KEY_NAME variable set."
-  printf '\n%s\n' "Enter the chillbox gpg key name to use (should be unique)."
-  test -z "$INTERACTIVE" || read -r chillbox_gpg_key_name
-  test -n "$chillbox_gpg_key_name" || (echo "No chillbox gpg key name set. Exiting" && exit 1)
 fi
 
 tmp_cred_csv=$(mktemp)
@@ -226,7 +207,6 @@ export S3_ENDPOINT_URL="${s3_endpoint_url}"
 export S3_ARTIFACT_ENDPOINT_URL="${s3_endpoint_url}"
 export CHILLBOX_ARTIFACT="${chillbox_artifact}"
 export CHILLBOX_SERVER_NAME="${chillbox_server_name}"
-export CHILLBOX_GPG_KEY_NAME="${chillbox_gpg_key_name}"
 export CHILLBOX_SERVER_PORT=80
 export SITES_ARTIFACT="${sites_artifact}"
 export TECH_EMAIL="${tech_email}"

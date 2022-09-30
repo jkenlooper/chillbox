@@ -26,7 +26,6 @@ setup_file() {
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
-  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
 
   export CHILLBOX_SERVER_NAME="chillbox"
   export CHILLBOX_SERVER_PORT="80"
@@ -163,12 +162,6 @@ main() {
 
 @test "fail when IMMUTABLE_BUCKET_NAME is empty" {
   export IMMUTABLE_BUCKET_NAME=""
-  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
-  assert_failure
-}
-
-@test "fail when CHILLBOX_GPG_KEY_NAME is empty" {
-  export CHILLBOX_GPG_KEY_NAME=""
   run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }

@@ -39,10 +39,6 @@ export IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $script_name: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $script_name: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
-export CHILLBOX_GPG_KEY_NAME=${CHILLBOX_GPG_KEY_NAME}
-test -n "${CHILLBOX_GPG_KEY_NAME}" || (echo "ERROR $script_name: CHILLBOX_GPG_KEY_NAME variable is empty" && exit 1)
-echo "INFO $script_name: Using CHILLBOX_GPG_KEY_NAME '${CHILLBOX_GPG_KEY_NAME}'"
-
 echo "INFO $script_name: Running site init for service object: ${service_obj}"
 
 # TODO mount tmpfs at /run/tmp/chillbox_secrets
