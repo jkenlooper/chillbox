@@ -2,8 +2,8 @@
 
 set -o errexit
 
-current_user="$(id -u -n)"
-test "$current_user" = "root" || (echo "ERROR $0: Must be root." && exit 1)
+#current_user="$(id -u -n)"
+#test "$current_user" = "root" || (echo "ERROR $0: Must be root." && exit 1)
 
 chillbox_cache="${XDG_CACHE_HOME:-"$HOME/.cache"}/chillbox/"
 mkdir -p "$chillbox_cache"
@@ -15,7 +15,7 @@ qemu_tar_xz="https://download.qemu.org/qemu-7.1.0.tar.xz"
 qemu_tar_xz_file="$(basename "$qemu_tar_xz")"
 cached_qemu_tar_xz_file="$chillbox_cache/$qemu_tar_xz_file"
 
-has_qemu_x86_64="$(command -v qemu-x86_64 || printf "")"
+has_qemu_x86_64="$(command -v qemu-system-x86_64 || printf "")"
 if [ -z "$has_qemu_x86_64" ]; then
   if [ ! -e "$cached_qemu_tar_xz_file" ]; then
     wget -O "$cached_qemu_tar_xz_file" "$qemu_tar_xz"
@@ -53,4 +53,20 @@ if [ ! -e "$cached_alpine_custom_image_file" ]; then
     && mv --force --verbose "$cached_alpine_custom_image_file" "$cached_alpine_custom_image_file.INVALID" \
     && exit 1
     )
+  bunzip2 "$cached_alpine_custom_image_file"
 fi
+
+image_dir="$(dirname "$cached_alpine_custom_image_file")"
+image_file="$(basename "$cached_alpine_custom_image_file" ".bz2")"
+
+qemu-system-x86_64 \
+  -machine type=q35,accel=tcg \
+  -smp 4 \
+  -hda "$image_dir/$image_file" \
+  -m 8G \
+  -vga virtio \
+  -usb \
+  -device usb-tablet \
+  -display default,show-cursor=on
+
+
