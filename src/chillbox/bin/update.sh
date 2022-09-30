@@ -16,8 +16,6 @@ set -o errexit
 # shellcheck disable=SC1091
 . /home/dev/.env
 
-export INTERACTIVE="yes"
-
 mkdir -p /usr/local/src/
 cd /usr/local/src/
 

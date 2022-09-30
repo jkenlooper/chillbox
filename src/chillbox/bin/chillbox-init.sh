@@ -2,8 +2,6 @@
 
 set -o errexit
 
-export INTERACTIVE="${INTERACTIVE:-}"
-
 developer_public_ssh_keys="${DEVELOPER_PUBLIC_SSH_KEYS:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"

@@ -57,30 +57,24 @@ eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$SLUGNAME" '@sh "
 
 service_secrets_config_file=""
 
-if [ -n "$INTERACTIVE" ] && [ "$INTERACTIVE" = "yes" ]; then
-  if [ -n "$service_secrets_config" ]; then
-    service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config"
-    service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
-    mkdir -p "$service_secrets_config_dir"
-    chown -R "$SLUGNAME":"$SLUGNAME" "$service_secrets_config_dir"
-    chmod -R 700 "$service_secrets_config_dir"
+if [ -n "$service_secrets_config" ]; then
+  service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config"
+  service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
+  mkdir -p "$service_secrets_config_dir"
+  chown -R "$SLUGNAME":"$SLUGNAME" "$service_secrets_config_dir"
+  chmod -R 700 "$service_secrets_config_dir"
 
-    "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
-  fi
-  # Need to check if this secrets config file was successfully downloaded since it
-  # might not exist yet. Secrets are added to the s3 bucket in a different process.
-  if [ -n "$service_secrets_config_file" ] && [ -e "$service_secrets_config_file" ] && [ ! -s "$service_secrets_config_file" ]; then
-    # Failed to decrypt file and it is now an empty file so remove it.
-    echo "WARNING $script_name: Failed to decrypt service secrets config file."
-    rm -f "$service_secrets_config_file"
-  fi
-  if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file" ]; then
-    echo "WARNING $script_name: No service secrets config file was able to be downloaded and decrypted."
-  fi
-else
-  if [ -n "$service_secrets_config" ]; then
-    echo "WARNING $script_name: Running in non-interactive mode and can't automatically decrypt service secrets config: $service_secrets_config"
-  fi
+  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
+fi
+# Need to check if this secrets config file was successfully downloaded since it
+# might not exist yet. Secrets are added to the s3 bucket in a different process.
+if [ -n "$service_secrets_config_file" ] && [ -e "$service_secrets_config_file" ] && [ ! -s "$service_secrets_config_file" ]; then
+  # Failed to decrypt file and it is now an empty file so remove it.
+  echo "WARNING $script_name: Failed to decrypt service secrets config file."
+  rm -f "$service_secrets_config_file"
+fi
+if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file" ]; then
+  echo "WARNING $script_name: No service secrets config file was able to be downloaded and decrypted."
 fi
 
 # Extract just the new service handler directory from the tmp_artifact
