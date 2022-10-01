@@ -114,9 +114,9 @@ typeit "Go on. Off you go."
 printf "\n\n"
 
 cat <<SECRETS > "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
-ANSWER1=$first_answer
-ANSWER2=$second_answer
-ANSWER5=$fifth_answer
+ANSWER1="$first_answer"
+ANSWER2="$second_answer"
+ANSWER5="$fifth_answer"
 SECRETS
 cleanup() {
 	shred -fu "$TMPFS_DIR/secrets/$SECRETS_CONFIG" || rm -f "$TMPFS_DIR/secrets/$SECRETS_CONFIG"

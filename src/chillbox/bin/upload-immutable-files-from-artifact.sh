@@ -64,5 +64,5 @@ s5cmd cp \
 s5cmd cp \
   --cache-control 'public, max-age:31536000, immutable' \
   --acl 'public-read' \
-  "$immutable_tmp_dir/$SLUGNAME/" \
+  "$immutable_tmp_dir/$SLUGNAME/*" \
   "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/immutable/"

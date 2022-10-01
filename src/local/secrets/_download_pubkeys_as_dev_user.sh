@@ -27,5 +27,5 @@ export AWS_PROFILE=chillbox_object_storage
 export S3_ENDPOINT_URL="${endpoint_url}"
 
 s5cmd cp \
-  "s3://${artifact_bucket_name}/chillbox/public-keys/" \
+  "s3://${artifact_bucket_name}/chillbox/public-keys/*" \
   "/var/lib/chillbox/public-keys/"

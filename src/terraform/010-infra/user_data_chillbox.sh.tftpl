@@ -44,8 +44,8 @@ mkdir -p "$HOME/.aws"
 chmod 0700 "$HOME/.aws"
 cat <<HERE > "$HOME/.aws/credentials"
 [chillbox_object_storage]
-aws_access_key_id=${access_key_id}
-aws_secret_access_key=${secret_access_key}
+aws_access_key_id=$access_key_id
+aws_secret_access_key=$secret_access_key
 HERE
 chmod 0600 "$HOME/.aws/credentials"
 
@@ -58,7 +58,7 @@ tar x -o -f "$s5cmd_tmp_dir/$s5cmd_tar" -C "/usr/local/bin" s5cmd
 rm -rf "$s5cmd_tmp_dir"
 
 export AWS_PROFILE=chillbox_object_storage
-export S3_ENDPOINT_URL="${s3_endpoint_url}"
+export S3_ENDPOINT_URL="$s3_endpoint_url"
 
 s5cmd cp "s3://$artifact_bucket_name/chillbox/$chillbox_artifact" \
   "$tmp_chillbox_artifact"

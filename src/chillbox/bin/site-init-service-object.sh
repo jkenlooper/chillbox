@@ -61,8 +61,8 @@ if [ -n "$service_secrets_config" ]; then
   service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config"
   service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
   mkdir -p "$service_secrets_config_dir"
-  chown -R "$SLUGNAME":"$SLUGNAME" "$service_secrets_config_dir"
-  chmod -R 700 "$service_secrets_config_dir"
+  chown -R "$SLUGNAME":dev "$service_secrets_config_dir"
+  chmod -R 770 "$service_secrets_config_dir"
 
   "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
 fi

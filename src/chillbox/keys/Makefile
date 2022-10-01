@@ -30,6 +30,7 @@ clean:
 install: $(objects)
 	mkdir -p $(BINDIR)
 	install --owner=dev --group=dev --mode=0700 bin/generate-new-chillbox-keys $(BINDIR)
+	install --owner=dev --group=dev --mode=0700 bin/decrypt-file $(BINDIR)
 
 bin:
 	mkdir -p bin
@@ -47,8 +48,8 @@ bin/generate-new-chillbox-keys: import-map.json bin src/*.js
 # Only need to decrypt files and not encrypt them on the server.
 bin/decrypt-file: import-map.json bin src/*.js
 	deno compile \
-		--allow-read=/home/dev/.local/share/chillbox/keys,/tmp/ \
-		--allow-write=/run/tmp/chillbox_secrets/ \
+		--allow-read=/home/dev/.local/share/chillbox/keys,/tmp/,/run/tmp/chillbox_secrets/ \
+		--allow-write=/home/dev/.local/share/chillbox/keys,/run/tmp/chillbox_secrets/ \
 		--allow-run=hostname \
 		--import-map import-map.json \
 		--no-prompt \

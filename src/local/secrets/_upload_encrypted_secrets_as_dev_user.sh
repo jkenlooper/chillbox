@@ -27,5 +27,5 @@ export AWS_PROFILE=chillbox_object_storage
 export S3_ENDPOINT_URL="${endpoint_url}"
 
 s5cmd cp \
-  "/var/lib/encrypted-secrets/" \
+  "/var/lib/encrypted-secrets/*" \
   "s3://${artifact_bucket_name}/chillbox/encrypted-secrets/"

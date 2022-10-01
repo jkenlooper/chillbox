@@ -243,7 +243,7 @@ rm -rf "$s5cmd_tmp_dir"
 
 ## COPY_chillbox_artifact
 s5cmd cp \
-  "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT"
+  "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT" \
   "$tmp_chillbox_artifact"
 
 # nginx/templates/ -> /etc/chillbox/templates/

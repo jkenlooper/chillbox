@@ -3,7 +3,7 @@
 set -o errexit
 
 script_name="$(basename "$0")"
-project_dir="$(dirname "$(realpath "$0")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 
 usage() {
   cat <<HERE
