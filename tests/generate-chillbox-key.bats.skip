@@ -13,9 +13,9 @@ setup() {
   load '/opt/bats-assert/load'
   load '/opt/bats-mock/load'
 
-  mock_aws="$(mock_create)"
-  mock_set_output "${mock_aws}" "something" 0
-  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+  mock_s5cmd="$(mock_create)"
+  mock_set_output "${mock_s5cmd}" "something" 0
+  ln -s "${mock_s5cmd}" $BATS_RUN_TMPDIR/s5cmd
 
   PATH="$BATS_RUN_TMPDIR:$PATH"
 
@@ -30,8 +30,8 @@ setup() {
 teardown() {
   rm -rf "$tmp_gpg_home"
 
-  test -L $BATS_RUN_TMPDIR/aws \
-    && rm -f $BATS_RUN_TMPDIR/aws
+  test -L $BATS_RUN_TMPDIR/s5cmd \
+    && rm -f $BATS_RUN_TMPDIR/s5cmd
 }
 
 main() {
@@ -42,5 +42,5 @@ main() {
   run main
   assert_success
 
-  test "$(mock_get_call_num "${mock_aws}")" -eq 1
+  test "$(mock_get_call_num "${mock_s5cmd}")" -eq 1
 }

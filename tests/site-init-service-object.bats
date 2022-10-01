@@ -65,9 +65,9 @@ setup() {
   mock_rc_service="$(mock_create)"
   ln -s "${mock_rc_service}" $BATS_RUN_TMPDIR/rc-service
 
-  mock_aws="$(mock_create)"
-  mock_set_output "${mock_aws}" "something" 0
-  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+  mock_s5cmd="$(mock_create)"
+  mock_set_output "${mock_s5cmd}" "something" 0
+  ln -s "${mock_s5cmd}" $BATS_RUN_TMPDIR/s5cmd
 
   mock_gpg="$(mock_create)"
   mock_set_output "${mock_gpg}" "something" 0
@@ -107,8 +107,8 @@ teardown() {
   test -L $BATS_RUN_TMPDIR/rc-service \
     && rm -f $BATS_RUN_TMPDIR/rc-service
 
-  test -L $BATS_RUN_TMPDIR/aws \
-    && rm -f $BATS_RUN_TMPDIR/aws
+  test -L $BATS_RUN_TMPDIR/s5cmd \
+    && rm -f $BATS_RUN_TMPDIR/s5cmd
 
   test -L $BATS_RUN_TMPDIR/gpg \
     && rm -f $BATS_RUN_TMPDIR/gpg
@@ -166,7 +166,7 @@ main() {
   assert_failure
 }
 
-# Skip test for now since it doesn't mock aws s3 very well.
+# Skip test for now since it doesn't mock s5cmd very well.
 #@test "pass when service lang template is flask" {
 #  # Arrange
 #  export service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"

@@ -26,9 +26,7 @@ test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exi
 
 echo "INFO $script_name: Checking and extracting files to immutable bucket for: ${SLUGNAME} ${VERSION}"
 
-immutable_version_file_exists=$(aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 ls \
+immutable_version_file_exists=$(s5cmd ls \
   "s3://${IMMUTABLE_BUCKET_NAME}/$SLUGNAME/versions/$VERSION/version.txt" || printf '')
 if [ -n "$immutable_version_file_exists" ]; then
   echo "INFO $script_name: Immutable version file already exists: s3://${IMMUTABLE_BUCKET_NAME}/$SLUGNAME/versions/$VERSION/version.txt"
@@ -39,17 +37,13 @@ fi
 immutable_archive_file="${SLUGNAME}-${VERSION}.immutable.tar.gz"
 tmp_artifact=$(mktemp)
 
-artifact_exists=$(aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 ls \
+artifact_exists=$(s5cmd ls \
   "s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file" || printf '')
 if [ -z "$artifact_exists" ]; then
   echo "ERROR $script_name: Immutable archive file doesn't exist: s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file"
   exit 1
 else
-  aws \
-    --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp \
+  s5cmd cp \
     "s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file"  \
     "$tmp_artifact"
 fi
@@ -61,19 +55,14 @@ tar x -z -f "$tmp_artifact" -C "$immutable_tmp_dir"
 # Create a version.txt file in the immutable directory so it can be used for
 # version verification.
 printf "%s" "${VERSION}" > "$immutable_tmp_dir/$SLUGNAME/version.txt"
-aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp \
-  "$immutable_tmp_dir/$SLUGNAME/version.txt" \
-  "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/versions/${VERSION}/version.txt" \
-  --cache-control 'public, max-age:31536000, immutable' \
-  --acl 'public-read'
-
-aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp \
-  "$immutable_tmp_dir/$SLUGNAME/" \
-  "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/immutable/" \
+s5cmd cp \
   --cache-control 'public, max-age:31536000, immutable' \
   --acl 'public-read' \
-  --recursive
+  "$immutable_tmp_dir/$SLUGNAME/version.txt" \
+  "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/versions/${VERSION}/version.txt"
+
+s5cmd cp \
+  --cache-control 'public, max-age:31536000, immutable' \
+  --acl 'public-read' \
+  "$immutable_tmp_dir/$SLUGNAME/" \
+  "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/immutable/"

@@ -48,8 +48,8 @@ output_user_data_file="$1"
 
 export CHILLBOX_INSTANCE="$chillbox_instance"
 export WORKSPACE="$workspace"
-chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
-env_config="$chillbox_config_home/env"
+#chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+#env_config="$chillbox_config_home/env"
 export chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 

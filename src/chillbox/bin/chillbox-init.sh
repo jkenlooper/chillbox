@@ -105,14 +105,11 @@ if [ -z "$chillbox_server_name" ]; then
   test -n "$chillbox_server_name" || (echo "No chillbox server name set. Exiting" && exit 1)
 fi
 
-tmp_cred_csv=$(mktemp)
 tmp_chillbox_artifact=$(mktemp)
 
 cleanup() {
   echo ""
   rm -f "$tmp_chillbox_artifact"
-  # Double tap
-  shred -fu "$tmp_cred_csv" 2> /dev/null || rm -f "$tmp_cred_csv"
 }
 trap cleanup EXIT
 
@@ -189,7 +186,7 @@ rc-update add s6-svscan boot
 # IMMUTABLE_BUCKET_NAME=""
 ARTIFACT_BUCKET_NAME=""
 # S3_ENDPOINT_URL=""
-S3_ARTIFACT_ENDPOINT_URL=""
+# S3_ARTIFACT_ENDPOINT_URL=""
 CHILLBOX_ARTIFACT=""
 # CHILLBOX_SERVER_NAME=""
 # CHILLBOX_SERVER_PORT=80
@@ -217,32 +214,37 @@ chmod 600 /home/dev/.env
 # shellcheck disable=SC1091
 . /home/dev/.env
 
-## RUN TEMP_AWS_CLI
-# Only need aws s3 to get the chillbox artifact. Will use the
-# bin/install-aws-cli.sh to install latest aws version.
-has_aws="$(command -v aws || printf '')"
-if [ -z "$has_aws" ]; then
-  apk add \
-    -q --no-progress \
-    aws-cli
-fi
-
-# Set the AWS credentials so upload-artifacts.sh can use them.
-cat <<HERE > "$tmp_cred_csv"
-User Name, Access Key ID, Secret Access Key
-chillbox_object_storage,${access_key_id},${secret_access_key}
+# Set the credentials for accessing the s3 object storage
+mkdir -p /home/dev/.aws
+chown -R dev:dev /home/dev/.aws
+mkdir -p "$HOME/.aws"
+chmod 0700 /home/dev/.aws
+chmod 0700 "$HOME/.aws"
+cat <<HERE > "$HOME/.aws/credentials"
+[chillbox_object_storage]
+aws_access_key_id=${access_key_id}
+aws_secret_access_key=${secret_access_key}
 HERE
-aws configure import --csv "file://$tmp_cred_csv"
+chmod 0600 "$HOME/.aws/credentials"
+cp "$HOME/.aws/credentials" /home/dev/.aws/credentials
+chmod 0600 /home/dev/.aws/credentials
+chown dev:dev /home/dev/.aws/credentials
+
 export AWS_PROFILE=chillbox_object_storage
-# Don't need this temporary file anymore after the import.
-shred -fu "$tmp_cred_csv" 2> /dev/null
+export S3_ENDPOINT_URL="${s3_endpoint_url}"
+
+# UPKEEP due: "2023-01-01" label: "s5cmd for s3 object storage" interval: "+3 months"
+s5cmd_release_url="https://github.com/peak/s5cmd/releases/download/v2.0.0/s5cmd_2.0.0_Linux-64bit.tar.gz"
+s5cmd_tar="$(basename "$s5cmd_release_url")"
+s5cmd_tmp_dir="$(mktemp -d)"
+wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
+tar x -o -f "$s5cmd_tmp_dir/$s5cmd_tar" -C "/usr/local/bin" s5cmd
+rm -rf "$s5cmd_tmp_dir"
 
 ## COPY_chillbox_artifact
-aws \
-  --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-  s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT" \
+s5cmd cp \
+  "s3://$ARTIFACT_BUCKET_NAME/chillbox/$CHILLBOX_ARTIFACT"
   "$tmp_chillbox_artifact"
-apk del aws-cli || printf '\n%s\n' "...Ignoring error with 'apk del aws-cli'"
 
 # nginx/templates/ -> /etc/chillbox/templates/
 mkdir -p /etc/chillbox
@@ -253,7 +255,6 @@ mkdir -p /etc/chillbox/bin
 tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 bin
 
 ## RUN_INSTALL_SCRIPTS
-/etc/chillbox/bin/install-aws-cli.sh
 /etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"

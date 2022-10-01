@@ -19,24 +19,13 @@ apk add \
   gnupg \
   gnupg-dirmngr
 
-install_aws_cli_dir="$(mktemp -d)"
-
-# UPKEEP due: "2022-10-08" label: "install-aws-cli gist" interval: "+3 months"
-# https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
-# Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-install_aws_cli_dir="$(mktemp -d)"
-wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/0951e80d092960cf27f893aaa12d5ed754dc3bed.zip \
-  -O "$install_aws_cli_dir/install-aws-cli.zip"
-echo "9006755dfbc2cdaf192029a3a2f60941beecc868157ea265c593f11e608a906a5928dcad51a815c676e8f77593e5847e9b6023b47c28bc87b5ffeecd5708e9ac  $install_aws_cli_dir/install-aws-cli.zip" | sha512sum --strict -c \
-  || ( \
-    echo "Cleaning up in case errexit is not set." \
-    && mv --verbose "$install_aws_cli_dir/install-aws-cli.zip" "$install_aws_cli_dir/install-aws-cli.zip.INVALID" \
-    && exit 1 \
-    )
-unzip -j "$install_aws_cli_dir/install-aws-cli.zip" -d "$install_aws_cli_dir"
-chmod +x "$install_aws_cli_dir/install-aws-cli.sh"
-"$install_aws_cli_dir/install-aws-cli.sh"
-rm -rf "$install_aws_cli_dir"
+# UPKEEP due: "2023-01-01" label: "s5cmd for s3 object storage" interval: "+3 months"
+s5cmd_release_url="https://github.com/peak/s5cmd/releases/download/v2.0.0/s5cmd_2.0.0_Linux-64bit.tar.gz"
+s5cmd_tar="$(basename "$s5cmd_release_url")"
+s5cmd_tmp_dir="$(mktemp -d)"
+wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
+tar x -o -f "$s5cmd_tmp_dir/$s5cmd_tar" -C "/usr/local/bin" s5cmd
+rm -rf "$s5cmd_tmp_dir"
 
 INSTALL
 

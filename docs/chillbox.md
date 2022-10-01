@@ -2,7 +2,6 @@ chillbox artifact
 
 - user_data_chillbox.sh generated from src/terraform/020-chillbox/user_data_chillbox.sh.tftpl
     - bin/chillbox-init.sh
-        - bin/install-aws-cli.sh
         - bin/install-chill.sh
         - bin/install-service-dependencies.sh
         - bin/install-acme.sh

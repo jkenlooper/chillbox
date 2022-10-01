@@ -46,9 +46,9 @@ setup() {
   mv "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh.bak
   ln -s "${mock_site_init_service_object_sh}" "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh
 
-  mock_aws="$(mock_create)"
-  mock_set_output "${mock_aws}" "something" 2
-  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+  mock_s5cmd="$(mock_create)"
+  mock_set_output "${mock_s5cmd}" "something" 2
+  ln -s "${mock_s5cmd}" $BATS_RUN_TMPDIR/s5cmd
 
   mock_crontab="$(mock_create)"
   ln -s "${mock_crontab}" $BATS_RUN_TMPDIR/crontab
@@ -75,8 +75,8 @@ teardown() {
   test -e "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh.bak \
     && mv "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh.bak "${BATS_TEST_DIRNAME}"/../bin/site-init-service-object.sh
 
-  test -L $BATS_RUN_TMPDIR/aws \
-    && rm -f $BATS_RUN_TMPDIR/aws
+  test -L $BATS_RUN_TMPDIR/s5cmd \
+    && rm -f $BATS_RUN_TMPDIR/s5cmd
 
   test -L $BATS_RUN_TMPDIR/crontab \
     && rm -f $BATS_RUN_TMPDIR/crontab
@@ -122,7 +122,7 @@ main() {
   run main "${sites_artifact_file}"
   assert_success
 
-  test "$(mock_get_call_num "${mock_aws}")" -eq 4
+  test "$(mock_get_call_num "${mock_s5cmd}")" -eq 4
   test "$(mock_get_call_num "${mock_crontab}")" -eq 1
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/sites/site1.site.json" >&3

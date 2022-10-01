@@ -13,17 +13,19 @@ endpoint_url=\(.s3_endpoint_url)
 artifact_bucket_name=\(.artifact_bucket_name)
 "' /var/lib/terraform-010-infra/output.json)"
 
+# Set the credentials for accessing the s3 object storage
+mkdir -p /home/dev/.aws
+chown -R dev:dev /home/dev/.aws
+chmod 0700 /home/dev/.aws
+jq -r '"[chillbox_object_storage]
+aws_access_key_id=\(.do_spaces_access_key_id)
+aws_secret_access_key=\(.do_spaces_secret_access_key)"' "${decrypted_terraform_spaces}" > /home/dev/.aws/credentials
+chmod 0600 /home/dev/.aws/credentials
+chown dev:dev /home/dev/.aws/credentials
 
-tmp_cred_csv="/run/tmp/secrets/tmp_cred.csv"
-jq -r '"User Name, Access Key ID, Secret Access Key
-chillbox_object_storage,\(.do_spaces_access_key_id),\(.do_spaces_secret_access_key)"' "${decrypted_terraform_spaces}" > "$tmp_cred_csv"
-aws configure import --csv "file://$tmp_cred_csv"
 export AWS_PROFILE=chillbox_object_storage
-shred -fu "$tmp_cred_csv" || rm -f "$tmp_cred_csv"
+export S3_ENDPOINT_URL="${endpoint_url}"
 
-aws \
-  --endpoint-url "$endpoint_url" \
-  s3 cp \
-  --recursive \
-  "/var/lib/encrypted-secrets" \
-  "s3://${artifact_bucket_name}/chillbox/encrypted-secrets"
+s5cmd cp \
+  "/var/lib/encrypted-secrets/" \
+  "s3://${artifact_bucket_name}/chillbox/encrypted-secrets/"

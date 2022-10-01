@@ -40,8 +40,7 @@ trap cleanup EXIT
 if [ -z "${sites_artifact_file}" ]; then
   echo "INFO $script_name: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
   tmp_sites_artifact="$(mktemp)"
-  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
+  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
     "$tmp_sites_artifact"
 else
   test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at ${sites_artifact_file}" && exit 1)
@@ -95,8 +94,7 @@ for site_json in $sites; do
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
 
   tmp_artifact="$(mktemp)"
-  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
+  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
     "$tmp_artifact"
 
   slugdir="$current_working_dir/$SLUGNAME"

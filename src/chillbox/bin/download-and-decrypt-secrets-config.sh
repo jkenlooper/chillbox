@@ -27,9 +27,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-service_secrets_config_exists="$(aws \
-  --endpoint-url "$S3_ENDPOINT_URL" \
-  s3 ls \
+service_secrets_config_exists="$(s5cmd ls \
   "s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted-secrets/$service_secrets_config_dir/$hostname/$service_secrets_config_file_name" > /dev/null \
     && printf 'yes' \
     || printf 'no')"
@@ -39,9 +37,7 @@ if [ "$service_secrets_config_exists" = "no" ]; then
   exit 0
 fi
 
-aws \
-  --endpoint-url "$S3_ENDPOINT_URL" \
-  s3 cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted-secrets/$service_secrets_config_dir/$hostname/$service_secrets_config_file_name" \
+s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted-secrets/$service_secrets_config_dir/$hostname/$service_secrets_config_file_name" \
   "$tmp_encrypted_secret_config"
 
 decrypted_file="/run/tmp/chillbox_secrets/$service_secrets_config_path"

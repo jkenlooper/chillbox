@@ -43,8 +43,10 @@ alpine_custom_image_checksum="3a37457517fe456930901d7794666f1e25b5bd78b663c61e86
 
 alpine_custom_image_file="$(basename "$alpine_custom_image")"
 cached_alpine_custom_image_file="$chillbox_cache/$alpine_custom_image_file"
+image_dir="$(dirname "$cached_alpine_custom_image_file")"
+image_file="$(basename "$cached_alpine_custom_image_file" ".bz2")"
 
-if [ ! -e "$cached_alpine_custom_image_file" ]; then
+if [ ! -e "$image_dir/$image_file" ]; then
   wget -O "$cached_alpine_custom_image_file" "$alpine_custom_image"
   sha512sum "$cached_alpine_custom_image_file"
   echo "$alpine_custom_image_checksum  $cached_alpine_custom_image_file" | sha512sum --strict -c \
@@ -56,8 +58,6 @@ if [ ! -e "$cached_alpine_custom_image_file" ]; then
   bunzip2 "$cached_alpine_custom_image_file"
 fi
 
-image_dir="$(dirname "$cached_alpine_custom_image_file")"
-image_file="$(basename "$cached_alpine_custom_image_file" ".bz2")"
 
 qemu-system-x86_64 \
   -machine type=q35,accel=tcg \
@@ -67,6 +67,12 @@ qemu-system-x86_64 \
   -vga virtio \
   -usb \
   -device usb-tablet \
-  -display default,show-cursor=on
+  -display default,show-cursor=on \
+  -daemonize \
+  -net user,hostfwd=tcp::10022-:22 \
+  -net nic
 
+sleep 30
+
+ssh root@localhost -p10022
 

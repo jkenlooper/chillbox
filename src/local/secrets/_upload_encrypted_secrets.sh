@@ -2,7 +2,6 @@
 
 set -o errexit
 
-echo "INFO $0: aws-cli version: $(aws --version)"
 echo "INFO $0: jq version: $(jq --version)"
 
 if [ ! -f "/var/lib/terraform-010-infra/output.json" ]; then
