@@ -19,17 +19,11 @@ setup() {
 
   PATH="$BATS_RUN_TMPDIR:$PATH"
 
-  # Use an ephemeral directory for gpg home for testing
-  tmp_gpg_home="$(mktemp -d)"
-  export GNUPGHOME="$tmp_gpg_home"
-  export S3_ARTIFACT_ENDPOINT_URL="test"
   export S3_ENDPOINT_URL="test"
   export ARTIFACT_BUCKET_NAME="test"
   export AWS_PROFILE="test"
 }
 teardown() {
-  rm -rf "$tmp_gpg_home"
-
   test -L $BATS_RUN_TMPDIR/s5cmd \
     && rm -f $BATS_RUN_TMPDIR/s5cmd
 }

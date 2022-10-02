@@ -13,8 +13,8 @@ echo "INFO $script_name: Using slugname '${SLUGNAME}'"
 test -n "${VERSION}" || (echo "ERROR $script_name: VERSION variable is empty" && exit 1)
 echo "INFO $script_name: Using version '${VERSION}'"
 
-test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
-echo "INFO $script_name: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
+test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
 
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $script_name: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"

@@ -186,7 +186,6 @@ rc-update add s6-svscan boot
 # IMMUTABLE_BUCKET_NAME=""
 ARTIFACT_BUCKET_NAME=""
 # S3_ENDPOINT_URL=""
-# S3_ARTIFACT_ENDPOINT_URL=""
 CHILLBOX_ARTIFACT=""
 # CHILLBOX_SERVER_NAME=""
 # CHILLBOX_SERVER_PORT=80
@@ -199,7 +198,6 @@ export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
 export IMMUTABLE_BUCKET_DOMAIN_NAME="${immutable_bucket_domain_name}"
 export ARTIFACT_BUCKET_NAME="${artifact_bucket_name}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"
-export S3_ARTIFACT_ENDPOINT_URL="${s3_endpoint_url}"
 export CHILLBOX_ARTIFACT="${chillbox_artifact}"
 export CHILLBOX_SERVER_NAME="${chillbox_server_name}"
 export CHILLBOX_SERVER_PORT=80

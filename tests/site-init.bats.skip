@@ -15,7 +15,8 @@ setup_file() {
   cd "${BATS_TEST_DIRNAME}"/fixtures
   tar -c -z -f $sites_artifact_file sites
 
-  export S3_ARTIFACT_ENDPOINT_URL="https://s3.example.com"
+  export S3_ENDPOINT_URL="https://s3.example.com"
+  export AWS_PROFILE="test"
   export ARTIFACT_BUCKET_NAME="example-artifact-bucket-name"
   export IMMUTABLE_BUCKET_NAME="example-immutable-bucket-name"
   export SITES_ARTIFACT="mock-sites-example.sites.tar.gz"
@@ -93,8 +94,8 @@ main() {
   "${BATS_TEST_DIRNAME}"/../bin/site-init.sh $@
 }
 
-@test "fail when S3_ARTIFACT_ENDPOINT_URL is empty" {
-  export S3_ARTIFACT_ENDPOINT_URL=""
+@test "fail when S3_ENDPOINT_URL is empty" {
+  export S3_ENDPOINT_URL=""
   run main
   assert_failure
 }

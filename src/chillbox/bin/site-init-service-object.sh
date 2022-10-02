@@ -23,13 +23,11 @@ test -d "${slugdir}" || (echo "ERROR $script_name: slugdir should be a directory
 test -d "$(dirname "${slugdir}")" || (echo "ERROR $script_name: parent directory of slugdir should be a directory" && exit 1)
 echo "INFO $script_name: Using slugdir '${slugdir}'"
 
-export S3_ARTIFACT_ENDPOINT_URL=${S3_ARTIFACT_ENDPOINT_URL}
-test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
-echo "INFO $script_name: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
-
 export S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
 echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
+
+test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exit 1)
 
 export ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
@@ -102,7 +100,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   HOST=localhost \
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
-  S3_ENDPOINT_URL="$S3_ARTIFACT_ENDPOINT_URL" \
+  S3_ENDPOINT_URL="$S3_ENDPOINT_URL" \
   SECRETS_CONFIG="${service_secrets_config_file}" \
     ./.venv/bin/flask init-db \
     || echo "ERROR $script_name: Failed to run './.venv/bin/flask init-db' for ${SLUGNAME} ${service_handler}."

@@ -22,8 +22,8 @@ setup_file() {
   mkdir -p /run/tmp/chillbox_secrets/$SLUGNAME/api
   touch /run/tmp/chillbox_secrets/$SLUGNAME/api/api-bridge.secrets.cfg
 
-  export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
+  export AWS_PROFILE="test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
 
@@ -138,12 +138,6 @@ main() {
 
 @test "fail when slugdir is empty" {
   export slugdir=""
-  run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
-  assert_failure
-}
-
-@test "fail when S3_ARTIFACT_ENDPOINT_URL is empty" {
-  export S3_ARTIFACT_ENDPOINT_URL=""
   run main "${service_obj}" "${tmp_artifact}" "${slugdir}"
   assert_failure
 }

@@ -12,9 +12,11 @@ if [ -z "${sites_artifact_file}" ]; then
   echo "INFO $script_name: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 fi
 
-export S3_ARTIFACT_ENDPOINT_URL="${S3_ARTIFACT_ENDPOINT_URL}"
-test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
-echo "INFO $script_name: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
+export S3_ENDPOINT_URL="${S3_ENDPOINT_URL}"
+test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
+
+test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exit 1)
 
 export ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME}"
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)

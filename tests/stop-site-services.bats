@@ -14,10 +14,10 @@ setup_file() {
   mkdir -p /etc/chillbox/sites
   cp -f "${BATS_TEST_DIRNAME}/fixtures/sites/site1.site.json" /etc/chillbox/sites/
 
-  export S3_ARTIFACT_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export ARTIFACT_BUCKET_NAME="fake-artifact-bucket"
   export IMMUTABLE_BUCKET_NAME="fake-immutable-bucket"
+  export AWS_PROFILE="test"
 
   export CHILLBOX_SERVER_NAME="chillbox"
   export CHILLBOX_SERVER_PORT="80"
