@@ -95,6 +95,8 @@ docker build \
   -t "$s3_download_pubkeys_image" \
   -f "${project_dir}/src/local/secrets/s3-download-pubkeys.Dockerfile" \
   "${project_dir}/src/local/secrets"
+# Echo out something after a docker build to clear/reset the stdout.
+clear && echo "INFO $script_name: finished docker build of $s3_download_pubkeys_image"
 
 pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
@@ -117,7 +119,10 @@ docker run \
   --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_download_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
+# Echo out something after a docker run to clear/reset the stdout.
+clear && echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
 
+# Provide encrypt-file.js deno script for the service handler container to use.
 cp "$project_dir/src/local/secrets/encrypt-file.js" "$pubkey_dir"
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
@@ -138,18 +143,25 @@ for site_json in $site_json_files; do
     service_handler="$(echo "$service_obj" | jq -r '.handler')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
     test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
-    encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}"
-    encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
 
+    encrypted_secret_service_dir="$encrypted_secrets_dir/$slugname/$service_handler"
     mkdir -p "$encrypted_secret_service_dir"
 
-    if [ -e "$encrypted_secret_file" ]; then
-      echo "The encrypted file for $slugname $service_handler already exists: $encrypted_secret_file"
-      echo "Replace this file? y/n"
-      read -r replace_secret_file
-      test "$replace_secret_file" = "y" || continue
-    fi
-    rm -f "$encrypted_secret_file"
+    chillbox_hostnames="$(find "$pubkey_dir" -depth -maxdepth 1 -type f -name '*.public.pem' -exec basename {} .public.pem \;)"
+    replace_secret_files=""
+    for chillbox_hostname in $chillbox_hostnames; do
+      encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/$chillbox_hostname/$secrets_config"
+
+      if [ -e "$encrypted_secret_file" ]; then
+        echo "The encrypted file $slugname/$service_handler/$chillbox_hostname/$secrets_config already exists in $encrypted_secrets_dir"
+        echo "Replace this file? y/n"
+        read -r replace_secret_file
+        test "$replace_secret_file" = "y" || continue
+      fi
+      replace_secret_files="y"
+    done
+    test "$replace_secret_files" = "y" || continue
+    find "$encrypted_secrets_dir/$slugname/$service_handler" -depth -mindepth 2 -maxdepth 2 -type f -delete
 
     tmp_service_dir="$(mktemp -d)"
     tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
@@ -175,7 +187,10 @@ for site_json in $site_json_files; do
       -t "$service_image_name" \
       -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" \
       "$tmp_service_dir/$slugname/$service_handler/"
+    # Echo out something after a docker build to clear/reset the stdout.
+    clear && echo "INFO $script_name: finished docker build of $service_image_name"
 
+    clear && echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile"
     docker run \
       -i --tty \
       --rm \
