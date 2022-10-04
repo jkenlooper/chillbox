@@ -58,7 +58,10 @@ async function importPublicKey(publicPemFile) {
 
   const pemHeader = "-----BEGIN PUBLIC KEY-----";
   const pemFooter = "-----END PUBLIC KEY-----";
-  const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+  const pemContents = pem.substring(
+    pemHeader.length,
+    pem.length - pemFooter.length,
+  );
   const binaryDerString = atob(pemContents);
   const binaryDer = str2ab(binaryDerString);
 
@@ -67,10 +70,10 @@ async function importPublicKey(publicPemFile) {
     binaryDer,
     {
       name: "RSA-OAEP",
-      hash: "SHA-512"
+      hash: "SHA-512",
     },
     true,
-    ["encrypt"]
+    ["encrypt"],
   );
 }
 
@@ -85,17 +88,20 @@ async function encryptFile(publicKey, file, outFile) {
   // small payloads.
   // https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
   if (plaintext.byteLength > 382) {
-    console.log("plaintext byte length is over the 382 byte limit allowed for the key.");
+    console.log(
+      "plaintext byte length is over the 382 byte limit allowed for the key.",
+    );
     Deno.exit(4);
   }
   // TODO Should include a symmetric key as payload instead to avoid the limit?
   // See about wrapping the key used to encrypt the payload.
 
-  const ciphertext = await encrypt({
-    name: "RSA-OAEP"
-  },
+  const ciphertext = await encrypt(
+    {
+      name: "RSA-OAEP",
+    },
     publicKey,
-    plaintext
+    plaintext,
   );
   await Deno.writeFile(outFile, ciphertext);
 }

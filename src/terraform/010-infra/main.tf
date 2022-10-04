@@ -1,8 +1,10 @@
 terraform {
   required_providers {
+    # UPKEEP due: "2022-12-04" label: "Terraform provider digitalocean/digitalocean" interval: "+2 months"
+    # https://registry.terraform.io/providers/digitalocean/digitalocean/latest
     digitalocean = {
       source  = "digitalocean/digitalocean"
-      version = "~> 2.0"
+      version = "2.22.3"
     }
   }
 }

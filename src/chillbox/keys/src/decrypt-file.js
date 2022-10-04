@@ -71,7 +71,10 @@ async function importPrivateKey(privatePemFile) {
 
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
-  const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+  const pemContents = pem.substring(
+    pemHeader.length,
+    pem.length - pemFooter.length,
+  );
   const binaryDerString = atob(pemContents);
   const binaryDer = str2ab(binaryDerString);
 
@@ -80,10 +83,10 @@ async function importPrivateKey(privatePemFile) {
     binaryDer,
     {
       name: "RSA-OAEP",
-      hash: "SHA-512"
+      hash: "SHA-512",
     },
     false,
-    ["decrypt"]
+    ["decrypt"],
   );
 }
 
@@ -95,11 +98,12 @@ async function decryptFile(privateKey, file, outFile) {
     ciphertext = await Deno.readFile(file);
   }
 
-  const plaintext = await decrypt({
-    name: "RSA-OAEP"
-  },
+  const plaintext = await decrypt(
+    {
+      name: "RSA-OAEP",
+    },
     privateKey,
-    ciphertext
+    ciphertext,
   );
   await Deno.writeFile(outFile, plaintext);
 }

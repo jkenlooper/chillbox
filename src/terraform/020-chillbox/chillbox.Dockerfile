@@ -95,7 +95,9 @@ COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
 set -o errexit
-su dev -c "terraform init"
+# Use 'terraform init -upgrade' since the tf files may have been updated with
+# a newer provider version.
+su dev -c "terraform init -upgrade"
 
 # A Terraform workspace is required so that there is a directory created for the
 # terraform state location instead of a file.  This way a docker volume can be

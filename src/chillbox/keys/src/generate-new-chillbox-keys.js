@@ -29,19 +29,19 @@ async function generateNewChillboxKey(dataDir) {
    The RSA-OAEP is asymmetric (public/private key) algorithm that can be used
    for encryption and decryption.
   */
-  generateKey({
-    name: "RSA-OAEP",
-    modulusLength: 4096,
-    publicExponent: new Uint8Array([1, 0, 1]),
-    hash: "SHA-512",
-  },
+  generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 4096,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-512",
+    },
     true,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   ).then((keyPair) => {
     exportCryptoKey(privatePemFile, keyPair.privateKey);
     exportCryptoKey(publicPemFile, keyPair.publicKey);
   });
-
 }
 
 async function checkExistingPemFile(pemFile, key) {
@@ -72,9 +72,14 @@ function ab2str(buf) {
 async function exportCryptoKey(pemFile, key) {
   const exported = await exportKey(
     key.type === "public" ? "spki" : "pkcs8",
-    key
+    key,
   );
-  await Deno.writeTextFile(pemFile, `-----BEGIN ${key.type.toUpperCase()} KEY-----\n${btoa(ab2str(exported))}\n-----END ${key.type.toUpperCase()} KEY-----`);
+  await Deno.writeTextFile(
+    pemFile,
+    `-----BEGIN ${key.type.toUpperCase()} KEY-----\n${
+      btoa(ab2str(exported))
+    }\n-----END ${key.type.toUpperCase()} KEY-----`,
+  );
 
   // Only allow reading it after it is written to prevent chance of overwriting
   // the generated key files.

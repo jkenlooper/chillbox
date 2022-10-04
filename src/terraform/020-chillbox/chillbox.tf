@@ -15,15 +15,17 @@ resource "digitalocean_custom_image" "alpine" {
 }
 
 resource "digitalocean_droplet" "chillbox" {
-  count      = var.chillbox_count
-  name       = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}"
-  size       = var.chillbox_droplet_size
-  image      = digitalocean_custom_image.alpine.id
-  region     = var.region
-  vpc_uuid   = digitalocean_vpc.chillbox.id
-  ssh_keys   = [for ssh_key in digitalocean_ssh_key.chillbox : ssh_key.id]
-  tags       = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
-  monitoring = false
+  count         = var.chillbox_count
+  name          = "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}"
+  size          = var.chillbox_droplet_size
+  image         = digitalocean_custom_image.alpine.id
+  resize_disk   = false
+  region        = var.region
+  vpc_uuid      = digitalocean_vpc.chillbox.id
+  ssh_keys      = [for ssh_key in digitalocean_ssh_key.chillbox : ssh_key.id]
+  tags          = [digitalocean_tag.fw_web.name, digitalocean_tag.fw_developer_ssh.name, digitalocean_tag.droplet.name]
+  monitoring    = false
+  droplet_agent = false
   lifecycle {
     prevent_destroy = false
     ignore_changes = [

@@ -200,10 +200,10 @@ variable "chillbox_count" {
   }
 }
 variable "user_data_password" {
-  type = string
+  type        = string
   description = "User-data password."
 }
 variable "initial_dev_user_password" {
-  type = string
+  type        = string
   description = "Initial dev user password."
 }
