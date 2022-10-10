@@ -212,3 +212,47 @@ docker_run_chillbox_container() {
 
 }
 docker_run_chillbox_container
+
+echo "TODO ansible setup"
+exit 0
+
+
+# Start initial ansible
+
+export ANSIBLE_IMAGE="chillbox-ansible:latest"
+export ANSIBLE_CONTAINER="chillbox-ansible-$CHILLBOX_INSTANCE-$WORKSPACE"
+
+"$project_dir/src/local/_docker_build_ansible.sh"
+
+
+docker_run_ansible_container() {
+  docker run \
+    --name "$ANSIBLE_CONTAINER" \
+    --user dev \
+    --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
+    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
+    --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
+    --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
+    --mount "type=volume,src=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-020-chillbox,readonly=false" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
+    --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \
+    --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
+    --mount "type=bind,src=$chillbox_dist_file,dst=/usr/local/src/chillbox-terraform/dist/$CHILLBOX_ARTIFACT,readonly=true" \
+    --mount "type=bind,src=$chillbox_state_home/$SITES_MANIFEST,dst=/usr/local/src/chillbox-terraform/dist/$SITES_MANIFEST,readonly=true" \
+    --mount "type=bind,src=$chillbox_state_home/$SITES_ARTIFACT,dst=/usr/local/src/chillbox-terraform/dist/$SITES_ARTIFACT,readonly=true" \
+    --mount "type=bind,src=$dist_sites_dir,dst=/usr/local/src/chillbox-terraform/dist/sites,readonly=true" \
+    --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
+    "$ANSIBLE_IMAGE" || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
+}
