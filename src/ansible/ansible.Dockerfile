@@ -60,7 +60,22 @@ chmod -R 0700 /var/lib/doterra
 mkdir -p /var/lib/terraform-010-infra
 chown -R dev:dev /var/lib/terraform-010-infra
 chmod -R 0700 /var/lib/terraform-010-infra
+
+mkdir -p /var/lib/ansible
+chown -R dev:dev /var/lib/ansible
+chmod -R 0700 /var/lib/ansible
+
+mkdir -p /etc/ansible
+chown -R dev:dev /etc/ansible
+chmod -R 0700 /etc/ansible
 SETUP
+
 
 # TODO Configure ansible
 # https://docs.ansible.com/ansible/latest/installation_guide/intro_configuration.html
+COPY --chown=dev:dev ansible.cfg /etc/ansible/ansible.cfg
+
+RUN <<ANSIBLE_INIT
+set -o errexit
+
+ANSIBLE_INIT

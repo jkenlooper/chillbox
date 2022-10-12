@@ -14,6 +14,7 @@ apk add \
   mandoc man-pages \
   coreutils \
   openssl \
+  openssh-keygen \
   gnupg \
   gnupg-dirmngr
 
