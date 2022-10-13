@@ -113,7 +113,7 @@ docker run \
   --name "$s3_download_pubkeys_container" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=true" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
@@ -238,7 +238,7 @@ docker run \
   --name "$s3_upload_encrypted_secrets_container" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted-secrets" \

@@ -112,7 +112,7 @@ been pulled. The pull-terraform-tfstate.sh script can be used to accomplish this
 volume_list="$(docker volume list \
   --filter "name=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-${TERRAFORM_CHILLBOX_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
-  --filter "name=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE}" \
+  --filter "name=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE" \

@@ -23,7 +23,7 @@ INSTALL
 WORKDIR /usr/local/src/chillbox-terraform
 
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
-ENV GPG_KEY_NAME="chillbox_doterra"
+ENV GPG_KEY_NAME="chillbox_local"
 ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
 ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/terraform.tfstate.json.asc"
 

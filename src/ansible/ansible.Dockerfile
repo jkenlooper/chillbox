@@ -42,7 +42,7 @@ INSTALL
 
 ENV PATH=/usr/local/src/ansible/bin:${PATH}
 
-ENV GPG_KEY_NAME="chillbox_doterra"
+ENV GPG_KEY_NAME="chillbox_local"
 
 RUN <<SETUP
 set -o errexit

@@ -4,6 +4,8 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 terraform_command=${1:-interactive}
 if [ "$terraform_command" != "interactive" ] && [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
   echo "ERROR $0: This command ($terraform_command) is not supported in this script."
@@ -82,7 +84,7 @@ docker run \
   -i --tty \
   --name "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=bind,src=${terraform_infra_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
@@ -119,7 +121,7 @@ docker_run_infra_container() {
     --hostname "${INFRA_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
@@ -180,7 +182,7 @@ docker_run_chillbox_container() {
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
@@ -227,7 +229,7 @@ docker_run_ansible_container() {
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \

@@ -133,6 +133,10 @@ init_and_source_chillbox_config() {
         pub_ssh_key_files="$HOME/.ssh/id_rsa.pub"
       fi
     fi
+
+    # TODO generate the ansible key pair as well as the gpg key to encrypt the
+    # private key.
+
     fingerprint_sha256_accept_list="$(cat "$fingerprint_sha256_accept_list_tmp")"
     rm -f "$fingerprint_sha256_accept_list_tmp"
 
