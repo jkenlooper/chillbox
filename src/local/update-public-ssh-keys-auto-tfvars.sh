@@ -68,7 +68,7 @@ done
 # TODO: use docker cp to grab the public ansible key from the mounted volume.
 public_ansible_ssh_key=.../ansible.pem.pub
 # Show the ansible public key fingerprint: ssh-keygen -l -E sha256 -f ansible.pem.pub
-cat "$public_ansible_ssh_key" >> "$accepted_pub_ssh_keys"
+#cat "$public_ansible_ssh_key" >> "$accepted_pub_ssh_keys"
 
 
 jq --raw-input '{developer_public_ssh_keys: ([.] + [inputs] | map(select(. != ""))) }' "$accepted_pub_ssh_keys" > "$ssh_keys_file"

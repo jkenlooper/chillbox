@@ -17,14 +17,9 @@ chillbox_artifact_version="$(make --silent -C "$project_dir" inspect.VERSION)"
 
 SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
-export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
-
-export WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  echo "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
-  exit 1
-fi
+# This script shouldn't be run directly. Do a sanity check still.
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 
 chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_ARTIFACT"
 chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
