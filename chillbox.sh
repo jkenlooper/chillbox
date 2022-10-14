@@ -134,8 +134,13 @@ init_and_source_chillbox_config() {
       fi
     fi
 
-    # TODO generate the ansible key pair as well as the gpg key to encrypt the
-    # private key.
+    # Generate the ssh key pair that will be used by ansible when connecting to
+    # the deployed chillbox server. This will also create the chillbox_local gpg
+    # key that encrypts the credentials used for the hosting service
+    # (DigitalOcean) and that ssh private key for ansible.
+    public_key_for_ansible="$chillbox_config_home/ansible.pem.pub"
+    "$project_dir/src/local/init-gnupg-keys.sh" "$public_key_for_ansible"
+    printf "%s\n" "$(ssh-keygen -l -E sha256 -f "$public_key_for_ansible" || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
 
     fingerprint_sha256_accept_list="$(cat "$fingerprint_sha256_accept_list_tmp")"
     rm -f "$fingerprint_sha256_accept_list_tmp"
@@ -149,7 +154,7 @@ export SITES_ARTIFACT_URL="example"
 
 # The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
 # public ssh keys that will be added to the deployed chillbox server.
-export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files"
+export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files $public_key_for_ansible"
 
 # Only include the public ssh keys that match the fingerprint in the accept
 # list. These are compared with the

@@ -26,6 +26,8 @@ docker run \
   --name "$ANSIBLE_CONTAINER" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/run/tmp/ansible,tmpfs-mode=0700" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-gnupg-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/chillbox-gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-ansible-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/ansible,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/doterra,readonly=true" \
   "$ANSIBLE_IMAGE"

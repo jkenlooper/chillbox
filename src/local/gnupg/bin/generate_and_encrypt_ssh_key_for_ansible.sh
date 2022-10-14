@@ -11,12 +11,13 @@ test -n "$GPG_KEY_NAME" || (echo "ERROR $0: GPG_KEY_NAME variable is empty" && e
 test -n "$secure_tmp_ansible" || (echo "ERROR: secure_tmp_ansible variable is empty." && exit 1)
 test -d "$secure_tmp_ansible" || (echo "ERROR $0: The path '$secure_tmp_ansible' is not a directory" && exit 1)
 
-ciphertext_ansible_ssh_key=/var/lib/doterra/secrets/ansible.pem.asc
-public_ansible_ssh_key=/var/lib/doterra/secrets/ansible.pem.pub
+ciphertext_ansible_ssh_key=/var/lib/chillbox-gnupg/ansible.pem.asc
+public_ansible_ssh_key=/var/lib/chillbox-gnupg/ansible.pem.pub
 plaintext_ansible_ssh_key="$secure_tmp_ansible/ansible.pem"
 
 if [ -f "$ciphertext_ansible_ssh_key" ]; then
   echo "INFO $script_name: The encrypted ssh key for ansible already exists. Skipping the creation of a new one."
+  exit 0
 fi
 
 remove_plaintext_ssh_key() {
@@ -44,7 +45,7 @@ ssh-keygen -t rsa -b 4096 \
   -f "$plaintext_ansible_ssh_key"
 
 gpg --encrypt --recipient "$GPG_KEY_NAME" --armor --output "$ciphertext_ansible_ssh_key" \
-  --comment "Chillbox doterra secrets private ssh key for ansible" \
+  --comment "Chillbox local private ssh key for ansible" \
   --comment "Date: $(date)" \
   "$plaintext_ansible_ssh_key"
 remove_plaintext_ssh_key

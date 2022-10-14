@@ -115,6 +115,7 @@ volume_list="$(docker volume list \
   --filter "name=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE}" \
   --filter "name=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE}" \
+  --filter "name=chillbox-gnupg-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE" \
   --filter "name=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE" \
   --quiet)"
   test -n "$volume_list" || printf '\n%s\n' "WARNING $0: No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."

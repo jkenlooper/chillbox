@@ -21,8 +21,26 @@ INSTALL
 
 WORKDIR /usr/local/src/chillbox-gnupg
 
-ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
+ENV PATH=/usr/local/src/chillbox-gnupg/bin:${PATH}
 ENV GPG_KEY_NAME="chillbox_local"
 
-#TODO
+RUN <<SETUP
+set -o errexit
 
+addgroup dev
+adduser -G dev -D dev
+chown -R dev:dev .
+
+mkdir -p /home/dev/.gnupg
+chown -R dev:dev /home/dev/.gnupg
+chmod -R 0700 /home/dev/.gnupg
+
+mkdir -p /var/lib/chillbox-gnupg
+chown -R dev:dev /var/lib/chillbox-gnupg
+chmod -R 0700 /var/lib/chillbox-gnupg
+
+SETUP
+
+COPY --chown=dev:dev bin bin
+
+CMD ["/usr/local/src/chillbox-gnupg/bin/init.sh"]

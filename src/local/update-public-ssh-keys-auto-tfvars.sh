@@ -64,13 +64,6 @@ for ssh_key_location in ${PUBLIC_SSH_KEY_LOCATIONS}; do
 
 done
 
-# Always include the generated public ssh key from the local ansible container.
-# TODO: use docker cp to grab the public ansible key from the mounted volume.
-public_ansible_ssh_key=.../ansible.pem.pub
-# Show the ansible public key fingerprint: ssh-keygen -l -E sha256 -f ansible.pem.pub
-#cat "$public_ansible_ssh_key" >> "$accepted_pub_ssh_keys"
-
-
 jq --raw-input '{developer_public_ssh_keys: ([.] + [inputs] | map(select(. != ""))) }' "$accepted_pub_ssh_keys" > "$ssh_keys_file"
 # Verify that the public ssh keys were added.
 jq --exit-status '.developer_public_ssh_keys[]' "$ssh_keys_file" > /dev/null || (echo "ERROR $0: No public ssh keys set in $ssh_keys_file." && exit 1)
