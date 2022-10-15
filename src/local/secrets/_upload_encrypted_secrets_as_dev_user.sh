@@ -6,12 +6,16 @@ decrypted_terraform_spaces="$1"
 test -n "$decrypted_terraform_spaces" || (echo "ERROR $0: First arg is not set." && exit 1)
 test -e "$decrypted_terraform_spaces" || (echo "ERROR $0: Missing $decrypted_terraform_spaces file." && exit 1)
 
+plaintext_terraform_010_infra_output_file="$2"
+test -n "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $0: Second arg is not set." && exit 1)
+test -e "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $0: Missing $plaintext_terraform_010_infra_output_file file." && exit 1)
+
 endpoint_url=""
 artifact_bucket_name=""
 eval "$(jq -r 'map_values(.value) | @sh "
 endpoint_url=\(.s3_endpoint_url)
 artifact_bucket_name=\(.artifact_bucket_name)
-"' /var/lib/terraform-010-infra/output.json)"
+"' "$plaintext_terraform_010_infra_output_file")"
 
 # Set the credentials for accessing the s3 object storage
 mkdir -p /home/dev/.aws

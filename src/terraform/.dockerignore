@@ -4,6 +4,7 @@
 # Except these specific files and directories
 !/010-infra/variables.tf
 !/010-infra/main.tf
+!/010-infra/outputs.tf
 
 !/020-chillbox/chillbox.tf
 !/020-chillbox/variables.tf

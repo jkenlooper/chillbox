@@ -51,6 +51,7 @@ ENV SITES_ARTIFACT="$SITES_ARTIFACT"
 
 COPY --chown=dev:dev 010-infra/variables.tf ./
 COPY --chown=dev:dev 010-infra/main.tf ./
+COPY --chown=dev:dev 010-infra/outputs.tf ./
 COPY --chown=dev:dev 010-infra/user_data_chillbox.sh.tftpl .
 COPY --chown=dev:dev 010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT

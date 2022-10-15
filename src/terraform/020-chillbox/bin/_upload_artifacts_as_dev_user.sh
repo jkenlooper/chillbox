@@ -3,17 +3,19 @@
 set -o errexit
 set -o nounset
 
-terraform_command=$1
-decrypted_terraform_spaces=$2
+terraform_command="$1"
+decrypted_terraform_spaces="$2"
+plaintext_terraform_010_infra_output_file="$3"
 
 mkdir -p /run/tmp/secrets/logs
 chmod -R 0700 /run/tmp/secrets/logs
 export LOG_FILE="/run/tmp/secrets/logs/doterra-upload-artifacts.log"
+touch "$LOG_FILE"
 
 echo "INFO $0: jq version: $(jq --version)"
 
-if [ ! -f "/var/lib/terraform-010-infra/output.json" ]; then
-  echo "ERROR $0: Missing file: /var/lib/terraform-010-infra/output.json"
+if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
+  echo "ERROR $0: Missing file: $plaintext_terraform_010_infra_output_file"
   exit 1
 fi
 
@@ -32,7 +34,7 @@ jq \
   chillbox_artifact: $jq_chillbox_artifact,
   sites_manifest: $jq_sites_manifest,
   } + map_values(.value)' \
-  /var/lib/terraform-010-infra/output.json \
+  "$plaintext_terraform_010_infra_output_file" \
   > chillbox_sites.auto.tfvars.json
 chown dev:dev chillbox_sites.auto.tfvars.json
 

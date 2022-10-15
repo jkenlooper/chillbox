@@ -71,10 +71,17 @@ docker run \
   --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   "$sleeper_image"
 docker cp "$tmp_container_name:/var/lib/terraform-010-infra/user_data_chillbox.sh.encrypted" "$chillbox_state_home/user_data_chillbox.sh.encrypted"
-docker cp "$tmp_container_name:/var/lib/terraform-010-infra/output.json" "$chillbox_state_home/output.json"
+
+# TODO The user_data_password to decrypt the user_data_chillbox.sh.encrypted is
+# in the output.json.asc, but that is encrypted with the gnupg key that is on
+# the docker volume.
+docker cp "$tmp_container_name:/var/lib/terraform-010-infra/output.json.asc" "$chillbox_state_home/output.json.asc"
 
 docker stop --time 0 "$tmp_container_name" || printf ""
 docker rm "$tmp_container_name" || printf ""
+
+echo "Decrypting the $chillbox_state_home/output.json.asc file is not supported at this time."
+exit 1
 
 user_data_password="$(jq -r '.user_data_password.value' "$chillbox_state_home/output.json")"
 

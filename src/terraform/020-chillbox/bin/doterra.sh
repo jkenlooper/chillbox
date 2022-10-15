@@ -46,6 +46,14 @@ if [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && 
   exit 1
 fi
 
+ciphertext_terraform_010_infra_output_file=/var/lib/terraform-010-infra/output.json.asc
+if [ ! -f "$ciphertext_terraform_010_infra_output_file" ]; then
+  echo "ERROR $script_name: Missing file: $ciphertext_terraform_010_infra_output_file"
+  exit 1
+fi
+
+ciphertext_terraform_020_chillbox_output_file=/var/lib/terraform-020-chillbox/output.json.asc
+
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"
 chown -R dev:dev "$(dirname "$secure_tmp_secrets_dir")"
@@ -99,8 +107,18 @@ if [ ! -f "${decrypted_chillbox_spaces}" ]; then
   set +x
 fi
 
-su dev -c "
-_upload_artifacts_as_dev_user.sh \"$terraform_command\" \"$decrypted_terraform_spaces\"
+plaintext_terraform_010_infra_output_file="$secure_tmp_secrets_dir/terraform-010-infra-output.json"
+if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
+  echo "INFO $0: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
+  set -x
+  _dev_tty.sh "
+    _decrypt_file_as_dev_user.sh \"$ciphertext_terraform_010_infra_output_file\" \"$plaintext_terraform_010_infra_output_file\""
+  set +x
+fi
+
+su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
+  GPG_KEY_NAME=$GPG_KEY_NAME \
+  _upload_artifacts_as_dev_user.sh \"$terraform_command\" \"$decrypted_terraform_spaces\" \"$plaintext_terraform_010_infra_output_file\"
 "
 
 # Need to update the encrypted tfstate with any potential changes that have
@@ -118,14 +136,15 @@ sync_encrypted_tfstate() {
 trap sync_encrypted_tfstate EXIT
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
-  _doterra_as_dev_user.sh \"$terraform_command\" \"/var/lib/terraform-020-chillbox/output.json\""
+  GPG_KEY_NAME=$GPG_KEY_NAME \
+  _doterra_as_dev_user.sh \"$terraform_command\" \"$ciphertext_terraform_020_chillbox_output_file\""
 
 if [ "$terraform_command" = "apply" ]; then
   cat <<HERE
 INFO $script_name: If initially deploying a new chillbox server.
   Log file for the user data script will be on the server at:
     /var/log/chillbox-init/*.log
-  The output variables from terraform are in this json file and may contain sensitive values:
-    /var/lib/terraform-020-chillbox/output.json
+  The output variables from terraform are in this json file which is encrypted with the gnupg key chillbox_local
+    $ciphertext_terraform_020_chillbox_output_file
 HERE
 fi
