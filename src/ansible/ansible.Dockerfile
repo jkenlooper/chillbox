@@ -71,9 +71,13 @@ chmod -R 0700 /etc/ansible
 SETUP
 
 
+WORKDIR /usr/local/src/chillbox-ansible
 # TODO Configure ansible
 # https://docs.ansible.com/ansible/latest/installation_guide/intro_configuration.html
 COPY --chown=dev:dev ansible.cfg /etc/ansible/ansible.cfg
+COPY bin bin
+
+ENV PATH=/usr/local/src/chillbox-ansible/bin:${PATH}
 
 RUN <<ANSIBLE_INIT
 set -o errexit
