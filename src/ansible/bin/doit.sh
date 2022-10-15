@@ -7,34 +7,48 @@ script_name="$(basename "$0")"
 usage() {
   cat <<HERE
 
-Wrapper around the ansible command.
+Wrapper around the ansible command. Use '--' to pass an option to the ansible command if no arg is used.
+
+If an interactive session with an ansible command is needed then should just do
+'su dev' command after decrypting the private ssh key for ansible.
 
 Usage:
   $script_name -h
-  $script_name <ansible args>
+  $script_name -- --help
+  $script_name
+  $script_name -- <options> <pattern>
+  $script_name <pattern>
+  $script_name -s <sub-command> -- <options> <args>
 
 Options:
   -h                  Show this help message.
+  -s <sub-command>    Run ansible sub command like playbook, console, etc.
 
+Examples:
+  Just decrypt the private ssh key for ansible and switch to dev user. Use this
+  command if running ansible commands interactively.
+  $script_name && su dev
+
+  Run the command "ansible -m command -a 'whoami' localhost".
+  $script_name -- -m command -a 'whoami' localhost
+
+  Run one or more playbooks.
+  $script_name -s playbook -- playbook [playbook ...]
 HERE
 }
 
-while getopts "h" OPTION ; do
+sub_command=""
+
+while getopts "hs:" OPTION ; do
   case "$OPTION" in
     h) usage
        exit 0 ;;
+    s) sub_command=$OPTARG ;;
     ?) usage
        exit 1 ;;
   esac
 done
 shift $((OPTIND - 1))
-
-ansible_command=$*
-if [ -z "$ansible_command" ]; then
-  usage
-  echo "ERROR $script_name: Must supply args for the ansible command."
-  exit 1
-fi
 
 ciphertext_ansible_private_ssh_key_file=/var/lib/chillbox-gnupg/ansible.pem.asc
 
@@ -52,6 +66,11 @@ if [ ! -f "$plaintext_ansible_private_ssh_key_file" ]; then
   set +x
 fi
 
-set -x
-su dev -c "plaintext_ansible_private_ssh_key_file=$plaintext_ansible_private_ssh_key_file _ansible_as_dev_user.sh $ansible_command"
-set +x
+# Only need to run the ansible commands if an arg was passed.
+if [ -n "$1" ]; then
+  cmd="$(which ansible)"
+  if [ -n "$sub_command" ]; then
+    cmd="$(which "ansible-$sub_command")"
+  fi
+  su dev -s "$cmd" -- "$@"
+fi
