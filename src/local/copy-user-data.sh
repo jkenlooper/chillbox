@@ -70,9 +70,9 @@ docker run \
   --name "$tmp_container_name" \
   --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   "$sleeper_image"
-docker cp "$tmp_container_name:/var/lib/terraform-010-infra/user_data_chillbox.sh.encrypted" "$chillbox_state_home/user_data_chillbox.sh.encrypted"
+docker cp "$tmp_container_name:/var/lib/terraform-010-infra/bootstrap-chillbox-init-credentials.sh.encrypted" "$chillbox_state_home/bootstrap-chillbox-init-credentials.sh.encrypted"
 
-# TODO The user_data_password to decrypt the user_data_chillbox.sh.encrypted is
+# TODO The bootstrap_chillbox_pass to decrypt the bootstrap-chillbox-init-credentials.sh.encrypted is
 # in the output.json.asc, but that is encrypted with the gnupg key that is on
 # the docker volume.
 docker cp "$tmp_container_name:/var/lib/terraform-010-infra/output.json.asc" "$chillbox_state_home/output.json.asc"
@@ -83,7 +83,7 @@ docker rm "$tmp_container_name" || printf ""
 echo "Decrypting the $chillbox_state_home/output.json.asc file is not supported at this time."
 exit 1
 
-user_data_password="$(jq -r '.user_data_password.value' "$chillbox_state_home/output.json")"
+bootstrap_chillbox_pass="$(jq -r '.bootstrap_chillbox_pass.value' "$chillbox_state_home/output.json")"
 
-openssl enc -aes-256-cbc -d -md sha512 -pbkdf2 -a -iter 100000 -salt -pass "pass:${user_data_password}" -in "${chillbox_state_home}/user_data_chillbox.sh.encrypted" -out "$output_user_data_file"
+openssl enc -aes-256-cbc -d -md sha512 -pbkdf2 -a -iter 100000 -salt -pass "pass:${bootstrap_chillbox_pass}" -in "${chillbox_state_home}/bootstrap-chillbox-init-credentials.sh.encrypted" -out "$output_user_data_file"
 chmod +x "$output_user_data_file"

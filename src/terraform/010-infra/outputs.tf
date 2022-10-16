@@ -11,8 +11,8 @@ output "artifact_bucket_name" {
   description = "Artifact bucket name is used to store artifact files."
 }
 
-output "user_data_password" {
-  value       = random_string.user_data_password.result
+output "bootstrap_chillbox_pass" {
+  value       = random_string.bootstrap_chillbox_pass.result
   sensitive   = true
   description = "The password used to encrypt the user-data."
 }

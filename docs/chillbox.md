@@ -1,6 +1,6 @@
 chillbox artifact 
 
-- user_data_chillbox.sh generated from src/terraform/020-chillbox/user_data_chillbox.sh.tftpl
+- bootstrap-chillbox-init-credentials.sh generated from src/terraform/020-chillbox/bootstrap-chillbox-init-credentials.sh.tftpl
     - bin/chillbox-init.sh
         - bin/install-chill.sh
         - bin/install-service-dependencies.sh

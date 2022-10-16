@@ -199,7 +199,7 @@ variable "chillbox_count" {
     error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
   }
 }
-variable "user_data_password" {
+variable "bootstrap_chillbox_pass" {
   type        = string
   description = "User-data password."
 }

@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+set -o errexit
+
+# Ansible requires a python interpretor.
+# Install openssl to use to decrypt the bootstrap file.
+apk update
+apk install \
+  -q --no-progress \
+  openssl \
+  python3
+
+ln -s -f /usr/bin/python3 /usr/bin/python
+
+# The work directory is most likely /root
+work_dir="$(dirname "$0")"
+
+cat <<'HERE' > "$work_dir/bootstrap-chillbox-init-credentials.sh.encrypted"
+${tf_bootstrap_chillbox_init_credentials_encrypted}
+HERE

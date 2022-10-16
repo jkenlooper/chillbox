@@ -34,7 +34,9 @@ resource "digitalocean_droplet" "chillbox" {
       ssh_keys,
     ]
   }
-  user_data = file("/var/lib/terraform-010-infra/user_data_chillbox.sh.encrypted")
+  user_data = templatefile("init-chillbox.sh.tftpl", {
+    tf_bootstrap_chillbox_init_credentials_encrypted : file("/var/lib/terraform-010-infra/bootstrap-chillbox-init-credentials.sh.encrypted"),
+  })
 }
 
 resource "digitalocean_ssh_key" "chillbox" {

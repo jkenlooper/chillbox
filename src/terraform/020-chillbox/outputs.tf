@@ -5,8 +5,8 @@ output "initial_dev_user_password" {
   description = "Initial dev user password. This will require it to be changed on first login."
 }
 
-output "user_data_password" {
-  value       = var.user_data_password
+output "bootstrap_chillbox_pass" {
+  value       = var.bootstrap_chillbox_pass
   sensitive   = true
   description = "The password used to encrypt the user-data."
 }

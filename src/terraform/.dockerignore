@@ -5,20 +5,20 @@
 !/010-infra/variables.tf
 !/010-infra/main.tf
 !/010-infra/outputs.tf
+!/010-infra/bootstrap-chillbox-init-credentials.sh.tftpl
 
 !/020-chillbox/chillbox.tf
 !/020-chillbox/variables.tf
 !/020-chillbox/main.tf
 !/020-chillbox/outputs.tf
+!/020-chillbox/init-chillbox.sh.tftpl
+!/020-chillbox/upload-artifacts.sh
 
 !/030-artifact-modules/extract-terraform-artifact-modules.sh
-
-!/010-infra/user_data_chillbox.sh.tftpl
 
 !/bin/*
 !/010-infra/bin/*
 !/020-chillbox/bin/*
-!/020-chillbox/upload-artifacts.sh
 
 # terraform init creates the dependency lock file
 # https://www.terraform.io/language/files/dependency-lock
