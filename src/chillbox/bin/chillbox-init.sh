@@ -5,7 +5,7 @@ set -o errexit
 developer_public_ssh_keys="${DEVELOPER_PUBLIC_SSH_KEYS:-}"
 access_key_id="${ACCESS_KEY_ID:-}"
 secret_access_key="${SECRET_ACCESS_KEY:-}"
-dev_user_passphrase="${DEV_USER_PASSPHRASE:-}"
+dev_user_passphrase_hashed="${DEV_USER_PASSPHRASE_HASHED:-}"
 tech_email="${TECH_EMAIL:-}"
 immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
 immutable_bucket_domain_name="${IMMUTABLE_BUCKET_DOMAIN_NAME:-}"
@@ -39,14 +39,19 @@ if [ -z "$secret_access_key" ]; then
   test -n "$secret_access_key" || (echo "No secret access key set. Exiting" && exit 1)
 fi
 
-if [ -z "$dev_user_passphrase" ]; then
-  printf '\n%s\n' "No DEV_USER_PASSPHRASE variable set."
-  printf '\n%s\n' "Enter the initial passphrase for the new 'dev' user. The dev user will be prompted to change it on the first login."
+dev_user_exists="$(id -u dev 2> /dev/null)"
+if [ -z "$dev_user_exists" ]; then
+  if [ -z "$INTERACTIVE" ]; then
+    echo "No initial dev user exists and the INTERACTIVE env var has not been set. Will not prompt to create the dev user with a password. Exiting"
+    exit 1
+  fi
+  printf '\n%s\n' "Enter the initial passphrase for the new 'dev' user. The dev user will be prompted to change it on the first login. This passphrase will be hashed with a SHA512-based password algorithm."
   printf '\n%s\n' "Characters entered are hidden."
-  stty -echo
-  test -z "$INTERACTIVE" || read -r dev_user_passphrase
-  stty echo
-  test -n "$dev_user_passphrase" || (echo "No initial dev user passphrase set. Exiting" && exit 1)
+  tmp_file_for_hashed_pass="$(mktemp)"
+  openssl passwd -6 > "$tmp_file_for_hashed_pass"
+  dev_user_passphrase_hashed="$(cat "$tmp_file_for_hashed_pass")"
+  rm -f "$tmp_file_for_hashed_pass"
+  test -n "$dev_user_passphrase_hashed" || (echo "No initial dev user passphrase set. Exiting" && exit 1)
 fi
 
 if [ -z "$tech_email" ]; then
@@ -126,14 +131,15 @@ apk add gnupg gnupg-dirmngr
 apk add mandoc man-pages docs
 apk add vim
 
-addgroup dev || printf "  ...ignoring addgroup dev error"
-# No password is assigned (-D) initially.
-adduser -G dev -D dev || printf "  ...ignoring adduser dev error"
-# Assign a password via chpasswd since this is a non-interactive script.
-# By default, the chpasswd will encrypt the supplied password.
-printf '%s' "dev:$dev_user_passphrase" | chpasswd
-# Set password as expired to force user to reset when logging in
-passwd --expire dev
+# Only need to create the dev user here if this script was ran interactively and
+# a hashed password has been created. Otherwise the existing dev user should
+# have the password reset by expiring it.
+if [ -z "$dev_user_exists" ] && [ -n "$dev_user_passphrase_hashed" ]; then
+  useradd -g dev -p "$dev_user_passphrase_hashed" dev
+else
+  # Set password as expired to force user to reset when logging in
+  passwd --expire dev
+fi
 
 # A box that has been provisioned via the cloud provider should already have
 # public keys added. This handles a locally provisioned box.

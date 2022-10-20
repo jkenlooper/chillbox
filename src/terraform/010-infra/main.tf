@@ -42,13 +42,23 @@ resource "digitalocean_spaces_bucket" "immutable" {
 }
 
 resource "random_string" "initial_dev_user_password" {
-  length      = 16
+  length      = 64
   special     = false
   lower       = true
   upper       = true
   min_lower   = 3
   min_upper   = 3
   min_numeric = 3
+}
+
+resource "null_resource" "dev_user_passphrase_hashed" {
+  depends_on = [
+    random_string.initial_dev_user_password
+  ]
+
+  provisioner "local-exec" {
+    command = "openssl passwd -6 '${random_string.initial_dev_user_password.result}' > /var/lib/terraform-010-infra/dev_user_passphrase_hashed"
+  }
 }
 
 resource "random_string" "bootstrap_chillbox_pass" {
@@ -68,7 +78,6 @@ resource "local_sensitive_file" "bootstrap_chillbox_init_credentials" {
     tf_developer_public_ssh_keys : "%{for public_ssh_key in var.developer_public_ssh_keys} ${public_ssh_key}\n %{endfor}",
     tf_access_key_id : var.do_chillbox_spaces_access_key_id,
     tf_secret_access_key : var.do_chillbox_spaces_secret_access_key,
-    tf_dev_user_passphrase : random_string.initial_dev_user_password.result,
     tf_tech_email : var.tech_email,
     tf_immutable_bucket_name : digitalocean_spaces_bucket.immutable.name,
     tf_immutable_bucket_domain_name : "${digitalocean_spaces_bucket.immutable.name}.${var.bucket_region}.digitaloceanspaces.com",

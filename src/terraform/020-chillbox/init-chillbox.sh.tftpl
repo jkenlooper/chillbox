@@ -2,15 +2,24 @@
 
 set -o errexit
 
+# Set by terraform
+# shellcheck disable=SC2154,SC2016
+dev_user_passphrase_hashed='${tf_dev_user_passphrase_hashed}'
+
 # Ansible requires a python interpretor.
 # Install openssl to use to decrypt the bootstrap file.
+# Need to use useradd command from the shadow-utils so ansible.builtin.user
+# module can work.
 apk update
 apk install \
   -q --no-progress \
   openssl \
+  shadow \
   python3
 
 ln -s -f /usr/bin/python3 /usr/bin/python
+
+useradd -g dev -p "$dev_user_passphrase_hashed" dev
 
 # The work directory is most likely /root
 work_dir="$(dirname "$0")"
