@@ -28,15 +28,25 @@ ln -s /usr/bin/python3 /usr/bin/python
 python -m venv .
 /usr/local/src/ansible/bin/pip install --upgrade pip wheel
 
-# UPKEEP due: "2023-04-10" label: "Ansible" interval: "+6 months"
+# UPKEEP due: "2022-12-17" label: "Ansible" interval: "+2 months"
 # https://pypi.org/project/ansible/
-/usr/local/src/ansible/bin/pip install --disable-pip-version-check ansible==6.4.0
+/usr/local/src/ansible/bin/pip install --disable-pip-version-check ansible==6.5.0
 export PATH=/usr/local/src/ansible/bin:$PATH
 
 # Confirm that ansible has been installed
 which ansible
 ansible --version
 ansible-community --version
+
+# UPKEEP due: "2022-12-17" label: "Ansible Lint" interval: "+2 months"
+# https://pypi.org/project/ansible-lint/
+# ansible-lint uses the same ansible-core version that ansible package installs.
+/usr/local/src/ansible/bin/pip install --disable-pip-version-check ansible-lint==6.8.2
+export PATH=/usr/local/src/ansible/bin:$PATH
+
+# Confirm that ansible-lint has been installed
+which ansible-lint
+ansible-lint --version
 
 INSTALL
 
@@ -79,7 +89,12 @@ COPY bin bin
 
 ENV PATH=/usr/local/src/chillbox-ansible/bin:${PATH}
 
+COPY playbooks playbooks
+
 RUN <<ANSIBLE_INIT
 set -o errexit
+
+#TODO
+#ansible-playbook --syntax-check playbooks/*.playbook.yml
 
 ANSIBLE_INIT

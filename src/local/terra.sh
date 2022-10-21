@@ -127,6 +127,7 @@ docker_run_infra_container() {
     --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_infra_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
     --mount "type=bind,src=${terraform_infra_dir}/bootstrap-chillbox-init-credentials.sh.tftpl,dst=/usr/local/src/chillbox-terraform/bootstrap-chillbox-init-credentials.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
@@ -190,6 +191,7 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/init-chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/init-chillbox.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \

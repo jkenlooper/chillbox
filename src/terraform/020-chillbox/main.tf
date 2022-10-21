@@ -97,12 +97,16 @@ resource "local_file" "host_inventory" {
   filename        = "/var/lib/terraform-020-chillbox/host_inventory.ansible.cfg"
   file_permission = "0400"
   content         = <<-HOST_INVENTORY
+  %{for droplet in compact(flatten([digitalocean_droplet.chillbox[*]]))~}
+  ${droplet.name} ansible_host=${droplet.ipv4_address}
+  %{endfor~}
+
   [all:vars]
   tech_email=${var.tech_email}
 
   [chillbox]
-  %{for ipv4_address in compact(flatten([digitalocean_droplet.chillbox[*].ipv4_address]))~}
-  ${ipv4_address}
+  %{for droplet in compact(flatten([digitalocean_droplet.chillbox[*]]))~}
+  ${droplet.name}
   %{endfor~}
 
   [chillbox:vars]

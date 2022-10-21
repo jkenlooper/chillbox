@@ -190,7 +190,6 @@ variable "dns_ttl" {
 }
 
 variable "chillbox_count" {
-  default     = 1
   description = "Chillbox server count."
   type        = number
   validation {

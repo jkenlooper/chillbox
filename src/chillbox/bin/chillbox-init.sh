@@ -151,15 +151,25 @@ if [ ! -e /root/.ssh/authorized_keys ]; then
   chmod -R 644 /root/.ssh/authorized_keys
 fi
 
-# The dev user will also use the same keys as root.
+# The dev and ansibledev users will also use the same keys as root.
 mkdir -p /home/dev/.ssh
 cp /root/.ssh/authorized_keys /home/dev/.ssh/
 chown -R dev:dev /home/dev/.ssh
 chmod -R 700 /home/dev/.ssh
 chmod -R 644 /home/dev/.ssh/authorized_keys
 
+ansibledev_user_exists="$(id -u ansibledev 2> /dev/null)"
+if [ -n "$ansibledev_user_exists" ]; then
+  mkdir -p /home/ansibledev/.ssh
+  cp /root/.ssh/authorized_keys /home/ansibledev/.ssh/
+  chown -R ansibledev:ansibledev /home/ansibledev/.ssh
+  chmod -R 700 /home/ansibledev/.ssh
+  chmod -R 644 /home/ansibledev/.ssh/authorized_keys
+fi
+
 # Use doas instead of sudo since sudo seems bloated.
 apk add doas
+# TODO configure doas for the ansibledev user
 cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
 permit persist dev as root
 DOAS_CONFIG
@@ -294,3 +304,8 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 n
 nginx -t
 rc-update add nginx default
 rc-service nginx start
+
+# Create the init-date.txt file when this script has successfully run. This is
+# used by ansible playbooks to prevent running the chillbox-init.sh script
+# again.
+date > /etc/chillbox/init-date.txt

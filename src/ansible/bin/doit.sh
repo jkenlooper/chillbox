@@ -66,6 +66,26 @@ if [ ! -f "$plaintext_ansible_private_ssh_key_file" ]; then
   set +x
 fi
 
+ciphertext_terraform_010_infra_output_file=/var/lib/terraform-010-infra/output.json.asc
+if [ ! -f "$ciphertext_terraform_010_infra_output_file" ]; then
+  echo "ERROR $script_name: Missing file: $ciphertext_terraform_010_infra_output_file"
+  exit 1
+fi
+secure_tmp_terraform_dir=/run/tmp/ansible/terraform
+mkdir -p "$secure_tmp_terraform_dir"
+chown -R dev:dev "$(dirname "$secure_tmp_terraform_dir")"
+chmod -R 0700 "$(dirname "$secure_tmp_terraform_dir")"
+plaintext_terraform_010_infra_output_file="$secure_tmp_terraform_dir/terraform-010-infra-output.json"
+if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
+  echo "INFO $0: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
+  set -x
+  _dev_tty.sh "
+    _decrypt_file_as_dev_user.sh \"$ciphertext_terraform_010_infra_output_file\" \"$plaintext_terraform_010_infra_output_file\""
+  set +x
+fi
+# Convert the terraform output json file to a simple key:value for ansible vars to use.
+jq -r '. | to_entries | map({(.key|tostring):.value.value}) | add' "$plaintext_terraform_010_infra_output_file"  > /run/tmp/ansible/terraform/vars.json
+
 # Only need to run the ansible commands if an arg was passed.
 if [ -n "$1" ]; then
   cmd="$(which ansible)"

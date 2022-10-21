@@ -114,3 +114,14 @@ variable "sub_domain" {
     error_message = "The sub domain must be blank or be a valid sub domain label. The last character should be a '.' since it will be prepended to the domain variable."
   }
 }
+
+variable "chillbox_count" {
+  default     = 1
+  description = "Chillbox server count. Added here so any resources for individual chillbox servers can be made before hand."
+  type        = number
+  validation {
+    # TODO Future feature is to support scaling out with a load balancer.
+    condition     = can(var.chillbox_count <= 1)
+    error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
+  }
+}

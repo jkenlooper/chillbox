@@ -61,6 +61,28 @@ resource "null_resource" "dev_user_passphrase_hashed" {
   }
 }
 
+resource "random_string" "chillbox_ansibledev_pass" {
+  count       = var.chillbox_count
+  length      = 128
+  special     = false
+  lower       = true
+  upper       = true
+  min_lower   = 13
+  min_upper   = 13
+  min_numeric = 13
+}
+
+resource "null_resource" "chillbox_ansibledev_pass_hashed" {
+  count       = var.chillbox_count
+  depends_on = [
+    random_string.chillbox_ansibledev_pass
+  ]
+
+  provisioner "local-exec" {
+    command = "openssl passwd -6 '${random_string.chillbox_ansibledev_pass[count.index].result}' > /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
+  }
+}
+
 resource "random_string" "bootstrap_chillbox_pass" {
   length      = 128
   special     = false

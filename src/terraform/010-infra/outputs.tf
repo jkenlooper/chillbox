@@ -14,7 +14,7 @@ output "artifact_bucket_name" {
 output "bootstrap_chillbox_pass" {
   value       = random_string.bootstrap_chillbox_pass.result
   sensitive   = true
-  description = "The password used to encrypt the user-data."
+  description = "The password used to encrypt the bootstrap-chillbox-init-credentials.sh.encrypted file."
 }
 
 output "tech_email" {
@@ -33,4 +33,15 @@ output "initial_dev_user_password" {
   value       = random_string.initial_dev_user_password.result
   sensitive   = true
   description = "Initial dev user password. This will require it to be changed on first login."
+}
+
+output "chillbox_ansibledev_pass" {
+  value = random_string.chillbox_ansibledev_pass[*].result
+  sensitive = true
+  description = "The passwords for the ansibledev user which is used for automation tools like ansible"
+}
+
+output "chillbox_count" {
+  value       = var.chillbox_count
+  description = "Chillbox server count."
 }
