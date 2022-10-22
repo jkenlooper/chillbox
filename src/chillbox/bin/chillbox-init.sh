@@ -135,7 +135,7 @@ apk add vim
 # a hashed password has been created. Otherwise the existing dev user should
 # have the password reset by expiring it.
 if [ -z "$dev_user_exists" ] && [ -n "$dev_user_passphrase_hashed" ]; then
-  useradd -g dev -p "$dev_user_passphrase_hashed" dev
+  useradd -m -U -p "$dev_user_passphrase_hashed" dev
 else
   # Set password as expired to force user to reset when logging in
   passwd --expire dev
@@ -172,6 +172,12 @@ apk add doas
 # TODO configure doas for the ansibledev user
 cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
 permit persist dev as root
+permit persist ansibledev as root cmd apk args fix
+permit persist ansibledev as root cmd apk args update
+permit persist ansibledev as root cmd apk args upgrade
+permit persist ansibledev as root cmd apk args cache
+permit persist ansibledev as root cmd reboot
+permit persist ansibledev as root cmd halt
 DOAS_CONFIG
 doas -C /etc/doas.conf && echo "doas config ok"
 

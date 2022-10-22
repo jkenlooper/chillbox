@@ -5,6 +5,7 @@ set -o errexit
 # Set by terraform
 # shellcheck disable=SC2154,SC2016
 dev_user_passphrase_hashed='${tf_dev_user_passphrase_hashed}'
+# shellcheck disable=SC2154,SC2016
 hashed_password_for_ansibledev='${tf_hashed_password_for_ansibledev}'
 
 # Ansible requires a python interpretor.
@@ -20,9 +21,10 @@ apk install \
 
 ln -s -f /usr/bin/python3 /usr/bin/python
 
-useradd -g dev -p "$dev_user_passphrase_hashed" dev
+useradd -m -U -p "$dev_user_passphrase_hashed" dev
 
-useradd -g ansibledev -G dev -p "$hashed_password_for_ansibledev" ansibledev
+# TODO Should the ansibledev user be in the same group as dev user?
+useradd -m -U -p "$hashed_password_for_ansibledev" ansibledev
 
 # The work directory is most likely /root
 work_dir="$(dirname "$0")"
