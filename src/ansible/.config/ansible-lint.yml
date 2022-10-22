@@ -1,0 +1,7 @@
+---
+# https://ansible-lint.readthedocs.io/configuring/#configuration-file
+
+use_default_rules: true
+
+# Offline mode disables installation of requirements.yml
+offline: true

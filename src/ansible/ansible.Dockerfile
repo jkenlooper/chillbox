@@ -82,19 +82,12 @@ SETUP
 
 
 WORKDIR /usr/local/src/chillbox-ansible
-# TODO Configure ansible
 # https://docs.ansible.com/ansible/latest/installation_guide/intro_configuration.html
 COPY --chown=dev:dev ansible.cfg /etc/ansible/ansible.cfg
+COPY README.md README.md
+COPY .config .config
 COPY bin bin
 
 ENV PATH=/usr/local/src/chillbox-ansible/bin:${PATH}
 
 COPY playbooks playbooks
-
-RUN <<ANSIBLE_INIT
-set -o errexit
-
-#TODO
-#ansible-playbook --syntax-check playbooks/*.playbook.yml
-
-ANSIBLE_INIT
