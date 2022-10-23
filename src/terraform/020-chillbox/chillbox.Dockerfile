@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4.1
+# syntax=docker/dockerfile:1.4.3
 
 # UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
 # docker pull hashicorp/terraform:1.2.7
@@ -31,11 +31,11 @@ INSTALL
 
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
 set -o errexit
-# UPKEEP due: "2022-11-14" label: "Alpine Linux custom image" interval: "+3 months"
+# UPKEEP due: "2023-01-23" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-08-14-1528/alpine-virt-image-2022-08-14-1528.qcow2.bz2"
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-10-23-1351/alpine-virt-image-2022-10-23-1351.qcow2.bz2"
 echo "INFO: Using alpine custom image $alpine_custom_image"
-alpine_custom_image_checksum="3a37457517fe456930901d7794666f1e25b5bd78b663c61e86975127a1e49b9b7d0e55f4d34efc66bc093af998065ce3c329a79fe38144696a7551324c968575"
+alpine_custom_image_checksum="f229495ff2f6344a0d0e73b7e94492748b8aed9a964a7287a2e2e111193211c0713130f45008b45dca1db0c9339b59f529e51667fe4bb50c8b78e28f75e783a3"
 echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
 
 set -o errexit

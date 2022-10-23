@@ -1,0 +1,11 @@
+
+---
+- name: Update installed packages
+  hosts: chillbox
+  #remote_user: ansibledev
+  vars_files:
+    - /run/tmp/ansible/terraform/vars.json
+  tasks:
+    - name: Update all installed packages to the latest versions
+      community.general.apk:
+        upgrade: true

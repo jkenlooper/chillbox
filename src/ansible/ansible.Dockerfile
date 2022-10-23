@@ -21,6 +21,7 @@ apk add --no-cache \
   mandoc man-pages \
   coreutils \
   openssl \
+  openssh \
   gnupg \
   gnupg-dirmngr
 

@@ -186,6 +186,7 @@ doas -C /etc/doas.conf && echo "doas config ok"
 # work with the AuthorizedKeysFile and publickey method.
 apk add openssh-server-pam
 
+# TODO skip keyboard-interactive for ansibledev user somehow?
 cat <<SSHD_CONFIG > /etc/ssh/sshd_config
 AuthenticationMethods publickey,keyboard-interactive
 AuthorizedKeysFile .ssh/authorized_keys

@@ -13,7 +13,7 @@ hashed_password_for_ansibledev='${tf_hashed_password_for_ansibledev}'
 # Need to use useradd command from the shadow-utils so ansible.builtin.user
 # module can work.
 apk update
-apk install \
+apk add \
   -q --no-progress \
   openssl \
   shadow \
