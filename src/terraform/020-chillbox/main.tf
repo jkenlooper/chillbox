@@ -96,28 +96,11 @@ resource "digitalocean_firewall" "web" {
 resource "local_file" "host_inventory" {
   filename        = "/var/lib/terraform-020-chillbox/host_inventory.ansible.cfg"
   file_permission = "0400"
-  content         = <<-HOST_INVENTORY
-
-  [all:vars]
-  tech_email=${var.tech_email}
-
-  [chillbox]
-
-  [chillbox:vars]
-  domain_name=${var.sub_domain}${var.domain}
-  HOST_INVENTORY
-
-  # TODO Set droplet ip with names here
-  #%{for droplet in [digitalocean_droplet.chillbox]~}
-  #  ${droplet.name} ansible_host=${droplet.ipv4_address}
-  #  %{endfor~}
-  #
-  #  [all:vars]
-  #  tech_email=${var.tech_email}
-  #
-  #  [chillbox]
-  #  %{for droplet in [digitalocean_droplet.chillbox[*]]~}
-  #  ${droplet.name}
-  #  %{endfor~}
+  content = templatefile("host_inventory.ansible.cfg.tftpl", {
+    template_source_file : abspath("host_inventory.ansible.cfg.tftpl"),
+    chillbox_name_ipv4address_map : zipmap(digitalocean_droplet.chillbox.*.name, digitalocean_droplet.chillbox.*.ipv4_address)
+    tech_email : var.tech_email,
+    sub_domain : var.sub_domain,
+    domain : var.domain,
+  })
 }
-

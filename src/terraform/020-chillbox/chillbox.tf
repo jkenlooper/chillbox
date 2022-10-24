@@ -39,7 +39,16 @@ resource "digitalocean_droplet" "chillbox" {
     tf_hashed_password_for_ansibledev : chomp(file("/var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}")),
     tf_bootstrap_chillbox_init_credentials_encrypted : file("/var/lib/terraform-010-infra/bootstrap-chillbox-init-credentials.sh.encrypted"),
   })
+
+  # Create a broken symbolic link in the /var directory to bridge the ansible
+  # container to use any sensitive values like ansible_ssh_pass for each host.
+  # The ansible container will decrypt the ciphertext with chillbox_local gpg
+  # key and create the plaintext file in the /run/tmp/... directory.
+  provisioner "local-exec" {
+    command = "ln -s /run/tmp/something/${self.name}.json /var/lib/terraform-020-chillbox/${self.name}.json"
+  }
 }
+# TODO create /var/lib/terraform-020-chillbox/${self.name}.json.asc encrypted file to store the ansible_ssh_pass for ansibledev
 
 resource "digitalocean_ssh_key" "chillbox" {
   for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys : md5(ssh_key)], var.developer_public_ssh_keys)

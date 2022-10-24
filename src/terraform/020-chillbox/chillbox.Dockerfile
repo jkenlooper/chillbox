@@ -91,7 +91,6 @@ COPY --chown=dev:dev 020-chillbox/chillbox.tf .
 COPY --chown=dev:dev 020-chillbox/variables.tf .
 COPY --chown=dev:dev 020-chillbox/main.tf .
 COPY --chown=dev:dev 020-chillbox/outputs.tf .
-COPY --chown=dev:dev 020-chillbox/init-chillbox.sh.tftpl .
 COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
@@ -115,6 +114,8 @@ ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 ARG SITES_MANIFEST
 ENV SITES_MANIFEST="$SITES_MANIFEST"
 
+COPY --chown=dev:dev 020-chillbox/init-chillbox.sh.tftpl .
+COPY --chown=dev:dev 020-chillbox/host_inventory.ansible.cfg.tftpl .
 COPY --chown=dev:dev 020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev bin bin
 COPY --chown=dev:dev 020-chillbox/bin/ bin/

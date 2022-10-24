@@ -11,6 +11,6 @@ output "bootstrap_chillbox_pass" {
   description = "The password used to encrypt the user-data."
 }
 output "host_inventory_ansible_cfg" {
-  value = local_file.host_inventory.filename
+  value       = local_file.host_inventory.filename
   description = "The host inventory file that Ansible will use."
 }
