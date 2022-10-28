@@ -36,12 +36,13 @@ output "initial_dev_user_password" {
 }
 
 output "chillbox_ansibledev_pass" {
-  value = random_string.chillbox_ansibledev_pass[*].result
-  sensitive = true
-  description = "The passwords for the ansibledev user which is used for automation tools like ansible"
+  value       = random_string.chillbox_ansibledev_pass[*].result
+  sensitive   = true
+  description = "Passwords for ansibledev user on each chillbox server that is used when automating with Ansible."
 }
 
 output "chillbox_count" {
   value       = var.chillbox_count
   description = "Chillbox server count."
 }
+

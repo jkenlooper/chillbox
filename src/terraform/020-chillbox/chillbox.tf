@@ -45,10 +45,19 @@ resource "digitalocean_droplet" "chillbox" {
   # The ansible container will decrypt the ciphertext with chillbox_local gpg
   # key and create the plaintext file in the /run/tmp/... directory.
   provisioner "local-exec" {
-    command = "ln -s /run/tmp/something/${self.name}.json /var/lib/terraform-020-chillbox/${self.name}.json"
+    on_failure = continue
+    command    = "mkdir -p /var/lib/terraform-020-chillbox/host_vars"
+  }
+  provisioner "local-exec" {
+    on_failure = continue
+    command    = "ln -s /run/tmp/ansible/terraform/${self.name}.json /var/lib/terraform-020-chillbox/host_vars/${self.name}.json"
+  }
+  provisioner "local-exec" {
+    on_failure = continue
+    when       = destroy
+    command    = "rm -f /var/lib/terraform-020-chillbox/host_vars/${self.name}.json"
   }
 }
-# TODO create /var/lib/terraform-020-chillbox/${self.name}.json.asc encrypted file to store the ansible_ssh_pass for ansibledev
 
 resource "digitalocean_ssh_key" "chillbox" {
   for_each   = zipmap([for ssh_key in var.developer_public_ssh_keys : md5(ssh_key)], var.developer_public_ssh_keys)
@@ -97,4 +106,31 @@ resource "digitalocean_record" "hostname_site_domains" {
   type  = "A"
   value = one(digitalocean_droplet.chillbox[*].ipv4_address)
   ttl   = var.dns_ttl
+}
+
+resource "local_sensitive_file" "ansible_host_vars_json" {
+  count           = var.chillbox_count
+  filename        = "/run/tmp/secrets/terraform-020-chillbox/chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.json"
+  file_permission = "0400"
+  content = jsonencode({
+    ansible_ssh_pass = var.chillbox_ansibledev_pass[count.index]
+  })
+
+  provisioner "local-exec" {
+    command    = "rm -f /var/lib/terraform-020-chillbox/host_vars/chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.json.asc"
+    on_failure = continue
+  }
+  provisioner "local-exec" {
+    command    = "mkdir -p /var/lib/terraform-020-chillbox/host_vars/"
+    on_failure = continue
+  }
+  provisioner "local-exec" {
+    command    = "gpg --encrypt --recipient '${var.GPG_KEY_NAME}' --armor --output '/var/lib/terraform-020-chillbox/host_vars/chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.json.asc' --comment 'ansible_ssh_pass for the ansibledev user on chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index} server.' '${self.filename}'"
+    on_failure = fail
+  }
+  provisioner "local-exec" {
+    when       = destroy
+    command    = "rm -f /var/lib/terraform-020-chillbox/host_vars/chillbox-*-${count.index}.json.asc"
+    on_failure = continue
+  }
 }

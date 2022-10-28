@@ -125,3 +125,8 @@ variable "chillbox_count" {
     error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
   }
 }
+
+variable "GPG_KEY_NAME" {
+  type        = string
+  description = "Gnupg key name."
+}

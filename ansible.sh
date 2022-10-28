@@ -28,6 +28,8 @@ docker run \
   -i --tty \
   --rm \
   --name "$ANSIBLE_CONTAINER" \
+  --env CHILLBOX_INSTANCE \
+  --env WORKSPACE \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/run/tmp/ansible,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/home/dev/.gnupg,readonly=false" \

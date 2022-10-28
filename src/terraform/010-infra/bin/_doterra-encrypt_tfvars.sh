@@ -6,6 +6,10 @@
 
 set -o errexit
 
+# Any files or directories created from this script should only be accessible by
+# the user executing the script.
+umask 0077
+
 secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
 
 # Sanity check that these were set.

@@ -49,15 +49,15 @@ resource "random_string" "initial_dev_user_password" {
   min_lower   = 3
   min_upper   = 3
   min_numeric = 3
-}
-
-resource "null_resource" "dev_user_passphrase_hashed" {
-  depends_on = [
-    random_string.initial_dev_user_password
-  ]
 
   provisioner "local-exec" {
-    command = "openssl passwd -6 '${random_string.initial_dev_user_password.result}' > /var/lib/terraform-010-infra/dev_user_passphrase_hashed"
+    command    = "openssl passwd -6 '${self.result}' > /var/lib/terraform-010-infra/dev_user_passphrase_hashed"
+    on_failure = fail
+  }
+  provisioner "local-exec" {
+    when       = destroy
+    command    = "rm -f /var/lib/terraform-010-infra/dev_user_passphrase_hashed"
+    on_failure = continue
   }
 }
 
@@ -70,16 +70,15 @@ resource "random_string" "chillbox_ansibledev_pass" {
   min_lower   = 13
   min_upper   = 13
   min_numeric = 13
-}
-
-resource "null_resource" "chillbox_ansibledev_pass_hashed" {
-  count       = var.chillbox_count
-  depends_on = [
-    random_string.chillbox_ansibledev_pass
-  ]
 
   provisioner "local-exec" {
-    command = "openssl passwd -6 '${random_string.chillbox_ansibledev_pass[count.index].result}' > /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
+    command    = "openssl passwd -6 '${self[count.index].result}' > /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
+    on_failure = fail
+  }
+  provisioner "local-exec" {
+    when       = destroy
+    command    = "rm -f /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
+    on_failure = continue
   }
 }
 

@@ -54,6 +54,7 @@ HERE
 WGET_ALPINE_CUSTOM_IMAGE
 
 ENV GPG_KEY_NAME="chillbox_local"
+ENV TF_VAR_GPG_KEY_NAME="$GPG_KEY_NAME"
 ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
 ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/terraform.tfstate.json.asc"
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}

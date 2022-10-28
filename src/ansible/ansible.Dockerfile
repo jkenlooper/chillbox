@@ -92,3 +92,7 @@ COPY bin bin
 ENV PATH=/usr/local/src/chillbox-ansible/bin:${PATH}
 
 COPY playbooks playbooks
+
+# Set CHILLBOX_INSTANCE and WORKSPACE when running the container.
+ENV CHILLBOX_INSTANCE=""
+ENV WORKSPACE=""

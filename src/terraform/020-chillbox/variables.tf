@@ -206,3 +206,12 @@ variable "initial_dev_user_password" {
   type        = string
   description = "Initial dev user password."
 }
+variable "chillbox_ansibledev_pass" {
+  type        = list(string)
+  description = "Passwords for ansibledev user on each chillbox server that is used when automating with Ansible."
+}
+
+variable "GPG_KEY_NAME" {
+  type        = string
+  description = "Gnupg key name."
+}

@@ -4,7 +4,7 @@
   hosts: chillbox
   #remote_user: ansibledev
   # TODO Set ssh_pass via file in host_vars directory.
-  #ssh_pass: "? chillbox_ansibledev_pass"
+  #ansible_ssh_pass: "? chillbox_ansibledev_pass"
   vars_files:
     - /run/tmp/ansible/terraform/vars.json
   tasks:
