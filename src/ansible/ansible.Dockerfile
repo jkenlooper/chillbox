@@ -22,6 +22,7 @@ apk add --no-cache \
   coreutils \
   openssl \
   openssh \
+  sshpass \
   gnupg \
   gnupg-dirmngr
 
