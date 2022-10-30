@@ -62,7 +62,8 @@ if [ -n "$service_secrets_config" ]; then
   chown -R "$SLUGNAME":dev "$service_secrets_config_dir"
   chmod -R 770 "$service_secrets_config_dir"
 
-  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
+  # TODO This will currently fail when the key handling is done with the custom deno scripts. Skipping this for now.
+  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config" || echo "WARNING $script_name: Ignored error from download-and-decrypt-secrets-config.sh since deno is not currently installed."
 fi
 # Need to check if this secrets config file was successfully downloaded since it
 # might not exist yet. Secrets are added to the s3 bucket in a different process.
