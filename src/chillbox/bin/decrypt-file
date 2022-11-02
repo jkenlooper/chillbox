@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+
+set -o errexit
+set -o nounset
+
+script_name="$(basename "$0")"
+
+usage() {
+  cat <<HERE
+
+Decrypt a file using a provided private key file in PEM format. This is
+a wrapper script around the openssl pkeyutl -decrypt command.
+
+Usage:
+  decrypt_file -h
+  decrypt_file <options> <file>
+
+Options:
+  -h        Show this help message.
+
+  -k        A private key file in PEM format
+
+  -i        Path to the encrypted file
+
+Args:
+  <file>    Output to file, use '-' to send to stdout
+
+HERE
+}
+
+decrypt_file() {
+  umask 0077
+  openssl pkeyutl \
+    -decrypt \
+    -inkey "$private_pem_file" \
+    -keyform "PEM" \
+    -pkeyopt rsa_padding_mode:oaep \
+    -pkeyopt rsa_oaep_md:sha512 \
+    -in "$input_ciphertext_file" \
+    -out "$output_plaintext_file"
+}
+
+while getopts "hk:i:" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    k) private_pem_file=$OPTARG ;;
+    i) input_ciphertext_file=$OPTARG ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+output_plaintext_file="${1:--}"
+
+test -e "$input_ciphertext_file" || (echo "ERROR $script_name: The ciphertext file doesn't exist. $input_ciphertext_file" && exit 1)
+
+if [ ! -e "$private_pem_file" ]; then
+  echo "ERROR $script_name: The private key doesn't exist. $private_pem_file"
+  exit 4
+fi
+
+decrypt_file
