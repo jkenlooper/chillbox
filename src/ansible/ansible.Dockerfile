@@ -18,7 +18,7 @@ apk add --no-cache \
   musl-dev \
   jq \
   vim \
-  mandoc man-pages \
+  mandoc man-pages docs \
   coreutils \
   openssl \
   openssh \

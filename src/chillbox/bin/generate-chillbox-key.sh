@@ -18,6 +18,7 @@ test -n "$AWS_PROFILE" || (echo "ERROR $0: No AWS_PROFILE set." && exit 1)
 key_name="$(hostname -s | xargs)"
 public_pem_key="/home/dev/.local/share/chillbox/keys/$key_name.public.pem"
 private_pem_key="/home/dev/.local/share/chillbox/keys/$key_name.private.pem"
+su dev -c "mkdir -p /home/dev/.local/share/chillbox/keys"
 su dev -c "$bin_dir/generate-new-chillbox-keys -n '$key_name' -d /home/dev/.local/share/chillbox/keys"
 test -e "$public_pem_key" || (echo "ERROR $0: No public pem key generated." && exit 1)
 test -e "$private_pem_key" || (echo "ERROR $0: No private pem key generated." && exit 1)

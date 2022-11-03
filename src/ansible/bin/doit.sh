@@ -117,6 +117,7 @@ if [ ! -s "$tmp_list_ciphertext_ansible_host_vars_json_files" ]; then
   rm -f "$tmp_list_ciphertext_ansible_host_vars_json_files"
   exit 1
 fi
+# TODO can't use 'while read' command here because of gpg decrypt
 while read ciphertext_ansible_host_vars_json; do
   ansible_host_vars_json_filename="$(basename "$ciphertext_ansible_host_vars_json" .asc)"
   plaintext_ansible_host_vars_json="/run/tmp/ansible/terraform/$ansible_host_vars_json_filename"
