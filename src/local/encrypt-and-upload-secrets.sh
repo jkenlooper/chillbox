@@ -122,8 +122,8 @@ docker run \
 # Echo out something after a docker run to clear/reset the stdout.
 clear && echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
 
-# Provide encrypt-file.js deno script for the service handler container to use.
-cp "$project_dir/src/local/secrets/encrypt-file.js" "$pubkey_dir"
+# Provide encrypt-file script for the service handler container to use.
+cp "$project_dir/src/local/secrets/encrypt-file" "$pubkey_dir"
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"

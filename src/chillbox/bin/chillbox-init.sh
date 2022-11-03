@@ -186,7 +186,6 @@ doas -C /etc/doas.conf && echo "doas config ok"
 # work with the AuthorizedKeysFile and publickey method.
 apk add openssh-server-pam
 
-# TODO skip keyboard-interactive for ansibledev user somehow?
 cat <<SSHD_CONFIG > /etc/ssh/sshd_config
 AuthenticationMethods publickey,keyboard-interactive
 AuthorizedKeysFile .ssh/authorized_keys
@@ -281,13 +280,15 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 /etc/chillbox/bin/install-acme.sh "$LETS_ENCRYPT_SERVER" "$TECH_EMAIL"
 
 ## Compile deno scripts and install in the /etc/chillbox/bin directory.
-# TODO Refactor deno scripts for generating keys to use openssl commands instead. Remove the WARNINGs about errors when running the commands.
-tmp_keys_dir="$(mktemp -d)"
-tar x -z -f "$tmp_chillbox_artifact" -C "$tmp_keys_dir" --strip-components 1 keys
-HOME=/home/dev make -C "$tmp_keys_dir" || echo "WARNING $0: Ignoring 'make' error when using deno to handle keys."
-BINDIR=/etc/chillbox/bin make -C "$tmp_keys_dir" install || echo "WARNING $0: Ignoring 'make install' error when using deno to handle keys."
+# The deno scripts have been replaced with shell scripts that wrap around the
+# openssl commands. It is no longer necessary to use make to compile the deno
+# scripts at this time.
+##tmp_keys_dir="$(mktemp -d)"
+##tar x -z -f "$tmp_chillbox_artifact" -C "$tmp_keys_dir" --strip-components 1 keys
+##HOME=/home/dev make -C "$tmp_keys_dir"
+##BINDIR=/etc/chillbox/bin make -C "$tmp_keys_dir" install
 
-/etc/chillbox/bin/generate-chillbox-key.sh || echo "WARNING $0: Ignoring 'generate-chillbox-key.sh' error when using deno to handle keys."
+/etc/chillbox/bin/generate-chillbox-key.sh
 
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/

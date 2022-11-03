@@ -15,6 +15,7 @@ service_secrets_config_file_name="$(basename "$service_secrets_config_path")"
 service_secrets_config_dir="$(dirname "$service_secrets_config_path")"
 
 hostname="$(hostname -s)"
+key_name="$hostname"
 S3_ENDPOINT_URL="${S3_ENDPOINT_URL:-}"
 ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME:-}"
 
@@ -52,7 +53,8 @@ chown -R "$SLUGNAME":dev "$decrypted_file_dir"
 chown dev:dev "$tmp_encrypted_secret_config"
 echo "INFO $0: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted-secrets/$service_secrets_config_dir/$hostname/$service_secrets_config_file_name to $decrypted_file"
 
-su dev -c "$bin_dir/decrypt-file -d /home/dev/.local/share/chillbox/keys -o '$decrypted_file' '$tmp_encrypted_secret_config'"
+su dev -c "$bin_dir/decrypt-file -k '/home/dev/.local/share/chillbox/keys/$key_name.private.pem' -i '$tmp_encrypted_secret_config' '$decrypted_file'"
 chown "$SLUGNAME":dev "$decrypted_file"
+chmod 770 "$decrypted_file"
 
 rm -f "$tmp_encrypted_secret_config"
