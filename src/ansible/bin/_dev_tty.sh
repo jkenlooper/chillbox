@@ -10,7 +10,7 @@ test "$current_user" = "root" || (echo "ERROR $0: Must be root." && exit 1)
 
 # Need to chown the tty before generating the gpg key since the user is being
 # switched and gnupg pinentry requires the same permission.
-current_tty="$(tty)"
+#current_tty="$(tty)"
 # TODO Why does the tty command sometimes return 'not a tty'?
 chown dev "$(tty)"
 cleanup() {

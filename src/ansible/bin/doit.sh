@@ -111,14 +111,15 @@ umask "$previous_umask"
 tmp_list_ciphertext_ansible_host_vars_json_files="$(mktemp)"
 find /var/lib/terraform-020-chillbox/host_vars -type f \
   -name "chillbox-$lowercase_chillbox_instance-$lowercase_workspace_environment-*.json.asc" \
-    > $tmp_list_ciphertext_ansible_host_vars_json_files
+    > "$tmp_list_ciphertext_ansible_host_vars_json_files"
 if [ ! -s "$tmp_list_ciphertext_ansible_host_vars_json_files" ]; then
   echo "ERROR $script_name: No files found matching name: chillbox-$lowercase_chillbox_instance-$lowercase_workspace_environment-*.json.asc in directory: /var/lib/terraform-020-chillbox/host_vars/"
   rm -f "$tmp_list_ciphertext_ansible_host_vars_json_files"
   exit 1
 fi
-# TODO can't use 'while read' command here because of gpg decrypt
-while read ciphertext_ansible_host_vars_json; do
+# Need to use a for loop instead of 'while read' because gpg needs the stdin.
+# shellcheck disable=SC2013
+for ciphertext_ansible_host_vars_json in $(cat "$tmp_list_ciphertext_ansible_host_vars_json_files"); do
   ansible_host_vars_json_filename="$(basename "$ciphertext_ansible_host_vars_json" .asc)"
   plaintext_ansible_host_vars_json="/run/tmp/ansible/terraform/$ansible_host_vars_json_filename"
   if [ ! -f "$plaintext_ansible_host_vars_json" ]; then
@@ -128,7 +129,7 @@ while read ciphertext_ansible_host_vars_json; do
       _decrypt_file_as_dev_user.sh \"$ciphertext_ansible_host_vars_json\" \"$plaintext_ansible_host_vars_json\""
     set +x
   fi
-done < "$tmp_list_ciphertext_ansible_host_vars_json_files"
+done
 rm -f "$tmp_list_ciphertext_ansible_host_vars_json_files"
 
 # Only need to run the ansible commands if an arg was passed.
