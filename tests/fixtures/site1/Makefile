@@ -14,7 +14,7 @@ project_files := $(shell find . -type f -not -path './.git/*' -not -path './dist
 VERSION := $(shell cat VERSION)+$(shell cat $(project_files) | md5sum - | cut -d' ' -f1)
 
 # Verify version string compiles with semver.org, output it for chillbox to use.
-inspect.VERSION:
+inspect.VERSION: ## Show the version string along with build metadata
 	@printf "%s" '$(VERSION)' | grep -q -P '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$$' - || (printf "\n%s\n" "ERROR Invalid version string '$(VERSION)' See https://semver.org" >&2 && exit 1)
 	@printf "%s" '$(VERSION)'
 
@@ -31,7 +31,14 @@ FORCE:
 objects := dist/artifact.tar.gz dist/immutable.tar.gz
 
 .PHONY: all
-all: $(objects)
+all: $(objects) ## Default is to make all dist files
+
+.PHONY: help
+help: ## Show this help
+	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: dist
+dist: dist/artifact.tar.gz dist/immutable.tar.gz ## Create tar.gz files for distribution
 
 # Run the bin/artifact.sh script to create the dist/artifact.tar.gz file.
 dist/artifact.tar.gz: bin/artifact.sh
@@ -39,8 +46,9 @@ dist/artifact.tar.gz: bin/artifact.sh
 
 # Run the bin/immutable.sh script to create the dist/immutable.tar.gz file.
 dist/immutable.tar.gz: bin/immutable.sh
-	./$< $(abspath $@)
+	./$< -s $(slugname) -t $(abspath $@) \
+		$(project_dir)immutable-example
 
 .PHONY: clean
-clean:
+clean: ## Remove files that were created
 	printf '%s\0' $(objects) | xargs -0 rm -f

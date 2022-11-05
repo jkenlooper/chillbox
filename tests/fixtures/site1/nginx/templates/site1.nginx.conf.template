@@ -1,4 +1,6 @@
 server {
+  listen ${SERVER_PORT};
+
   # Use special wildcard server_name by prefixing with '.' so
   # [chillbox-hostname].${SERVER_NAME} will also match.
   # https://nginx.org/en/docs/http/server_names.html
