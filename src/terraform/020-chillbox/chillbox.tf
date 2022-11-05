@@ -114,6 +114,7 @@ resource "local_sensitive_file" "ansible_host_vars_json" {
   file_permission = "0400"
   content = jsonencode({
     ansible_ssh_pass = var.chillbox_ansibledev_pass[count.index]
+    ansible_become_password = var.chillbox_ansibledev_pass[count.index]
   })
 
   provisioner "local-exec" {

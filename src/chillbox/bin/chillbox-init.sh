@@ -170,14 +170,32 @@ fi
 # Use doas instead of sudo since sudo seems bloated.
 apk add doas
 # TODO configure doas for the ansibledev user
+
+# TODO Allow ansibledev user to perform apk upgrade.
+# fatal: [chillbox-ansibletest-development-0]: FAILED! => {"changed": false,
+# "msg": "failed to upgrade packages", "packages": [], "stderr": "ERROR: Unable
+# to lock database: Permission denied\nERROR: Failed to open apk database:
+# Permission denied\n", "stderr_lines": ["ERROR: Unable to lock database:
+# Permission denied", "ERROR: Failed to open apk database: Permission denied"],
+# "stdout": "", "stdout_lines": []}
+#
+# Nov  5 13:05:52 localhost user.info ansible-community.general.apk: Invoked
+# with upgrade=True state=present no_cache=False update_cache=False
+# available=False world=/etc/apk/world name=None repository=None
+#
+#permit persist ansibledev as root cmd apk args fix
+#permit persist ansibledev as root cmd apk args update
+#permit persist ansibledev as root cmd apk args upgrade
+#permit persist ansibledev as root cmd apk args cache
+#permit persist ansibledev as root cmd reboot
+#permit persist ansibledev as root cmd halt
+
+# TODO It would be better to have the ansibledev user only have permission to
+# run a few commands and not have full root access. Not sure if it is possible
+# to only allow maintenance commands like apk update and such when using ansible.
 cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
 permit persist dev as root
-permit persist ansibledev as root cmd apk args fix
-permit persist ansibledev as root cmd apk args update
-permit persist ansibledev as root cmd apk args upgrade
-permit persist ansibledev as root cmd apk args cache
-permit persist ansibledev as root cmd reboot
-permit persist ansibledev as root cmd halt
+permit persist ansibledev as root
 DOAS_CONFIG
 doas -C /etc/doas.conf && echo "doas config ok"
 

@@ -9,5 +9,6 @@
     - /run/tmp/ansible/terraform/vars.json
   tasks:
     - name: Update all installed packages to the latest versions
+      become: true
       community.general.apk:
         upgrade: true

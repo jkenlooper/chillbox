@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# TODO This file location is only temporary. It will move to src/ansible/ directory.
+# TODO Remove it from the bind mount in tests/shellcheck.sh after it moves.
+
 set -o errexit
 
 project_dir="$(dirname "$(realpath "$0")")"

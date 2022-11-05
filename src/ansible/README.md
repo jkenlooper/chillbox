@@ -10,6 +10,8 @@ Cheatsheet:
 ```sh
 ansible-playbook playbooks/*.playbook.yml --syntax-check
 ansible-lint playbooks/*.playbook.yml 
+
+doit.sh -s playbook -- playbooks/bootstrap-chillbox-init-credentials.playbook.yml
 ```
 
 [Ansible documentation]: https://docs.ansible.com/
