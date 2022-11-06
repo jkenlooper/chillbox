@@ -11,7 +11,6 @@ Dependencies:
 * A [DigitalOcean] account
 
 ```bash
-./chillbox.sh apply
 
 ## TODO
 make
@@ -21,9 +20,9 @@ make install
 # Set to development, test, acceptance, or production
 export WORKSPACE=development
 # Create a new instance and enter the details in the prompt
-./chillbox.sh name_of_instance init
+chillbox.sh -i name_of_instance init
 # Apply the changes and deploy the chillbox instance with Terraform
-./chillbox.sh name_of_instance apply
+chillbox.sh -i name_of_instance apply
 ```
 
 [DigitalOcean]: https://www.digitalocean.com/

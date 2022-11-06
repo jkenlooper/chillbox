@@ -10,20 +10,28 @@ server {
   access_log /var/log/nginx/${SLUGNAME}/access.log;
   error_log /var/log/nginx/${SLUGNAME}/error.log;
 
-  location / {
+  location ${CHILL_STATIC_EXAMPLE_PATH} {
     limit_except GET {
       deny all;
     }
     root /usr/local/src/${SLUGNAME}/chill-static-example/frozen;
-    try_files $uri $uri/index.html =404;
+    # The last try_files parameter is either '=404' or '@chill-static-example'.
+    try_files $uri $uri/index.html ${CHILL_STATIC_EXAMPLE_TRY_FILES_LAST_PARAM};
+
+  }
+  location @chill-static-example {
+    # Note that when the location is a named location (@name); the request URI
+    # is not stripped off before passing it to the proxy.
+    proxy_pass ${CHILL_STATIC_EXAMPLE_URL};
   }
 
-  location ${CHILL_DYNAMIC_PUBLIC_URL_PREFIX}/ {
-    proxy_pass ${CHILL_DYNAMIC};
+
+  location ${CHILL_DYNAMIC_EXAMPLE_PATH} {
+    proxy_pass ${CHILL_DYNAMIC_URL};
   }
 
-  location /api/ {
-    proxy_pass ${API}/;
+  location ${API_PATH} {
+    proxy_pass ${API_URL};
     proxy_redirect default;
   }
 
@@ -32,8 +40,8 @@ server {
     root /srv/${SLUGNAME}/;
   }
 
-  location ${IMMUTABLE_EXAMPLE_URI} {
-    proxy_pass ${IMMUTABLE_EXAMPLE};
+  location ${IMMUTABLE_EXAMPLE_PATH} {
+    proxy_pass ${IMMUTABLE_EXAMPLE_URL};
   }
 
   location ~* ^/(robots|humans).txt$ {

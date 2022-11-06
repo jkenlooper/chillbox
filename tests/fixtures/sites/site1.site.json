@@ -11,39 +11,51 @@
   ],
   "env": [
     {
-      "name": "CHILL_STATIC",
-      "value": "http://localhost:$CHILL_STATIC_PORT"
+      "name": "CHILL_STATIC_EXAMPLE_TRY_FILES_LAST_PARAM",
+      "value": "=404"
     },
     {
-      "name": "CHILL_STATIC_PORT",
+      "name": "CHILL_STATIC_EXAMPLE_PATH",
+      "value": "/"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_URL",
+      "value": "http://localhost:$CHILL_STATIC_EXAMPLE_PORT/"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_PORT",
       "value": "5000"
     },
     {
-      "name": "CHILL_DYNAMIC",
-      "value": "http://localhost:$CHILL_DYNAMIC_PORT"
+      "name": "CHILL_DYNAMIC_EXAMPLE_PATH",
+      "value": "/dynamic/"
     },
     {
-      "name": "CHILL_DYNAMIC_PORT",
+      "name": "CHILL_DYNAMIC_EXAMPLE_URL",
+      "value": "http://localhost:$CHILL_DYNAMIC_EXAMPLE_PORT/"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_PORT",
       "value": "5001"
     },
     {
-      "name": "CHILL_DYNAMIC_PUBLIC_URL_PREFIX",
-      "value": "/dynamic"
+      "name": "API_PATH",
+      "value": "/api/"
     },
     {
-      "name": "API",
-      "value": "http://localhost:$API_PORT"
+      "name": "API_URL",
+      "value": "http://localhost:$API_PORT/"
     },
     {
       "name": "API_PORT",
       "value": "8084"
     },
     {
-      "name": "IMMUTABLE_EXAMPLE_URI",
+      "name": "IMMUTABLE_EXAMPLE_PATH",
       "value": "/immutable-example/v1/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
-      "name": "IMMUTABLE_EXAMPLE",
+      "name": "IMMUTABLE_EXAMPLE_URL",
       "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
@@ -88,15 +100,15 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "$CHILL_STATIC_PORT"
+          "value": "$CHILL_STATIC_EXAMPLE_PORT"
         },
         {
           "name": "CHILL_DYNAMIC_PUBLIC_URL_PREFIX",
           "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
         },
         {
-          "name": "IMMUTABLE_EXAMPLE_URI",
-          "value": "$IMMUTABLE_EXAMPLE_URI"
+          "name": "IMMUTABLE_EXAMPLE_PATH",
+          "value": "$IMMUTABLE_EXAMPLE_PATH"
         }
       ]
     },
@@ -122,8 +134,8 @@
           "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
         },
         {
-          "name": "IMMUTABLE_EXAMPLE_URI",
-          "value": "$IMMUTABLE_EXAMPLE_URI"
+          "name": "IMMUTABLE_EXAMPLE_PATH",
+          "value": "$IMMUTABLE_EXAMPLE_PATH"
         }
       ]
     }
