@@ -3,11 +3,11 @@
 set -o errexit
 
 
-TECH_EMAIL=${TECH_EMAIL:-$3}
+TECH_EMAIL=${TECH_EMAIL:-$2}
 test -n "${TECH_EMAIL}" || (echo "ERROR $0: TECH_EMAIL variable is empty" && exit 1)
 echo "INFO $0: Using TECH_EMAIL '${TECH_EMAIL}'"
 
-LETS_ENCRYPT_SERVER=${LETS_ENCRYPT_SERVER:-$2}
+LETS_ENCRYPT_SERVER=${LETS_ENCRYPT_SERVER:-$1}
 test -n "${LETS_ENCRYPT_SERVER}" || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable is empty" && exit 1)
 test "${LETS_ENCRYPT_SERVER}" = "letsencrypt" \
   || test "${LETS_ENCRYPT_SERVER}" = "letsencrypt_test" \

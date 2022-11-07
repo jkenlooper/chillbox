@@ -4,7 +4,7 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
-echo "Work in progress notes and commands to run."
+echo "TODO $script_name: Work in progress notes and commands to run."
 cat "$0"
 exit 0
 

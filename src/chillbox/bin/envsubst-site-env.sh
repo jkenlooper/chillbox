@@ -4,18 +4,9 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
-env_names_to_expand="
-CHILLBOX_SERVER_NAME
-CHILLBOX_SERVER_PORT
-S3_ENDPOINT_URL
-IMMUTABLE_BUCKET_NAME
-IMMUTABLE_BUCKET_DOMAIN_NAME
-ARTIFACT_BUCKET_NAME
-SLUGNAME
-VERSION
-SERVER_NAME
-SERVER_PORT
-"
+# The .env file is created from chillbox-init.sh script. Using sed here to avoid
+# duplicating that list of env variable names here.
+env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\)=.*/\1/p' /home/dev/.env)"
 env_names="$(printf "%s" "$env_names_to_expand" | sed 's/./$&/; /\S/!d' | xargs)"
 
 usage() {

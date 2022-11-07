@@ -97,10 +97,10 @@ if [ "${service_lang_template}" = "flask" ]; then
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
+  # TODO Switch FLASK_ENV to be production
   HOST=localhost \
   FLASK_ENV="development" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
-  S3_ENDPOINT_URL="$S3_ENDPOINT_URL" \
   SECRETS_CONFIG="${service_secrets_config_file}" \
     ./.venv/bin/flask init-db \
     || echo "ERROR $script_name: Failed to run './.venv/bin/flask init-db' for ${SLUGNAME} ${service_handler}."

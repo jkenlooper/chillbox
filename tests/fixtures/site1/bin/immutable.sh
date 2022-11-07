@@ -3,7 +3,7 @@
 set -o errexit
 
 script_name="$(basename "$0")"
-projectdir="$(dirname "$(dirname "$(realpath "$0")")")"
+#projectdir="$(dirname "$(dirname "$(realpath "$0")")")"
 
 usage() {
   cat <<HERE
@@ -42,6 +42,7 @@ create_archive() {
     test -d "$directory_full_path" || (echo "ERROR $script_name: The provided directory ($directory) is not a directory at $directory_full_path" >&2 && exit 1)
     directory_basename="$(basename "$directory_full_path")"
     hash_string="$(make --silent -C "$directory_full_path" inspect.HASH)"
+    test "${#has_string}" -eq "32" || (echo "ERROR $script_name: The hash string is not 32 characters in length. Did something fail? ($hash_string)" >&2 && exit 1)
     mkdir -p "$tmpdir/$slugname/$directory_basename/$hash_string"
     printf "%s" "$hash_string" > "$tmpdir/$slugname/$directory_basename/hash.txt"
     make -C "$directory_full_path"

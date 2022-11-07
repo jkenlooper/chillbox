@@ -19,8 +19,12 @@
       "value": "/"
     },
     {
-      "name": "CHILL_STATIC_EXAMPLE_URL",
-      "value": "http://localhost:$CHILL_STATIC_EXAMPLE_PORT/"
+      "name": "CHILL_STATIC_EXAMPLE_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_HOST",
+      "value": "localhost"
     },
     {
       "name": "CHILL_STATIC_EXAMPLE_PORT",
@@ -31,24 +35,32 @@
       "value": "/dynamic/"
     },
     {
-      "name": "CHILL_DYNAMIC_EXAMPLE_URL",
-      "value": "http://localhost:$CHILL_DYNAMIC_EXAMPLE_PORT/"
-    },
-    {
       "name": "CHILL_DYNAMIC_EXAMPLE_PORT",
       "value": "5001"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_HOST",
+      "value": "localhost"
     },
     {
       "name": "API_PATH",
       "value": "/api/"
     },
     {
-      "name": "API_URL",
-      "value": "http://localhost:$API_PORT/"
-    },
-    {
       "name": "API_PORT",
       "value": "8084"
+    },
+    {
+      "name": "API_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "API_HOST",
+      "value": "localhost"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_PATH",
@@ -101,14 +113,6 @@
         {
           "name": "CHILL_PORT",
           "value": "$CHILL_STATIC_EXAMPLE_PORT"
-        },
-        {
-          "name": "CHILL_DYNAMIC_PUBLIC_URL_PREFIX",
-          "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
-        },
-        {
-          "name": "IMMUTABLE_EXAMPLE_PATH",
-          "value": "$IMMUTABLE_EXAMPLE_PATH"
         }
       ]
     },
@@ -127,15 +131,11 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "$CHILL_DYNAMIC_PORT"
+          "value": "$CHILL_DYNAMIC_EXAMPLE_PORT"
         },
         {
           "name": "CHILL_PUBLIC_URL_PREFIX",
-          "value": "$CHILL_DYNAMIC_PUBLIC_URL_PREFIX"
-        },
-        {
-          "name": "IMMUTABLE_EXAMPLE_PATH",
-          "value": "$IMMUTABLE_EXAMPLE_PATH"
+          "value": "$CHILL_DYNAMIC_EXAMPLE_PATH"
         }
       ]
     }

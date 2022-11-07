@@ -80,6 +80,9 @@ for site_json in $sites; do
   # no home, or password for user
   adduser -D -h /dev/null -H "$SLUGNAME" || printf "Ignoring adduser error"
 
+  # TODO Check if there are any newer secrets in the s3 bucket for the site.
+  # If there are newer secrets; delete the version.txt file.
+
   VERSION="$(jq -r '.version' "$site_json")"
   export VERSION
 
