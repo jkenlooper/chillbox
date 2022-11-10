@@ -3,6 +3,7 @@ import os
 from flask import Flask
 import click
 from flask.cli import with_appcontext
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 
 def create_app(test_config=None):
@@ -50,6 +51,14 @@ def create_app(test_config=None):
         return 'Okay'
 
     app.cli.add_command(init_db_command)
+
+    # Only apply this middleware if the app is behind a proxy (nginx), and set
+    # the correct number of proxies that set each header. It can be a security
+    # issue if you get this configuration wrong.
+    # https://flask.palletsprojects.com/en/2.2.x/deploying/proxy_fix/
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+    )
 
     app.logger.debug("Create app done")
     return app

@@ -97,9 +97,8 @@ if [ "${service_lang_template}" = "flask" ]; then
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
-  # TODO Switch FLASK_ENV to be production
   HOST=localhost \
-  FLASK_ENV="development" \
+  FLASK_ENV="production" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
   SECRETS_CONFIG="${service_secrets_config_file}" \
     ./.venv/bin/flask init-db \
@@ -135,7 +134,7 @@ echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" 
     >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
   cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 s6-env HOST=localhost
-s6-env FLASK_ENV=development
+s6-env FLASK_ENV=production
 s6-env FLASK_INSTANCE_PATH=/var/lib/${SLUGNAME}/${service_handler}
 s6-env SECRETS_CONFIG=${service_secrets_config_file}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
