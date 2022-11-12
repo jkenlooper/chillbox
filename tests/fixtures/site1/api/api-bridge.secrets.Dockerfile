@@ -34,6 +34,11 @@ ENV TMPFS_DIR=$TMPFS_DIR
 ARG SERVICE_PERSISTENT_DIR=/var/lib/SLUGNAME-SERVICE_HANDLER
 ENV SERVICE_PERSISTENT_DIR=$SERVICE_PERSISTENT_DIR
 
+# Allow changing the binary to encrypt a file since it lives in the data volume
+# with the public keys. Mostly so local development can switch it to use a fake
+# encryption command.
+ENV ENCRYPT_FILE=encrypt-file
+
 RUN <<SECRETS_PROMPT_SH
 set -o errexit
 cat <<'HERE' > /usr/local/src/api-secrets/secrets-prompt.sh
@@ -45,6 +50,7 @@ set -o nounset
 test -e "$CHILLBOX_PUBKEY_DIR" || (echo "ERROR $0: No directory at $CHILLBOX_PUBKEY_DIR" && exit 1)
 pubkeys_list="$(find "$CHILLBOX_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name '*.public.pem')"
 test -n "$pubkeys_list" || (echo "ERROR $0: No chillbox public keys found at $CHILLBOX_PUBKEY_DIR" && exit 1)
+test -x "$CHILLBOX_PUBKEY_DIR/$ENCRYPT_FILE" || (echo "ERROR $0: The encrypt file doesn't exist or is not executable: $CHILLBOX_PUBKEY_DIR/$ENCRYPT_FILE" && exit 1)
 
 mkdir -p "$TMPFS_DIR/secrets/"
 mkdir -p "$SERVICE_PERSISTENT_DIR"
@@ -108,7 +114,7 @@ find "$CHILLBOX_PUBKEY_DIR" -depth -mindepth 1 -maxdepth 1 -name '*.public.pem' 
     encrypted_secrets_config_dir="$(dirname "$encrypted_secrets_config_file")"
     mkdir -p "$encrypted_secrets_config_dir"
     rm -f "$encrypted_secrets_config_file"
-    "$CHILLBOX_PUBKEY_DIR/encrypt-file" -k "$chillbox_public_key_file" -o "$encrypted_secrets_config_file" "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
+    "$CHILLBOX_PUBKEY_DIR/$ENCRYPT_FILE" -k "$chillbox_public_key_file" -o "$encrypted_secrets_config_file" "$TMPFS_DIR/secrets/$SECRETS_CONFIG"
   done
 
 HERE

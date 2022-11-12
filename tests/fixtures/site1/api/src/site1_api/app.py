@@ -48,7 +48,8 @@ def create_app(test_config=None):
 
     @app.route('/healthcheck')
     def healthcheck():
-        return 'Okay'
+        has_secrets = all([app.config.get('ANSWER1'), app.config.get('ANSWER2'), app.config.get('ANSWER5')])
+        return f"Okay. Secrets: {has_secrets}"
 
     app.cli.add_command(init_db_command)
 
