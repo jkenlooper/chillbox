@@ -34,5 +34,5 @@ for site_json in $sites; do
     "$@" \
     --cert-file "/var/lib/acmesh/$slugname.cer" \
     --key-file "/var/lib/acmesh/$slugname.key" \
-    --reloadcmd 'nginx -t && nginx -s reload'
+    --reloadcmd 'nginx -t && rc-service nginx reload'
 done

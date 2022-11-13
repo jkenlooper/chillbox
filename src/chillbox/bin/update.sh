@@ -11,4 +11,4 @@ cd /usr/local/src/
 /etc/chillbox/bin/site-init.sh
 
 /etc/chillbox/bin/reload-templates.sh
-nginx -t && nginx -s reload
+nginx -t && rc-service nginx reload

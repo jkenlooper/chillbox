@@ -1,0 +1,16 @@
+
+---
+- name: Force update chillbox services
+  hosts: chillbox
+  vars_files:
+    - /run/tmp/ansible/terraform/vars.json
+  tasks:
+    - name: Remove version.txt
+      become: true
+      ansible.builtin.file:
+        path: /srv/chillbox/site1/version.txt
+        state: absent
+    - name: Run the /etc/chillbox/bin/update.sh script
+      become: true
+      ansible.builtin.shell:
+        cmd: /etc/chillbox/bin/update.sh

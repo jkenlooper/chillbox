@@ -82,6 +82,9 @@ chown -R "$SLUGNAME":"$SLUGNAME" "$slugdir"
 # Save the service object for later use when updating or removing the service.
 echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
 
+eval "$(jq -r '.env // [] | .[] | "export " + .name + "=" + (.value | @sh)' "/etc/chillbox/sites/$SLUGNAME.site.json" \
+  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json")"
+
 # The 'freeze' variable is set from the environment object if at all. Default to
 # empty string.
 freeze=""
@@ -129,6 +132,9 @@ pipeline {
 s6-setuidgid $SLUGNAME
 cd $slugdir/${service_handler}
 PURR
+jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
+  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
+  >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
     | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
     >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
@@ -197,6 +203,9 @@ pipeline {
 s6-setuidgid "$SLUGNAME"
 cd "$slugdir/${service_handler}"
 MEOW
+jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
+  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
+  >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
       | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
       >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
