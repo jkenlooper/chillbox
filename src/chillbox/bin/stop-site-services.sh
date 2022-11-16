@@ -39,6 +39,8 @@ find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler
     "' "$existing_service_handler")"
     echo "$service_lang_template"
     rc-service "${SLUGNAME}-${service_name}" stop || printf "Ignoring"
+    # TODO Stopping the service doesn't work correctly. Need to configure the s6
+    # run script or change the configuration. Or maybe don't use s6 for now?
     rc-update delete "${SLUGNAME}-${service_name}" default || printf "Ignoring"
     rm -f "/etc/init.d/${SLUGNAME}-${service_name}" || printf "Ignoring"
     rm -rf "/etc/services.d/${SLUGNAME}-${service_name}" || printf "Ignoring"
