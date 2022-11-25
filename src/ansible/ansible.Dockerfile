@@ -97,3 +97,5 @@ COPY playbooks playbooks
 # Set CHILLBOX_INSTANCE and WORKSPACE when running the container.
 ENV CHILLBOX_INSTANCE=""
 ENV WORKSPACE=""
+
+CMD ["/usr/local/src/chillbox-ansible/bin/doit.sh", "-s", "playbook", "--", "playbooks/bootstrap-chillbox-init-credentials.playbook.yml"]

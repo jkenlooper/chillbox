@@ -15,7 +15,6 @@ echo "Running shellcheck on all scripts."
 docker run -it --rm \
   --mount "type=bind,src=${project_dir}/build,dst=/code/build,readonly=true" \
   --mount "type=bind,src=${project_dir}/chillbox.sh,dst=/code/chillbox.sh,readonly=true" \
-  --mount "type=bind,src=${project_dir}/ansible.sh,dst=/code/ansible.sh,readonly=true" \
   --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
   --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
   --entrypoint="sh" \
@@ -24,7 +23,6 @@ docker run -it --rm \
     (docker run -it --rm \
       --mount "type=bind,src=${project_dir}/build,dst=/code/build,readonly=true" \
       --mount "type=bind,src=${project_dir}/chillbox.sh,dst=/code/chillbox.sh,readonly=true" \
-      --mount "type=bind,src=${project_dir}/ansible.sh,dst=/code/ansible.sh,readonly=true" \
       --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
       --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
       --entrypoint="sh" \

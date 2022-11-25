@@ -74,11 +74,13 @@ chmod -R 0700 "$(dirname "$secure_tmp_ssh_dir")"
 
 plaintext_ansible_private_ssh_key_file="$secure_tmp_ssh_dir/ansible.pem"
 if [ ! -f "$plaintext_ansible_private_ssh_key_file" ]; then
+  clear
   echo "INFO $script_name: Decrypting file $ciphertext_ansible_private_ssh_key_file to $plaintext_ansible_private_ssh_key_file"
   set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"$ciphertext_ansible_private_ssh_key_file\" \"$plaintext_ansible_private_ssh_key_file\""
   set +x
+  clear
 fi
 
 
@@ -138,5 +140,9 @@ if [ -n "$1" ]; then
   if [ -n "$sub_command" ]; then
     cmd="$(which "ansible-$sub_command")"
   fi
-  su dev -s "$cmd" -- "$@"
+  tmp_out="$(mktemp)"
+  su dev -s "$cmd" -- "$@" > "$tmp_out" || echo "WARNING $0: ignoring error"
+  echo ""
+  cat "$tmp_out"
+  rm -f "$tmp_out"
 fi

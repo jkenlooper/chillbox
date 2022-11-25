@@ -35,6 +35,7 @@ Sub commands:
   push        - Pushes the Terraform state files to the Terraform containers.
   clean       - Removes state files that were saved for the instance and workspace.
   secrets     - Encrypt and upload the site secrets to the s3 object storage.
+  ansible     - Run ansible playbooks
 
 HERE
 }
@@ -57,6 +58,7 @@ check_args_and_environment_vars() {
     [ "$sub_command" != "pull" ] && \
     [ "$sub_command" != "push" ] && \
     [ "$sub_command" != "clean" ] && \
+    [ "$sub_command" != "ansible" ] && \
     [ "$sub_command" != "secrets" ]; then
     echo "ERROR $script_name: This command ($sub_command) is not supported in this script."
     exit 1
@@ -315,6 +317,9 @@ while getopts "hw:i:" OPTION ; do
 done
 shift $((OPTIND - 1))
 sub_command=${1:-interactive}
+# Shift the sub_command off the $@ so any other args can be passed down to other
+# commands.
+test "${#@}" -eq "0" || shift 1
 
 export CHILLBOX_INSTANCE="$chillbox_instance"
 export WORKSPACE="$workspace"
@@ -349,8 +354,11 @@ if [ "$sub_command" = "interactive" ] || \
   printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 
-  # TODO Run a src/local/ansible.sh script to run Ansible playbooks for the
-  # server.
+  # Always run the default command for ansible to init the chillbox server if it
+  # hasn't been done yet.
+  if [ "$sub_command" != "destroy" ]; then
+    "$project_dir/src/local/ansible.sh"
+  fi
 
 elif [ "$sub_command" = "clean" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command."
@@ -369,6 +377,9 @@ elif [ "$sub_command" = "secrets" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to encrypt and upload secrets."
   "$project_dir/src/local/encrypt-and-upload-secrets.sh" -h
   "$project_dir/src/local/encrypt-and-upload-secrets.sh"
+
+elif [ "$sub_command" = "ansible" ]; then
+    "$project_dir/src/local/ansible.sh" "$@"
 
 else
   echo "ERROR $script_name: the sub command '$sub_command' was not handled."

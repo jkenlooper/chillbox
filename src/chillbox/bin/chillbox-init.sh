@@ -119,6 +119,7 @@ cleanup() {
 trap cleanup EXIT
 
 apk update
+apk upgrade
 apk add sed attr grep coreutils jq
 
 # Need to use passwd command from the shadow-utils so the password can be set to
@@ -193,7 +194,7 @@ apk add doas
 # TODO It would be better to have the ansibledev user only have permission to
 # run a few commands and not have full root access. Not sure if it is possible
 # to only allow maintenance commands like apk update and such when using ansible.
-cat <<DOAS_CONFIG > /etc/doas.d/doas.conf
+cat <<DOAS_CONFIG > /etc/doas.conf
 permit persist dev as root
 permit persist ansibledev as root
 DOAS_CONFIG

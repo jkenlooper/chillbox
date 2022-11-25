@@ -1,15 +1,13 @@
 #!/usr/bin/env sh
 
-# TODO This file location is only temporary. It will move to src/ansible/ directory.
-# TODO Remove it from the bind mount in tests/shellcheck.sh after it moves.
-
 set -o errexit
 
-project_dir="$(dirname "$(realpath "$0")")"
+project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
 ansible_dir="$project_dir/src/ansible"
 
-export CHILLBOX_INSTANCE=ansibletest
-export WORKSPACE=development
+# This script shouldn't be run directly. Do a sanity check still.
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 
 INFRA_CONTAINER="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPACE"
 TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$CHILLBOX_INSTANCE-$WORKSPACE"
@@ -43,4 +41,10 @@ docker run \
   --mount "type=volume,src=chillbox-$TERRAFORM_CHILLBOX_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-020-chillbox,readonly=true" \
   --mount "type=bind,src=$ansible_dir/bin,dst=/usr/local/src/chillbox-ansible/bin" \
   --mount "type=bind,src=$ansible_dir/playbooks,dst=/usr/local/src/chillbox-ansible/playbooks" \
-  "$ANSIBLE_IMAGE"
+  "$ANSIBLE_IMAGE" "$@" || (
+  exitcode="$?"
+  echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+  read -r docker_continue_confirm
+  test "$docker_continue_confirm" = "y" || exit $exitcode
+)
+
