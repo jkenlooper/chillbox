@@ -194,6 +194,8 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/init-chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/init-chillbox.sh.tftpl" \
     --mount "type=bind,src=${terraform_chillbox_dir}/host_inventory.ansible.cfg.tftpl,dst=/usr/local/src/chillbox-terraform/host_inventory.ansible.cfg.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/ansible-etc-hosts-snippet.tftpl,dst=/usr/local/src/chillbox-terraform/ansible-etc-hosts-snippet.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/ansible_ssh_config.tftpl,dst=/usr/local/src/chillbox-terraform/ansible_ssh_config.tftpl" \
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \

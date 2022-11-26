@@ -1,0 +1,17 @@
+# Generated from ${template_source_file} in the local terraform 020 chillbox container.
+
+%{ for hostname, ipv4_address in chillbox_name_ipv4address_map ~}
+Host ${hostname} ${regex("chillbox-.*-(\\d+)", hostname)[0]}
+  IdentityFile /run/tmp/ansible/ssh/ansible.pem
+
+  Hostname ${hostname}
+
+  # Only trust the generated known_hosts file inside the ansible container.
+  # TODO Will need to attempt a ssh connection first on the 020-chillbox to
+  # create a known_hosts file to then copy over to the ansible container.
+  #StrictHostKeyChecking yes
+
+  # By default the 'dev' user should be used when using ssh in and interactive
+  # way.
+  User dev
+%{ endfor ~}

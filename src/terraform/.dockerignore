@@ -13,6 +13,8 @@
 !/020-chillbox/outputs.tf
 !/020-chillbox/init-chillbox.sh.tftpl
 !/020-chillbox/host_inventory.ansible.cfg.tftpl
+!/020-chillbox/ansible-etc-hosts-snippet.tftpl
+!/020-chillbox/ansible_ssh_config.tftpl
 !/020-chillbox/upload-artifacts.sh
 
 !/030-artifact-modules/extract-terraform-artifact-modules.sh

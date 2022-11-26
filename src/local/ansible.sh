@@ -25,6 +25,24 @@ export ANSIBLE_CONTAINER="chillbox-ansible-$CHILLBOX_INSTANCE-$WORKSPACE"
 # ssh key setup
 # https://docs.ansible.com/ansible/latest/user_guide/connection_details.html
 
+run_args="$@"
+
+tmp_ansible_etc_hosts_snippet="$(mktemp)"
+docker run \
+  -d \
+  --name "$ANSIBLE_CONTAINER-sleeper" \
+  --mount "type=volume,src=chillbox-$TERRAFORM_CHILLBOX_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-020-chillbox,readonly=true" \
+  "$ANSIBLE_IMAGE-sleeper" || (
+    exitcode="$?"
+    echo "docker exited with $exitcode exitcode. Ignoring"
+  )
+docker cp "$ANSIBLE_CONTAINER-sleeper:/var/lib/terraform-020-chillbox/ansible-etc-hosts-snippet" "$tmp_ansible_etc_hosts_snippet" || echo "Ignore docker cp error."
+docker stop --time 0 "$ANSIBLE_CONTAINER-sleeper" || printf ""
+docker rm "$ANSIBLE_CONTAINER-sleeper" || printf ""
+set -- $(cat "$tmp_ansible_etc_hosts_snippet")
+rm -f "$tmp_ansible_etc_hosts_snippet"
+
+set -x
 docker run \
   -i --tty \
   --rm \
@@ -41,7 +59,8 @@ docker run \
   --mount "type=volume,src=chillbox-$TERRAFORM_CHILLBOX_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-020-chillbox,readonly=true" \
   --mount "type=bind,src=$ansible_dir/bin,dst=/usr/local/src/chillbox-ansible/bin" \
   --mount "type=bind,src=$ansible_dir/playbooks,dst=/usr/local/src/chillbox-ansible/playbooks" \
-  "$ANSIBLE_IMAGE" "$@" || (
+  $@ \
+  "$ANSIBLE_IMAGE" $run_args || (
   exitcode="$?"
   echo "docker exited with $exitcode exitcode. Continue? [y/n]"
   read -r docker_continue_confirm

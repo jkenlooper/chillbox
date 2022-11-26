@@ -80,6 +80,11 @@ chmod -R 0700 /var/lib/ansible
 mkdir -p /etc/ansible
 chown -R dev:dev /etc/ansible
 chmod -R 0700 /etc/ansible
+
+# Make it easier to ssh to the chillbox servers by using the generated
+# ssh_config from terraform-020-chillbox container.
+mv /etc/ssh/ssh_config /etc/ssh/ssh_config.bak
+ln -s /var/lib/terraform-020-chillbox/ansible_ssh_config /etc/ssh/ssh_config
 SETUP
 
 
@@ -98,4 +103,4 @@ COPY playbooks playbooks
 ENV CHILLBOX_INSTANCE=""
 ENV WORKSPACE=""
 
-CMD ["/usr/local/src/chillbox-ansible/bin/doit.sh", "-s", "playbook", "--", "playbooks/bootstrap-chillbox-init-credentials.playbook.yml"]
+#CMD ["/usr/local/src/chillbox-ansible/bin/doit.sh", "-s", "playbook", "--", "playbooks/bootstrap-chillbox-init-credentials.playbook.yml"]

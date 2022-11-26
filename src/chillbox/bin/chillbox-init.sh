@@ -194,11 +194,13 @@ apk add doas
 # TODO It would be better to have the ansibledev user only have permission to
 # run a few commands and not have full root access. Not sure if it is possible
 # to only allow maintenance commands like apk update and such when using ansible.
-cat <<DOAS_CONFIG > /etc/doas.conf
+mkdir -p /etc/doas.d
+cat <<DOAS_CONFIG > /etc/doas.d/chillbox.doas.conf
 permit persist dev as root
 permit persist ansibledev as root
 DOAS_CONFIG
-doas -C /etc/doas.conf && echo "doas config ok"
+chmod 0600 /etc/doas.d/chillbox.doas.conf
+doas -C /etc/doas.d/chillbox.doas.conf && echo "doas config ok"
 
 # Configure sshd to only allow users with authorized_keys to ssh in. The root
 # user is blocked from logging in. PAM needs to be added and enabled for it to

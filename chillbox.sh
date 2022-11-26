@@ -354,10 +354,10 @@ if [ "$sub_command" = "interactive" ] || \
   printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 
-  # Always run the default command for ansible to init the chillbox server if it
-  # hasn't been done yet.
+  # Always run the bootstrap playbook for ansible to init the chillbox server if
+  # it hasn't been done yet.
   if [ "$sub_command" != "destroy" ]; then
-    "$project_dir/src/local/ansible.sh"
+    "$project_dir/src/local/ansible.sh" /usr/local/src/chillbox-ansible/bin/doit.sh -s playbook -- playbooks/bootstrap-chillbox-init-credentials.playbook.yml
   fi
 
 elif [ "$sub_command" = "clean" ]; then
@@ -379,7 +379,10 @@ elif [ "$sub_command" = "secrets" ]; then
   "$project_dir/src/local/encrypt-and-upload-secrets.sh"
 
 elif [ "$sub_command" = "ansible" ]; then
-    "$project_dir/src/local/ansible.sh" "$@"
+  # TODO Maybe show a list of playbooks and select which one to run?
+  # The default command to run in the ansible container is to bootstrap.
+
+  "$project_dir/src/local/ansible.sh" "$@"
 
 else
   echo "ERROR $script_name: the sub command '$sub_command' was not handled."

@@ -140,9 +140,6 @@ if [ -n "$1" ]; then
   if [ -n "$sub_command" ]; then
     cmd="$(which "ansible-$sub_command")"
   fi
-  tmp_out="$(mktemp)"
-  su dev -s "$cmd" -- "$@" > "$tmp_out" || echo "WARNING $0: ignoring error"
+  su dev -s "$cmd" -- "$@"
   echo ""
-  cat "$tmp_out"
-  rm -f "$tmp_out"
 fi

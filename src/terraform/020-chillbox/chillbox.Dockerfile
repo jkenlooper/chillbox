@@ -117,6 +117,8 @@ ENV SITES_MANIFEST="$SITES_MANIFEST"
 
 COPY --chown=dev:dev 020-chillbox/init-chillbox.sh.tftpl .
 COPY --chown=dev:dev 020-chillbox/host_inventory.ansible.cfg.tftpl .
+COPY --chown=dev:dev 020-chillbox/ansible-etc-hosts-snippet.tftpl .
+COPY --chown=dev:dev 020-chillbox/ansible_ssh_config.tftpl .
 COPY --chown=dev:dev 020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev bin bin
 COPY --chown=dev:dev 020-chillbox/bin/ bin/
