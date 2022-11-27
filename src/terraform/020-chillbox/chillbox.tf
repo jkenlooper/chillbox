@@ -53,9 +53,27 @@ resource "digitalocean_droplet" "chillbox" {
     command    = "ln -s /run/tmp/ansible/terraform/${self.name}.json /var/lib/terraform-020-chillbox/host_vars/${self.name}.json"
   }
   provisioner "local-exec" {
+    # The ssh_known_hosts file will be updated to include three hostnames for
+    # each chillbox server:
+    #   - ipv4_address
+    #   - chillbox full hostname (chillbox-example-development-0)
+    #   - chillbox short hostname (chillbox-0)
+    on_failure = fail
+    command = <<HERE
+    ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address} \
+      | sed -nE 's/^(${self.ipv4_address})(.*)$/\1\2\n${self.name}\2\nchillbox-${regex("chillbox-.*-(\\d+)", self.name)[0]}\2/p' \
+        > /var/lib/terraform-020-chillbox/ssh_known_hosts-${self.name}
+    HERE
+  }
+  provisioner "local-exec" {
     on_failure = continue
     when       = destroy
     command    = "rm -f /var/lib/terraform-020-chillbox/host_vars/${self.name}.json"
+  }
+  provisioner "local-exec" {
+    on_failure = continue
+    when       = destroy
+    command    = "rm -f /var/lib/terraform-020-chillbox/ssh_known_hosts-${self.name}"
   }
 }
 

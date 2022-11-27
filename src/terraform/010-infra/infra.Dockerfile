@@ -11,7 +11,7 @@ apk update
 apk add \
   jq \
   vim \
-  mandoc man-pages \
+  mandoc man-pages docs \
   coreutils \
   openssl \
   openssh-keygen \

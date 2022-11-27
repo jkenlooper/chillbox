@@ -134,6 +134,14 @@ for ciphertext_ansible_host_vars_json in $(cat "$tmp_list_ciphertext_ansible_hos
 done
 rm -f "$tmp_list_ciphertext_ansible_host_vars_json_files"
 
+# Rebuild the ssh known hosts file since new chillbox servers may have been
+# created or replaced. Set it to write-only to hint that it is created from
+# other files.
+touch /etc/ssh/ssh_known_hosts
+chmod 0644 /etc/ssh/ssh_known_hosts
+cat /var/lib/terraform-020-chillbox/ssh_known_hosts-* > /etc/ssh/ssh_known_hosts
+chmod 0444 /etc/ssh/ssh_known_hosts
+
 # Only need to run the ansible commands if an arg was passed.
 if [ -n "$1" ]; then
   cmd="$(which ansible)"

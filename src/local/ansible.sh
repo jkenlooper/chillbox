@@ -27,12 +27,21 @@ export ANSIBLE_CONTAINER="chillbox-ansible-$CHILLBOX_INSTANCE-$WORKSPACE"
 
 run_args="$@"
 
+# Sleeper image needs no context.
+sleeper_image="chillbox-sleeper"
+docker image rm "$sleeper_image" || printf ""
+export DOCKER_BUILDKIT=1
+< "$project_dir/src/local/secrets/sleeper.Dockerfile" \
+  docker build \
+    -t "$sleeper_image" \
+    -
+
 tmp_ansible_etc_hosts_snippet="$(mktemp)"
 docker run \
   -d \
   --name "$ANSIBLE_CONTAINER-sleeper" \
   --mount "type=volume,src=chillbox-$TERRAFORM_CHILLBOX_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-020-chillbox,readonly=true" \
-  "$ANSIBLE_IMAGE-sleeper" || (
+  "$sleeper_image" || (
     exitcode="$?"
     echo "docker exited with $exitcode exitcode. Ignoring"
   )
@@ -42,7 +51,6 @@ docker rm "$ANSIBLE_CONTAINER-sleeper" || printf ""
 set -- $(cat "$tmp_ansible_etc_hosts_snippet")
 rm -f "$tmp_ansible_etc_hosts_snippet"
 
-set -x
 docker run \
   -i --tty \
   --rm \
