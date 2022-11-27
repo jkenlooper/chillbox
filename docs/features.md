@@ -23,25 +23,25 @@ This is a list of notable features that have currently been implemented.
 - No remote build pipeline, all builds happen on the local host machine
 - [Terraform] has been isolated inside containers on the local host machine and the state files are encrypted on data volumes
 - Deployment to [DigitalOcean] cloud hosting provider
-- The user-data script added to the deployed server is encrypted. Currently this
-    requires manually decrypting this user-data script on the server and then
-    executing the user-data script. This process will eventually be automated
-    with Ansible. Use the generated password that was created in the isolated
-    terraform container to decrypt it.
+- The user-data script added to the deployed server is encrypted. [Ansible] is
+    used to bootstrap the server by decrypting the user-data script and
+    executing it as defined in the playbook file. 
+- [Ansible] is isolated to a container much like Terraform. It is used
+    to initialize the chillbox server when first deploying. The Alpine Linux
+    image used for [DigitalOcean] does not include [cloud-init] and I see no
+    reason to have it.
+- [Ansible] is used to manage the deployed chillbox server with security updates and such.
+  - Manually connecting with ssh to the deployed chillbox server is done within the
+      ansible container.
 
 
 ## Planned Features
 
 Upcoming list of features that will be implemented.
 
-- Ansible will be isolated to a container much like Terraform. It will be used
-    to initialize the chillbox server when first deploying. The Alpine Linux
-    image used for [DigitalOcean] does not include [cloud-init] and I see no
-    reason to have it.
 - All secrets are stored in a tmpfs file system when not encrypted
-  - Restarting of the server will require user interaction (via Ansible) to decrypt secrets
+  - Restarting of the server will require user interaction (via [Ansible]) to decrypt secrets
 - Trigger running the update script via secured webhook in chillbox server
-- Use Ansible to manage the deployed chillbox server with security updates and such
 
 ### Other Ideas for New Features
 
@@ -109,3 +109,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [OpenRC]: https://wiki.alpinelinux.org/wiki/OpenRC
 [Deno]: https://deno.land/
 [cloud-init]: https://cloud-init.io/
+[Ansible]: https://docs.ansible.com/
