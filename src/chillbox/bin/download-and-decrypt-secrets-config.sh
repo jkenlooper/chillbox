@@ -19,10 +19,6 @@ key_name="$hostname"
 S3_ENDPOINT_URL="${S3_ENDPOINT_URL:-}"
 ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME:-}"
 
-# TODO Verify that this has already been done?
-# shellcheck disable=SC1091
-# . /home/dev/.env
-
 test -n "$S3_ENDPOINT_URL" || (echo "ERROR $0: No S3_ENDPOINT_URL set. Exiting" && exit 1)
 test -n "$ARTIFACT_BUCKET_NAME" || (echo "ERROR $0: No ARTIFACT_BUCKET_NAME set. Exiting" && exit 1)
 

@@ -22,9 +22,13 @@ apk add \
 ln -s -f /usr/bin/python3 /usr/bin/python
 
 useradd -m -U -p "$dev_user_passphrase_hashed" dev
-
-# TODO Should the ansibledev user be in the same group as dev user?
 useradd -m -U -p "$hashed_password_for_ansibledev" ansibledev
+
+# Include the dev and ansibledev users to the chillconf group so both users can
+# modify the /etc/chillbox/chillbox.config file.
+groupadd --system chillconf
+usermod -a -G chillconf dev
+usermod -a -G chillconf ansibledev
 
 # The work directory is most likely /root
 work_dir="$(dirname "$0")"

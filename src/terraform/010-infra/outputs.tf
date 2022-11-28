@@ -46,3 +46,11 @@ output "chillbox_count" {
   description = "Chillbox server count."
 }
 
+output "sites_artifact" {
+  description = "The sites artifact file."
+  value = var.sites_artifact
+}
+output "chillbox_artifact" {
+  description = "The chillbox artifact file."
+  value = var.chillbox_artifact
+}

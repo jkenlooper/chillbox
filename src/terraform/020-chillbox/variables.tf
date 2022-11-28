@@ -60,10 +60,18 @@ variable "sites_manifest" {
 variable "sites_artifact" {
   description = "The sites artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.sites_artifact))
+    error_message = "The filename needs to end with '.tar.gz' and only have versioned filename characters."
+  }
 }
 variable "chillbox_artifact" {
   description = "The chillbox artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^chillbox\\.[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.chillbox_artifact))
+    error_message = "The filename needs to start with 'chillbox.' and end with '.tar.gz' and only have versioned filename characters."
+  }
 }
 
 variable "developer_ips" {

@@ -6,7 +6,7 @@ script_name="$(basename "$0")"
 
 # The .env file is created from chillbox-init.sh script. Using sed here to avoid
 # duplicating that list of env variable names here.
-env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\)=.*/\1/p' /home/dev/.env)"
+env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\)=.*/\1/p' /home/dev/.env /etc/chillbox/chillbox.config)"
 env_names="$(printf "%s" "$env_names_to_expand" | sed 's/./$&/; /\S/!d' | xargs)"
 
 usage() {

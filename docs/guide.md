@@ -1,3 +1,9 @@
+## Updates
+
+Change the SITES_ARTIFACT_URL export in the environment config file:
+`$HOME/.config/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/env`
+
+Run the `chillbox.sh apply` command.
 
 ## Recover from a pulled tfstate file.
 
