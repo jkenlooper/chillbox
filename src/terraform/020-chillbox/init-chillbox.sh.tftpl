@@ -23,6 +23,7 @@ ln -s -f /usr/bin/python3 /usr/bin/python
 
 useradd -m -U -p "$dev_user_passphrase_hashed" dev
 useradd -m -U -p "$hashed_password_for_ansibledev" ansibledev
+usermod -a -G ansibledev dev
 
 # Include the dev and ansibledev users to the chillconf group so both users can
 # modify the /etc/chillbox/chillbox.config file.

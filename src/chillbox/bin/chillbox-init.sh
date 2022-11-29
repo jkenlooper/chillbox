@@ -120,7 +120,7 @@ trap cleanup EXIT
 
 apk update
 apk upgrade
-apk add sed attr grep coreutils jq
+apk add sed attr grep coreutils jq entr
 
 # Need to use passwd command from the shadow-utils so the password can be set to
 # expire.
@@ -331,6 +331,31 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 ##BINDIR=/etc/chillbox/bin make -C "$tmp_keys_dir" install
 
 /etc/chillbox/bin/generate-chillbox-key.sh
+
+## Setup the watcher process for chillbox.config file changes.
+mkdir -p /etc/init.d
+cat <<MEOW > /etc/init.d/chillbox-trigger-update
+#!/sbin/openrc-run
+supervisor=s6
+name="chillbox-trigger-update"
+procname="chillbox-trigger-update"
+description="Watch the /etc/chillbox/chillbox.config file for changes and run update.sh"
+s6_service_path=/etc/services.d/chillbox-trigger-update
+depend() {
+  need s6-svscan
+}
+MEOW
+chmod +x "/etc/init.d/chillbox-trigger-update"
+mkdir -p "/etc/services.d/chillbox-trigger-update"
+cat <<PURR > "/etc/services.d/chillbox-trigger-update/run"
+#!/usr/bin/execlineb -P
+s6-setuidgid root
+fdmove -c 2 1
+/etc/chillbox/bin/watch-chillbox-config.sh
+PURR
+chmod +x "/etc/services.d/chillbox-trigger-update/run"
+rc-update add "chillbox-trigger-update" default
+rc-service "chillbox-trigger-update" start
 
 ## WORKDIR /usr/local/src/
 mkdir -p /usr/local/src/
