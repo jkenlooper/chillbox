@@ -1,22 +1,13 @@
 
 ---
-- name: Force update chillbox services
+- name: Update chillbox services
   hosts: chillbox
   vars_files:
     - /run/tmp/ansible/terraform/vars.json
   tasks:
 
-    # TODO Update the /etc/chillbox/chillbox.config file. Another process will
-    # be watching that file for changes and will then trigger the update.sh
-    # script.
-    #
-    # TODO Replace the /etch/chillbox/chillbox.config file with the below
-    # contents.
-    #
-    # # Updated via chillbox-update.playbook.yml
-    # export CHILLBOX_ARTIFACT="{{ chillbox_artifact }}"
-    # export SITES_ARTIFACT="{{ sites_artifact }}"
-    #
+    # Replacing the chillbox.config will trigger the chillbox-trigger-update
+    # service that runs the /etc/chillbox/bin/update.sh script.
     - name: Replace /etc/chillbox/chillbox.config
       ansible.builtin.template:
         backup: true
@@ -25,14 +16,3 @@
         force: true
         group: chillconf
         mode: '0660'
-        state: absent
-
-    - name: Remove version.txt
-      become: true
-      ansible.builtin.file:
-        path: /srv/chillbox/site1/version.txt
-        state: absent
-    - name: Run the /etc/chillbox/bin/update.sh script
-      become: true
-      ansible.builtin.shell:
-        cmd: /etc/chillbox/bin/update.sh
