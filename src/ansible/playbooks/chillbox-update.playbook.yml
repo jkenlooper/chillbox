@@ -17,6 +17,15 @@
     # export CHILLBOX_ARTIFACT="{{ chillbox_artifact }}"
     # export SITES_ARTIFACT="{{ sites_artifact }}"
     #
+    - name: Replace /etc/chillbox/chillbox.config
+      ansible.builtin.template:
+        backup: true
+        src: chillbox.config.jinja2
+        dest: /etc/chillbox/chillbox.config
+        force: true
+        group: chillconf
+        mode: '0660'
+        state: absent
 
     - name: Remove version.txt
       become: true
