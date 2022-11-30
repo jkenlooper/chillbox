@@ -356,8 +356,10 @@ if [ "$sub_command" = "interactive" ] || \
 
   # Always run the bootstrap playbook for ansible to init the chillbox server if
   # it hasn't been done yet.
-  if [ "$sub_command" != "destroy" ]; then
+  if [ "$sub_command" = "apply" ]; then
     "$project_dir/src/local/ansible.sh" /usr/local/src/chillbox-ansible/bin/doit.sh -s playbook -- playbooks/bootstrap-chillbox-init-credentials.playbook.yml
+  elif [ "$sub_command" = "interactive" ]; then
+    "$project_dir/src/local/ansible.sh"
   fi
 
 elif [ "$sub_command" = "clean" ]; then

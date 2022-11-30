@@ -56,10 +56,10 @@ tar x -z -f "$tmp_sites_artifact" -C /etc/chillbox/sites --strip-components 1 si
 # Most likely the nginx user has been added when the nginx package was
 # installed.
 if id -u nginx; then
-  echo "nginx user already added."
+  echo "INFO $script_name: nginx user already added."
 else
-  echo "Adding nginx user."
-  adduser -D -h /dev/null -H "nginx" || printf "Ignoring adduser error"
+  echo "INFO $script_name: Adding nginx user."
+  adduser -D -h /dev/null -H "nginx" || echo "WARNING $script_name: Ignoring adduser error"
 fi
 
 export SERVER_PORT="$CHILLBOX_SERVER_PORT"
@@ -78,7 +78,12 @@ for site_json in $sites; do
   cd "$current_working_dir"
 
   # no home, or password for user
-  adduser -D -h /dev/null -H "$SLUGNAME" || printf "Ignoring adduser error"
+  if id -u "$SLUGNAME"; then
+    echo "INFO $script_name: $SLUGNAME user already added."
+  else
+    echo "INFO $script_name: Adding $SLUGNAME user."
+    adduser -D -h /dev/null -H "$SLUGNAME" || echo "WARNING $script_name: Ignoring adduser error"
+  fi
 
   # TODO Check if there are any newer secrets in the s3 bucket for the site.
   # If there are newer secrets; delete the version.txt file.
