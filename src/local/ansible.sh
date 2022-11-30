@@ -66,6 +66,7 @@ docker run \
   --mount "type=volume,src=chillbox-$INFRA_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=volume,src=chillbox-$TERRAFORM_CHILLBOX_CONTAINER-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/var/lib/terraform-020-chillbox,readonly=true" \
   --mount "type=bind,src=$ansible_dir/bin,dst=/usr/local/src/chillbox-ansible/bin" \
+  --mount "type=bind,src=$ansible_dir/roles,dst=/usr/local/src/chillbox-ansible/roles" \
   --mount "type=bind,src=$ansible_dir/playbooks,dst=/usr/local/src/chillbox-ansible/playbooks" \
   $@ \
   "$ANSIBLE_IMAGE" $run_args || (

@@ -41,7 +41,7 @@ Upcoming list of features that will be implemented.
 
 - All secrets are stored in a tmpfs file system when not encrypted
   - Restarting of the server will require user interaction (via [Ansible]) to decrypt secrets
-- Trigger running the update script via secured webhook in chillbox server
+- Trigger running the update script via ansible playbook
 
 ### Other Ideas for New Features
 

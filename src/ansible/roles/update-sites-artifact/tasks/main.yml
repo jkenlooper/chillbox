@@ -1,0 +1,11 @@
+---
+# Replacing the chillbox.config will trigger the chillbox-trigger-update
+# service that runs the /etc/chillbox/bin/update.sh script.
+- name: Replace /etc/chillbox/chillbox.config
+  ansible.builtin.template:
+    backup: true
+    src: chillbox.config.jinja2
+    dest: /etc/chillbox/chillbox.config
+    force: true
+    group: chillconf
+    mode: '0660'

@@ -4,6 +4,7 @@
 # Except these specific files and directories
 !/bin/*
 !/.config/*
+!/roles/*
 !/playbooks/*
 !/ansible.cfg
 !/README.md
