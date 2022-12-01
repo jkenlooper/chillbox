@@ -210,13 +210,13 @@ create_example_site_tar_gz() {
   echo "INFO $script_name: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_example_sites_dir"' EXIT
-  example_sites_version="$(make --silent --directory="$project_dir" inspect.VERSION)"
+  example_sites_version="$(make --silent --directory="$project_dir" --no-print-directory inspect.VERSION)"
   echo "example_sites_version ($example_sites_version)"
   export SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
   cp -R "$project_dir/tests/fixtures/sites" "$tmp_example_sites_dir/"
-  site1_version="$(make --silent --directory="$project_dir/tests/fixtures/site1" inspect.VERSION)"
+  site1_version="$(make --silent --directory="$project_dir/tests/fixtures/site1" --no-print-directory inspect.VERSION)"
   echo "site1_version ($site1_version)"
   jq \
     --arg jq_release_file_path "$tmp_example_sites_dir/site1-$site1_version.tar.gz" \

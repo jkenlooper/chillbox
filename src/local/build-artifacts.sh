@@ -238,7 +238,7 @@ else
     chmod --recursive u+rw "$tmp_dir"
 
     echo "Running the 'make' command for $slugname which should make dist/immutable.tar.gz and dist/artifact.tar.gz" >> "$log_file"
-    make -C "$tmp_dir/$slugname" >> "$log_file"
+    make --silent -C "$tmp_dir/$slugname" >> "$log_file"
 
     immutable_archive_file="$tmp_dir/$slugname/dist/immutable.tar.gz"
     test -f "$immutable_archive_file" || (echo "ERROR $script_name: No file at $immutable_archive_file" >> "$log_file" && exit 1)
