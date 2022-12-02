@@ -253,13 +253,16 @@ build_artifacts() {
   printf "\n\n%s\n" "INFO $script_name: Build artifacts locally for sites artifact $SITES_ARTIFACT_URL"
   mkdir -p "$chillbox_state_home"
 
+sites_artifact="$(basename "${SITES_ARTIFACT_URL}")"
+sites_artifact_file="$chillbox_state_home/$sites_artifact"
+
   # The artifacts are built locally by executing the src/local/build-artifacts.sh.
   SITES_ARTIFACT=""
   CHILLBOX_ARTIFACT=""
   SITES_MANIFEST=""
   build_artifacts_log_file=""
   output_env="$(mktemp)"
-  "${project_dir}/src/local/build-artifacts.sh" -s "$SITES_ARTIFACT_URL" -o "$output_env"
+  "${project_dir}/src/local/build-artifacts.sh" -s "$SITES_ARTIFACT_URL" -o "$output_env" || (echo "ERROR $script_name: The build-artifacts.sh failed. Removing the $sites_artifact_file if it exists to ensure a clean build." && rm -f "$sites_artifact_file" && exit 1)
   eval "$(jq -r '@sh "
       export SITES_ARTIFACT=\(.sites_artifact)
       export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
