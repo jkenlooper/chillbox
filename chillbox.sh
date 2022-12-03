@@ -5,6 +5,12 @@ set -o errexit
 script_name="$(basename "$0")"
 project_dir="$(dirname "$(realpath "$0")")"
 
+# These variables are updated later, but can be shown in the help output.
+chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/<instance_name>/<workspace>"
+env_config="$chillbox_config_home/env"
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/<instance_name>/<workspace>"
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/<instance_name>/<workspace>"
+
 usage() {
   cat <<HERE
 
@@ -35,7 +41,22 @@ Sub commands:
   push        - Pushes the Terraform state files to the Terraform containers.
   clean       - Removes state files that were saved for the instance and workspace.
   secrets     - Encrypt and upload the site secrets to the s3 object storage.
-  ansible     - Run ansible playbooks
+  ansible     - Run ansible playbooks or ssh into the server
+
+Files:
+
+  Configuration:
+    $env_config
+    $chillbox_config_home/terraform-010-infra.private.auto.tfvars
+    $chillbox_config_home/terraform-020-chillbox.private.auto.tfvars
+
+  Data:
+    $chillbox_data_home/encrypted-secrets
+    $chillbox_data_home/terraform_state_backup
+
+  State (deleted with 'clean' sub-command):
+    $chillbox_state_home/build_artifact_logs/
+    $chillbox_state_home/<other cache files and directories>
 
 HERE
 }

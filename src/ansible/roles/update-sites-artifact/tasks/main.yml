@@ -11,8 +11,8 @@
     mode: '0660'
 
 # TODO Remove this task when the update.sh script properly stops running services.
-- name: Reboot as workaround on update.sh not stopping processes
-  become: true
-  ansible.builtin.reboot:
-    pre_reboot_delay: 30
-    post_reboot_delay: 10
+#- name: Reboot as workaround on update.sh not stopping processes
+#  become: true
+#  ansible.builtin.reboot:
+#    pre_reboot_delay: 30
+#    post_reboot_delay: 10

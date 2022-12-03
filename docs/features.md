@@ -66,6 +66,11 @@ would be tempted to implement.
 - Batching large jobs by spinning up temporary resources
 - Support for running OpenFaaS functions with [faasd](https://docs.openfaas.com/deployment/faasd/)
 - Monitoring and ability to easily view logs without being on the server
+- The build and install of Python service dependencies are done locally and
+    cached to avoid running `pip install` on the server.
+- Static code analysis done locally as part of the deployment
+  - Check for known vulnerabilities (pip-audit, sonarqube, socket.dev, others?)
+  - Code quality
 
 ## Out of Scope Features
 
