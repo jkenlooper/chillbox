@@ -122,7 +122,3 @@ resource "local_file" "ansible_ssh_config" {
     chillbox_name_ipv4address_map : zipmap(digitalocean_droplet.chillbox.*.name, digitalocean_droplet.chillbox.*.ipv4_address)
   })
 }
-
-# TODO Set the known_hosts file? Set a global one /etc/ssh/ssh_known_hosts
-# Create one by running a ssh command to attempt to connect to the deployed
-# chillbox server.

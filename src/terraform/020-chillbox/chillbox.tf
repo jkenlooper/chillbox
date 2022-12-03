@@ -58,11 +58,18 @@ resource "digitalocean_droplet" "chillbox" {
     #   - ipv4_address
     #   - chillbox full hostname (chillbox-example-development-0)
     #   - chillbox short hostname (chillbox-0)
+    # Need to put this in a while loop since it first might come back with no
+    # key fingerprints initially. Usually takes two tries.
     on_failure = fail
-    command = <<HERE
-    ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address} \
-      | sed -nE 's/^(${self.ipv4_address})(.*)$/\1\2\n${self.name}\2\nchillbox-${regex("chillbox-.*-(\\d+)", self.name)[0]}\2/p' \
-        > /var/lib/terraform-020-chillbox/ssh_known_hosts-${self.name}
+    command    = <<HERE
+    output=""
+    while test -z "$output"; do
+      output="$(ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address})"
+      ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address} \
+        | sed -nE 's/^(${self.ipv4_address})(.*)$/\1\2\n${self.name}\2\nchillbox-${regex("chillbox-.*-(\\d+)", self.name)[0]}\2/p' \
+          > /var/lib/terraform-020-chillbox/ssh_known_hosts-${self.name}
+      sleep 5
+    done
     HERE
   }
   provisioner "local-exec" {
@@ -131,7 +138,7 @@ resource "local_sensitive_file" "ansible_host_vars_json" {
   filename        = "/run/tmp/secrets/terraform-020-chillbox/chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.json"
   file_permission = "0400"
   content = jsonencode({
-    ansible_ssh_pass = var.chillbox_ansibledev_pass[count.index]
+    ansible_ssh_pass        = var.chillbox_ansibledev_pass[count.index]
     ansible_become_password = var.chillbox_ansibledev_pass[count.index]
   })
 
