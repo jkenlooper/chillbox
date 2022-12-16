@@ -20,7 +20,7 @@ setup_file() {
   mkdir -p "$slugdir"
 
   mkdir -p /run/tmp/chillbox_secrets/$SLUGNAME/api
-  touch /run/tmp/chillbox_secrets/$SLUGNAME/api/api-bridge.secrets.cfg
+  touch /run/tmp/chillbox_secrets/$SLUGNAME/api/api.secrets.cfg
 
   export S3_ENDPOINT_URL="http://fake.s3.endpoint.test"
   export AWS_PROFILE="test"

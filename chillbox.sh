@@ -172,7 +172,7 @@ init_and_source_chillbox_config() {
 # Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
 # export SITES_ARTIFACT_URL="/absolute/path/to/site1-0.1-example-sites.tar.gz"
 # export SITES_ARTIFACT_URL="https://example.test/site1-0.1-example-sites.tar.gz"
-# Setting this to 'example' will just use the example site in $project_dir
+# Setting this to 'example' will use the example site in $project_dir/tests/fixtures directory.
 export SITES_ARTIFACT_URL="example"
 
 # The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
@@ -237,15 +237,12 @@ create_example_site_tar_gz() {
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
   cp -R "$project_dir/tests/fixtures/sites" "$tmp_example_sites_dir/"
-  site1_version="$(make --silent --directory="$project_dir/tests/fixtures/site1" --no-print-directory inspect.VERSION)"
-  echo "site1_version ($site1_version)"
   jq \
-    --arg jq_release_file_path "$tmp_example_sites_dir/site1-$site1_version.tar.gz" \
+    --arg jq_release_file_path "$project_dir/tests/fixtures/site1-0.1.0-alpha.5+63c3313f0f1d222f820038c1d685598e.tar.gz" \
     '.release |= $jq_release_file_path' \
     < "$project_dir/tests/fixtures/sites/site1.site.json" \
     > "$tmp_example_sites_dir/sites/site1.site.json"
   tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
-  tar c -z -f "$tmp_example_sites_dir/site1-$site1_version.tar.gz" -C "$project_dir/tests/fixtures" site1
 }
 
 validate_environment_vars() {
