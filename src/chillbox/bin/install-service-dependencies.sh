@@ -47,7 +47,14 @@ apk add \
   zlib \
   zlib-dev
 
+# Support for python flask with gunicorn and gevent
+apk add \
+  py3-gunicorn
+
 ln -s -f /usr/bin/python3 /usr/bin/python
+
+# TODO where should a requirements.txt file be set?
+pip install --disable-pip-version-check --compile -r requirements.txt
 
 # TODO With Alpine Linux 3.16.2 it is not compatible with the previous hack of
 # updating glibc which was originally done for installing the aws-cli.

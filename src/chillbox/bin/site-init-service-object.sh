@@ -97,6 +97,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
+  # TODO don't use pip install of requirements.txt here.
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
 
@@ -172,7 +173,7 @@ elif [ "${service_lang_template}" = "chill" ]; then
   # chill-data.yaml that was included when the site artifact was created.
   su -p -s /bin/sh "$SLUGNAME" -c 'chill dropdb'
   su -p -s /bin/sh "$SLUGNAME" -c 'chill initdb'
-  su -p -s /bin/sh "$SLUGNAME" -c 'chill load --yaml chill-data.yaml'
+  su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name ''chill-*.yaml'' -exec chill load --yaml {} \;'
 
   if [ "${freeze}" = "true" ]; then
     echo "INFO $script_name: freeze - $SLUGNAME $service_name $service_handler"
