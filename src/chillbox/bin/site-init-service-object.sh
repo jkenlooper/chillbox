@@ -102,17 +102,17 @@ if [ "${service_lang_template}" = "flask" ]; then
   # TODO rsync the $slugdir/$service_handler/dist/python/ to $LOCAL_PYTHON_PACKAGES/
   # Fail if a package needs to be updated; they should be immutable.
   python -m venv .venv
-  ./.venv/bin/pip install --disable-pip-version-check --compile \
+  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index --find-links="$LOCAL_PYTHON_PACKAGES" \
-    -r requirements/requirements.txt \
-    .
+    -r $slugdir/$service_handler/requirements.txt \
+    $slugdir/$service_handler
 
   HOST=localhost \
   FLASK_DEBUG="false" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
   SECRETS_CONFIG="${service_secrets_config_file}" \
-    ./.venv/bin/flask init-db \
-    || echo "ERROR $script_name: Failed to run './.venv/bin/flask init-db' for ${SLUGNAME} ${service_handler}."
+    "$slugdir/$service_handler/.venv/bin/flask" init-db \
+    || echo "ERROR $script_name: Failed to run '$slugdir/$service_handler/.venv/bin/flask init-db' for ${SLUGNAME} ${service_handler}."
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 
@@ -154,7 +154,15 @@ s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 fdmove -c 2 1
-./.venv/bin/start
+gunicorn \
+    --name site1_api_app \
+    --workers 2 \
+    --worker-class gevent \
+    --max-requests 500 \
+    --max-requests-jitter 10 \
+    --log-level warning \
+    --bind "127.0.0.1:$PORT" \
+    "${SLUGNAME}_${service_name}.app:create_app()"
 } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
 PURR
   chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
