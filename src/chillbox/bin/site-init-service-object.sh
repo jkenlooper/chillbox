@@ -8,6 +8,8 @@ service_obj="$1"
 tmp_artifact="$2"
 slugdir="$3"
 
+export LOCAL_PYTHON_PACKAGES=/var/lib/chillbox/python
+
 test -n "${service_obj}" || (echo "ERROR $script_name: service_obj variable is empty" && exit 1)
 echo "INFO $script_name: Using service_obj '${service_obj}'"
 
@@ -97,12 +99,15 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
-  # TODO don't use pip install of requirements.txt here.
+  # TODO rsync the $slugdir/$service_handler/dist/python/ to $LOCAL_PYTHON_PACKAGES/
   python -m venv .venv
-  ./.venv/bin/pip install --disable-pip-version-check --compile -r requirements.txt .
+  ./.venv/bin/pip install --disable-pip-version-check --compile \
+    --no-index --find-links="$LOCAL_PYTHON_PACKAGES" \
+    -r requirements/requirements.txt \
+    .
 
   HOST=localhost \
-  FLASK_ENV="production" \
+  FLASK_DEBUG="false" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
   SECRETS_CONFIG="${service_secrets_config_file}" \
     ./.venv/bin/flask init-db \
@@ -141,7 +146,7 @@ echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" 
     >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
   cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 s6-env HOST=localhost
-s6-env FLASK_ENV=production
+s6-env FLASK_DEBUG=false
 s6-env FLASK_INSTANCE_PATH=/var/lib/${SLUGNAME}/${service_handler}
 s6-env SECRETS_CONFIG=${service_secrets_config_file}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}

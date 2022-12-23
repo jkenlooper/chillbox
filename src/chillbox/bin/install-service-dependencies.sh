@@ -49,6 +49,7 @@ apk add \
 
 # Support for python flask with gunicorn and gevent
 apk add \
+  -q --no-progress \
   py3-gunicorn
 
 ln -s -f /usr/bin/python3 /usr/bin/python
