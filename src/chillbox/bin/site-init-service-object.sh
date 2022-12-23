@@ -100,6 +100,7 @@ if [ "${service_lang_template}" = "flask" ]; then
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
   # TODO rsync the $slugdir/$service_handler/dist/python/ to $LOCAL_PYTHON_PACKAGES/
+  # Fail if a package needs to be updated; they should be immutable.
   python -m venv .venv
   ./.venv/bin/pip install --disable-pip-version-check --compile \
     --no-index --find-links="$LOCAL_PYTHON_PACKAGES" \

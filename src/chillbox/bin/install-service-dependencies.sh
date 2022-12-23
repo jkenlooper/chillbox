@@ -3,6 +3,7 @@
 set -o errexit
 
 script_name="$(basename "$0")"
+script_dir="$(dirname "$0")"
 
 apk add -q --no-progress nginx
 nginx -v
@@ -14,48 +15,9 @@ apk add -q --no-progress gettext
 apk add -q --no-progress jq
 jq --version
 
-# Support python services and python Pillow
-apk add \
-  -q --no-progress \
-  build-base \
-  freetype \
-  freetype-dev \
-  fribidi \
-  fribidi-dev \
-  gcc \
-  harfbuzz \
-  harfbuzz-dev \
-  jpeg \
-  jpeg-dev \
-  lcms2 \
-  lcms2-dev \
-  libffi-dev \
-  libjpeg \
-  musl-dev \
-  openjpeg \
-  openjpeg-dev \
-  py3-pip \
-  python3 \
-  python3-dev \
-  sqlite \
-  tcl \
-  tcl-dev \
-  tiff \
-  tiff-dev \
-  tk \
-  tk-dev \
-  zlib \
-  zlib-dev
-
-# Support for python flask with gunicorn and gevent
-apk add \
-  -q --no-progress \
-  py3-gunicorn
+"$script_dir/install-chillbox-packages.sh"
 
 ln -s -f /usr/bin/python3 /usr/bin/python
-
-# TODO where should a requirements.txt file be set?
-pip install --disable-pip-version-check --compile -r requirements.txt
 
 # TODO With Alpine Linux 3.16.2 it is not compatible with the previous hack of
 # updating glibc which was originally done for installing the aws-cli.
