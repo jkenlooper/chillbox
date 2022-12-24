@@ -238,7 +238,7 @@ create_example_site_tar_gz() {
   # be a file path instead of the https://example.test/ URL.
   cp -R "$project_dir/tests/fixtures/sites" "$tmp_example_sites_dir/"
   jq \
-    --arg jq_release_file_path "$project_dir/tests/fixtures/site1-0.1.0-alpha.5+63c3313f0f1d222f820038c1d685598e.tar.gz" \
+    --arg jq_release_file_path "$project_dir/tests/fixtures/site1-0.1.0-alpha.8+08d8f9843f1285ffa5c9ded57b079c85.tar.gz" \
     '.release |= $jq_release_file_path' \
     < "$project_dir/tests/fixtures/sites/site1.site.json" \
     > "$tmp_example_sites_dir/sites/site1.site.json"

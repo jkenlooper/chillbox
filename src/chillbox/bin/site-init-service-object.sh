@@ -8,8 +8,6 @@ service_obj="$1"
 tmp_artifact="$2"
 slugdir="$3"
 
-export LOCAL_PYTHON_PACKAGES=/var/lib/chillbox/python
-
 test -n "${service_obj}" || (echo "ERROR $script_name: service_obj variable is empty" && exit 1)
 echo "INFO $script_name: Using service_obj '${service_obj}'"
 
@@ -99,11 +97,12 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
-  # TODO rsync the $slugdir/$service_handler/dist/python/ to $LOCAL_PYTHON_PACKAGES/
-  # Fail if a package needs to be updated; they should be immutable.
+  # The requirements.txt file should include find-links that are relative to the
+  # service_handler directory. Ideally, this is where the deps/ directory is
+  # used.
   python -m venv .venv
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
-    --no-index --find-links="$LOCAL_PYTHON_PACKAGES" \
+    --no-index \
     -r $slugdir/$service_handler/requirements.txt \
     $slugdir/$service_handler
 

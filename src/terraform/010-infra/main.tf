@@ -33,6 +33,7 @@ resource "digitalocean_spaces_bucket" "artifact" {
   name   = "${substr("chillbox-artifact-${lower(var.environment)}-${lower(var.chillbox_instance)}-${replace(random_uuid.artifact.result, "-", "")}", 0, 60)}cb"
   region = var.bucket_region
   acl    = "private"
+  # TODO create life-cycle rule to expire everything except the encryption and public keys
 }
 
 resource "digitalocean_spaces_bucket" "immutable" {
