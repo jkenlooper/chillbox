@@ -103,7 +103,9 @@ if [ "${service_lang_template}" = "flask" ]; then
   python -m venv .venv
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
-    -r $slugdir/$service_handler/requirements.txt \
+    -r $slugdir/$service_handler/requirements.txt
+  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
+    --no-index \
     $slugdir/$service_handler
 
   HOST=localhost \
@@ -134,7 +136,6 @@ PURR
   mkdir -p "/etc/services.d/${SLUGNAME}-${service_name}"
   cat <<PURR > "/etc/services.d/${SLUGNAME}-${service_name}/run"
 #!/usr/bin/execlineb -P
-pipeline {
 s6-setuidgid $SLUGNAME
 cd $slugdir/${service_handler}
 PURR
@@ -153,7 +154,7 @@ s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 fdmove -c 2 1
-gunicorn \
+$slugdir/${service_handler}/.venv/bin/gunicorn \
     --name site1_api_app \
     --workers 2 \
     --worker-class gevent \
@@ -161,9 +162,11 @@ gunicorn \
     --max-requests-jitter 10 \
     --log-level warning \
     --bind "127.0.0.1:$PORT" \
+    --access-logfile - \
     "${SLUGNAME}_${service_name}.app:create_app()"
-} s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
 PURR
+  # pipeline {
+  # } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
   chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
   rc-update add "${SLUGNAME}-${service_name}" default
 

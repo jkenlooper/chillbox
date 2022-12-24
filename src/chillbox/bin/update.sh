@@ -27,4 +27,4 @@ chown root:ansibledev "$chillbox_update_log"
 nginx -t >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 nginx -t && rc-service nginx reload
 
-cat "$chillbox_init_log"
+cat "$chillbox_update_log"

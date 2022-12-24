@@ -78,6 +78,10 @@
       "name": "IMMUTABLE_EXAMPLE_HASH",
       "value": "replaced-with-cmd-to-get-hash",
       "cmd": "make --silent --directory=immutable-example --no-print-directory inspect.HASH"
+    },
+    {
+      "name": "PROXY_CACHE_VALID",
+      "value": "1s"
     }
   ],
   "crontab": [
@@ -85,12 +89,27 @@
   ],
   "services": [
     {
+      "name": "immutable-example",
+      "lang": "immutable",
+      "handler": "immutable-example",
+      "environment": [
+        {
+          "name": "HOST",
+          "value": "$IMMUTABLE_EXAMPLE_HOST"
+        }
+      ]
+    },
+    {
       "name": "api",
       "lang": "flask",
       "handler": "api",
       "secrets_config": "api.secrets.cfg",
       "secrets_export_dockerfile": "secrets.Dockerfile",
       "environment": [
+        {
+          "name": "HOST",
+          "value": "$API_HOST"
+        },
         {
           "name": "PORT",
           "value": "$API_PORT"
@@ -111,6 +130,10 @@
           "value": "true"
         },
         {
+          "name": "HOST",
+          "value": "$CHILL_STATIC_EXAMPLE_HOST"
+        },
+        {
           "name": "CHILL_HOST",
           "value": "localhost"
         },
@@ -128,6 +151,10 @@
         {
           "name": "freeze",
           "value": "false"
+        },
+        {
+          "name": "HOST",
+          "value": "$CHILL_DYNAMIC_EXAMPLE_HOST"
         },
         {
           "name": "CHILL_HOST",
