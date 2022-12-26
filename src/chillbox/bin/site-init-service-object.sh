@@ -109,10 +109,15 @@ if [ "${service_lang_template}" = "flask" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
+  python -m venv .venv
+  # Support gunicorn with option to use gevent.
+  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
+    --no-index \
+    --find-links /var/lib/chillbox/python \
+    gunicorn[gevent,setproctitle]
   # The requirements.txt file should include find-links that are relative to the
   # service_handler directory. Ideally, this is where the deps/ directory is
   # used.
-  python -m venv .venv
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     -r $slugdir/$service_handler/requirements.txt
@@ -120,6 +125,7 @@ if [ "${service_lang_template}" = "flask" ]; then
     --no-index \
     $slugdir/$service_handler
 
+  # TODO move the init-db to be triggered via gunicorn server hook 'on_starting'.
   HOST=localhost \
   FLASK_DEBUG="false" \
   FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
@@ -160,13 +166,16 @@ PURR
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
   >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+  # Set FLASK_ vars as a convenience for flask applications.
+  cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+s6-env FLASK_DEBUG=false
+s6-env FLASK_INSTANCE_PATH=/var/lib/${SLUGNAME}/${service_handler}
+PURR
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
     | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
     >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
   cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
 s6-env HOST=localhost
-s6-env FLASK_DEBUG=false
-s6-env FLASK_INSTANCE_PATH=/var/lib/${SLUGNAME}/${service_handler}
 s6-env SECRETS_CONFIG=${service_secrets_config_file}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
