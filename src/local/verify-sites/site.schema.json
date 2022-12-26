@@ -126,7 +126,11 @@
             "description": ""
           },
           "lang": {
-            "type": "string",
+            "enum": [
+              "immutable",
+              "chill",
+              "flask"
+            ],
             "title": "The lang schema",
             "description": ""
           },
@@ -135,9 +139,78 @@
             "title": "The handler schema",
             "description": ""
           },
+          "worker_class": {
+            "enum": [
+              "sync",
+              "gevent",
+              "uvicorn.workers.UvicornWorker"
+            ],
+            "title": "The worker_class schema",
+            "description": "Only supports some of the gunicorn worker classes."
+          },
+          "log_level": {
+            "enum": [
+              "debug",
+              "info",
+              "warning",
+              "error",
+              "critical"
+            ],
+            "title": "The log_level schema",
+            "description": "The log level to pass to gunicorn process manager. https://docs.gunicorn.org/en/latest/settings.html#loglevel"
+          },
+          "niceness": {
+            "type": "integer",
+            "maxiumum": 19,
+            "miniumum": -20,
+            "title": "The niceness schema",
+            "description": "The scheduling priority value to assign the process using the 'nice' command. A negative value favors the running service more with a higher scheduling priority."
+          },
+          "workers": {
+            "type": "integer",
+            "miniumum": 0,
+            "maximum": 12,
+            "title": "The workers schema",
+            "description": "The initial workers count. https://docs.gunicorn.org/en/latest/design.html#how-many-workers"
+          },
+          "workers_minimum": {
+            "type": "integer",
+            "miniumum": 0,
+            "title": "The workers_minimum schema",
+            "description": "The minimum workers count to use when auto-scaling."
+          },
+          "workers_maximum": {
+            "type": "integer",
+            "miniumum": 0,
+            "maximum": 12,
+            "title": "The workers_maximum schema",
+            "description": "The maximum workers count to use when auto-scaling."
+          },
+          "max_requests": {
+            "type": "integer",
+            "miniumum": 0,
+            "title": "The max_requests schema",
+            "description": "The value to pass to gunicorn max-requests. The maximum number of requests a worker will process before restarting."
+          },
+          "max_requests_jitter": {
+            "type": "integer",
+            "miniumum": 0,
+            "title": "The max_requests_jitter schema",
+            "description": "The value to pass to gunicorn max-requests-jitter. The maximum jitter to add to the *max_requests* setting."
+          },
           "secrets_config": {
             "type": "string",
             "title": "The secrets_config schema",
+            "description": ""
+          },
+          "secrets_export_dockerfile": {
+            "type": "string",
+            "title": "The secrets_export_dockerfile schema",
+            "description": ""
+          },
+          "manifest": {
+            "type": "string",
+            "title": "The manifest schema",
             "description": ""
           },
           "environment": {

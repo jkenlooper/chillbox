@@ -105,6 +105,13 @@
       "handler": "api",
       "secrets_config": "api.secrets.cfg",
       "secrets_export_dockerfile": "secrets.Dockerfile",
+      "niceness": 10,
+      "worker_class": "gevent",
+      "workers": 2,
+      "max_requests": 50,
+      "max_requests_jitter": 11,
+      "log_level": "debug",
+      "manifest": "MANIFEST",
       "environment": [
         {
           "name": "HOST",

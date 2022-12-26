@@ -46,11 +46,23 @@ service_name=""
 service_lang_template=""
 service_handler=""
 service_secrets_config=""
+service_niceness=""
+service_workers=""
+service_worker_class=""
+service_max_requests=""
+service_max_requests_jitter=""
+service_log_level=""
 eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$SLUGNAME" '@sh "
   service_name=\(.name)
   service_lang_template=\(.lang)
   service_handler=\(.handler)
   service_secrets_config=\( .secrets_config // "" )
+  service_niceness=\( .niceness // 0 )
+  service_worker_class=\( .worker_class // "sync" )
+  service_workers=\( .workers // 1 )
+  service_max_requests=\( .max_requests // 0 )
+  service_max_requests_jitter=\( .max_requests_jitter // 0 )
+  service_log_level=\( .log_level // "info" )
   "')"
 
 service_secrets_config_file=""
@@ -133,6 +145,12 @@ PURR
   chmod +x "/etc/init.d/${SLUGNAME}-${service_name}"
 
 
+  # Create a service directory with a run script and a logging script.
+  # https://skarnet.org/software/s6/servicedir.html
+  # Use gunicorn as process manager and uvicorn worker class.
+  # http://www.uvicorn.org/#running-with-gunicorn
+  # http://www.uvicorn.org/deployment/#deployment
+  # This setup is for uvicorn with uvloop.
   mkdir -p "/etc/services.d/${SLUGNAME}-${service_name}"
   cat <<PURR > "/etc/services.d/${SLUGNAME}-${service_name}/run"
 #!/usr/bin/execlineb -P
@@ -154,20 +172,37 @@ s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
 s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 fdmove -c 2 1
+nice -n $service_niceness
 $slugdir/${service_handler}/.venv/bin/gunicorn \
-    --name site1_api_app \
-    --workers 2 \
-    --worker-class gevent \
-    --max-requests 500 \
-    --max-requests-jitter 10 \
-    --log-level warning \
+    --name ${SLUGNAME}_${service_name}_app \
+    --workers $service_workers \
+    --worker-class $service_worker_class \
+    --max-requests $service_max_requests \
+    --max-requests-jitter $service_max_requests_jitter \
+    --log-level $service_log_level \
     --bind "127.0.0.1:$PORT" \
     --access-logfile - \
     "${SLUGNAME}_${service_name}.app:create_app()"
 PURR
-  # pipeline {
-  # } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
   chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
+
+  # Add logging
+  mkdir -p "/etc/services.d/${SLUGNAME}-${service_name}/log"
+  cat <<PURR > "/etc/services.d/${SLUGNAME}-${service_name}/log/run"
+#!/usr/bin/execlineb -P
+s6-setuidgid $SLUGNAME
+s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
+PURR
+  chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/log/run"
+
+  # Enable protection against constantly restarting a failing service.
+  cat <<PURR > "/etc/services.d/${SLUGNAME}-${service_name}/finish"
+#!/usr/bin/execlineb -P
+s6-setuidgid $SLUGNAME
+s6-permafailon 60 5 1-255,SIGSEGV,SIGBUS
+PURR
+  chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/finish"
+
   rc-update add "${SLUGNAME}-${service_name}" default
 
   # The service should only start if no service secrets config file has been
