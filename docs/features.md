@@ -14,7 +14,7 @@ This is a list of notable features that have currently been implemented.
     - Deployments will effectively skip already deployed sites based on the
         version string of the site.
 - Supported language handlers for services
-  - [Flask] (Python 3)
+  - Python 3 WSGI managed by Gunicorn (Planning to support ASGI as well)
   - [Chill] with dynamic or static deployment (Python 3)
 - Website services run on [Alpine Linux] and don't use [systemd]
   - [OpenRC] and [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].

@@ -129,7 +129,7 @@
             "enum": [
               "immutable",
               "chill",
-              "flask"
+              "python"
             ],
             "title": "The lang schema",
             "description": ""

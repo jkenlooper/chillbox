@@ -101,7 +101,7 @@
     },
     {
       "name": "api",
-      "lang": "flask",
+      "lang": "python",
       "handler": "api",
       "secrets_config": "api.secrets.cfg",
       "secrets_export_dockerfile": "secrets.Dockerfile",
@@ -124,6 +124,14 @@
         {
           "name": "FLASK_APP",
           "value": "site1_api.app"
+        },
+        {
+          "name": "FLASK_DEBUG",
+          "value": "false"
+        },
+        {
+          "name": "FLASK_INSTANCE_PATH",
+          "value": "/var/lib/$SLUGNAME/api"
         }
       ]
     },

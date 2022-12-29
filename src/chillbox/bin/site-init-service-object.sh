@@ -104,13 +104,15 @@ eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .nam
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json")"
 
 cd "$slugdir/${service_handler}"
-if [ "${service_lang_template}" = "flask" ]; then
+# This should support any WSGI or ASGI python applications.
+if [ "${service_lang_template}" = "python" ]; then
 
   mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
   python -m venv .venv
   # Support gunicorn with option to use gevent.
+  # TODO Support uvicorn for ASGI python apps.
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     --find-links /var/lib/chillbox/python \
@@ -124,14 +126,6 @@ if [ "${service_lang_template}" = "flask" ]; then
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     $slugdir/$service_handler
-
-  # TODO move the init-db to be triggered via gunicorn server hook 'on_starting'.
-  HOST=localhost \
-  FLASK_DEBUG="false" \
-  FLASK_INSTANCE_PATH="/var/lib/${SLUGNAME}/${service_handler}" \
-  SECRETS_CONFIG="${service_secrets_config_file}" \
-    "$slugdir/$service_handler/.venv/bin/flask" init-db \
-    || echo "ERROR $script_name: Failed to run '$slugdir/$service_handler/.venv/bin/flask init-db' for ${SLUGNAME} ${service_handler}."
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 
@@ -150,6 +144,13 @@ depend() {
 PURR
   chmod +x "/etc/init.d/${SLUGNAME}-${service_name}"
 
+  # The gunicorn command will use any gunicorn.conf.py file that is within the
+  # directory of the service. It could potentially use a different configuration
+  # file if the GUNICORN_CMD_ARGS are set in the site.json environment for the
+  # service. The gunicorn.conf.py file is used to define the server hooks.  For
+  # example, the on_starting() would be defined in gunicorn.conf.py to run
+  # a init-db operation.
+  # https://docs.gunicorn.org/en/stable/settings.html#server-hooks
 
   # Create a service directory with a run script and a logging script.
   # https://skarnet.org/software/s6/servicedir.html
@@ -166,11 +167,6 @@ PURR
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
   >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
-  # Set FLASK_ vars as a convenience for flask applications.
-  cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
-s6-env FLASK_DEBUG=false
-s6-env FLASK_INSTANCE_PATH=/var/lib/${SLUGNAME}/${service_handler}
-PURR
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
     | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
     >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
@@ -184,6 +180,7 @@ fdmove -c 2 1
 nice -n $service_niceness
 $slugdir/${service_handler}/.venv/bin/gunicorn \
     --name ${SLUGNAME}_${service_name}_app \
+    --chdir $slugdir/${service_handler} \
     --workers $service_workers \
     --worker-class $service_worker_class \
     --max-requests $service_max_requests \
