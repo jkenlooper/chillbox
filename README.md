@@ -60,6 +60,9 @@ Please contact me or create an issue.
 
 ## Testing and Development
 
+Checkout the project source code at [https://github.com/jkenlooper/chillbox]()
+which includes all the files and further documentation.
+
 Tests and [shellcheck] can be performed via the [tests/test.sh](./tests/test.sh) shell script. This
 uses [Bats-core] for running the shell testing where that works. Most of the
 shell scripts are also checked for any issues with [shellcheck]. An optional

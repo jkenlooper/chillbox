@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*.*.*-*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt install jq
+
+      - name: Shellcheck and test shell scripts
+        # TODO enable tests
+        if: false
+        run: make test
+
+      - name: Create dist
+        run: make dist
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: "dist/chillbox-cli-*.tar.gz"
+          fail_on_unmatched_files: true

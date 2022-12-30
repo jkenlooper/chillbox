@@ -172,7 +172,7 @@ init_and_source_chillbox_config() {
 # Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
 # export SITES_ARTIFACT_URL="/absolute/path/to/site1-0.1-example-sites.tar.gz"
 # export SITES_ARTIFACT_URL="https://example.test/site1-0.1-example-sites.tar.gz"
-# Setting this to 'example' will use the example site in $project_dir/tests/fixtures directory.
+# Setting this to 'example' will use the example site in $project_dir/example directory.
 export SITES_ARTIFACT_URL="example"
 
 # The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
@@ -196,9 +196,9 @@ HERE
 
   if [ ! -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" ] || [ ! -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" ]; then
     test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
+      || cp "$project_dir/example/chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
     test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+      || cp "$project_dir/example/chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
     printf "\n%s\n" "Example configuration files have been created. The files shown below should be updated using your text editor ($EDITOR)."
     printf "\n\n#### %s\n\n" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
     cat "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
@@ -236,11 +236,12 @@ create_example_site_tar_gz() {
   export SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
-  cp -R "$project_dir/tests/fixtures/sites" "$tmp_example_sites_dir/"
+  cp -R "$project_dir/example/sites" "$tmp_example_sites_dir/"
+  # TODO Finalize the example site that will be included.
   jq \
-    --arg jq_release_file_path "$project_dir/tests/fixtures/site1-0.1.0-alpha.8+00f0640c61565afb213f939aa8459f39.tar.gz" \
+    --arg jq_release_file_path "$project_dir/example/site1-0.1.0-alpha.8+00f0640c61565afb213f939aa8459f39.tar.gz" \
     '.release |= $jq_release_file_path' \
-    < "$project_dir/tests/fixtures/sites/site1.site.json" \
+    < "$project_dir/example/sites/site1.site.json" \
     > "$tmp_example_sites_dir/sites/site1.site.json"
   tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
 }
@@ -249,9 +250,9 @@ validate_environment_vars() {
   printf "\n\n%s\n" "INFO $script_name: Validating environment variables."
   test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
   test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
-    || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
+    || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/example/chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
   test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
-    || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config.  See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars'." && exit 1)
+    || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config.  See the default file in the tests directory: '$project_dir/example/chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars'." && exit 1)
   test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
     || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE is set to a file that doesn't exist: $TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" && exit 1)
   test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
