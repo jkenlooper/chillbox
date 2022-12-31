@@ -2,6 +2,10 @@
 
 set -o errexit
 
+# Default to being ran in the interactive mode. The 'make test' command will set
+# this to non-interactive to support CI.
+interactive=${INTERACTIVE:-"y"}
+
 # The tests need to be executed from the top level of the project.
 tests_dir="$(dirname "$(realpath "$0")")"
 project_dir="$(dirname "$tests_dir")"
@@ -41,6 +45,11 @@ else
     --mount "type=bind,src=${project_dir}/tests,dst=/code/tests,readonly=true" \
     "$CHILLBOX_BATS_IMAGE" "$test_target"
 
+fi
+
+# End the test here when it isn't being ran in interactive mode.
+if [ "$interactive" != "y" ]; then
+  exit
 fi
 
 printf '\n%s\n' "Run integration test with a deployment using Terraform? [y/n]"

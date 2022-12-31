@@ -3,6 +3,7 @@
 set -o errexit
 
 project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
+script_name="$(basename "$0")"
 ansible_dir="$project_dir/src/ansible"
 
 # This script shouldn't be run directly. Do a sanity check still.
@@ -25,7 +26,7 @@ export ANSIBLE_CONTAINER="chillbox-ansible-$CHILLBOX_INSTANCE-$WORKSPACE"
 # ssh key setup
 # https://docs.ansible.com/ansible/latest/user_guide/connection_details.html
 
-run_args="$@"
+run_args=$*
 
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
@@ -48,9 +49,13 @@ docker run \
 docker cp "$ANSIBLE_CONTAINER-sleeper:/var/lib/terraform-020-chillbox/ansible-etc-hosts-snippet" "$tmp_ansible_etc_hosts_snippet" || echo "Ignore docker cp error."
 docker stop --time 0 "$ANSIBLE_CONTAINER-sleeper" || printf ""
 docker rm "$ANSIBLE_CONTAINER-sleeper" || printf ""
+# shellcheck disable=SC2046
 set -- $(cat "$tmp_ansible_etc_hosts_snippet")
 rm -f "$tmp_ansible_etc_hosts_snippet"
 
+set -- "$@" "$ANSIBLE_IMAGE"
+# shellcheck disable=SC2086
+set -- "$@" $run_args
 docker run \
   -i --tty \
   --rm \
@@ -68,8 +73,7 @@ docker run \
   --mount "type=bind,src=$ansible_dir/bin,dst=/usr/local/src/chillbox-ansible/bin" \
   --mount "type=bind,src=$ansible_dir/roles,dst=/usr/local/src/chillbox-ansible/roles" \
   --mount "type=bind,src=$ansible_dir/playbooks,dst=/usr/local/src/chillbox-ansible/playbooks" \
-  $@ \
-  "$ANSIBLE_IMAGE" $run_args || (
+  "$@" || (
   exitcode="$?"
   echo "docker exited with $exitcode exitcode. Continue? [y/n]"
   read -r docker_continue_confirm

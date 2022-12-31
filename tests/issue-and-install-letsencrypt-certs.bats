@@ -8,8 +8,10 @@ setup_file() {
   export LETS_ENCRYPT_SERVER="letsencrypt_test"
   export SKIP_INSTALL_ACMESH="y"
 
-  mkdir -p /etc/chillbox/
-  cp -R "${BATS_TEST_DIRNAME}"/fixtures/sites /etc/chillbox/
+  mkdir -p /etc/chillbox/sites
+  jq --null-input '{
+    domain_list: [ "test.example.local", "anothertest.example.local" ]
+  }' > /etc/chillbox/sites/example.site.json
 }
 teardown_file() {
   rm -rf /etc/chillbox/sites
@@ -21,15 +23,20 @@ setup() {
   load '/opt/bats-mock/load'
 
   mock_acmesh="$(mock_create)"
-  ln -s "${mock_acmesh}" $BATS_RUN_TMPDIR/acme.sh
+  ln -s "${mock_acmesh}" "$BATS_RUN_TMPDIR/acme.sh"
+
+  mock_chown="$(mock_create)"
+  ln -s "${mock_chown}" "$BATS_RUN_TMPDIR/chown"
 
   PATH="$BATS_RUN_TMPDIR:$PATH"
 }
 teardown() {
   rm -rf /var/lib/acmesh
 
-  test -L $BATS_RUN_TMPDIR/acme.sh \
-    && rm -f $BATS_RUN_TMPDIR/acme.sh
+  test -L "$BATS_RUN_TMPDIR/acme.sh" \
+    && rm -f "$BATS_RUN_TMPDIR/acme.sh"
+  test -L "$BATS_RUN_TMPDIR/chown" \
+    && rm -f "$BATS_RUN_TMPDIR/chown"
 }
 
 main() {

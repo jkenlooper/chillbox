@@ -116,16 +116,16 @@ if [ "${service_lang_template}" = "python" ]; then
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    gunicorn[gevent,setproctitle]
+    'gunicorn[gevent,setproctitle]'
   # The requirements.txt file should include find-links that are relative to the
   # service_handler directory. Ideally, this is where the deps/ directory is
   # used.
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
-    -r $slugdir/$service_handler/requirements.txt
+    -r "$slugdir/$service_handler/requirements.txt"
   "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
-    $slugdir/$service_handler
+    "$slugdir/$service_handler"
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 
@@ -159,18 +159,17 @@ PURR
   # http://www.uvicorn.org/deployment/#deployment
   # This setup is for uvicorn with uvloop.
   mkdir -p "/etc/services.d/${SLUGNAME}-${service_name}"
-  cat <<PURR > "/etc/services.d/${SLUGNAME}-${service_name}/run"
+  {
+  cat <<PURR
 #!/usr/bin/execlineb -P
 s6-setuidgid $SLUGNAME
 cd $slugdir/${service_handler}
 PURR
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
-  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
-  >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
-    | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
-    >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
-  cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+    | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
+  cat <<PURR
 s6-env HOST=localhost
 s6-env SECRETS_CONFIG=${service_secrets_config_file}
 s6-env S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
@@ -190,6 +189,7 @@ $slugdir/${service_handler}/.venv/bin/gunicorn \
     --access-logfile - \
     "${SLUGNAME}_${service_name}.app:create_app()"
 PURR
+  } > "/etc/services.d/${SLUGNAME}-${service_name}/run"
   chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
 
   # Add logging
@@ -255,25 +255,25 @@ PURR
 
     mkdir -p "/etc/services.d/${SLUGNAME}-${service_name}"
 
-    cat <<MEOW > "/etc/services.d/${SLUGNAME}-${service_name}/run"
+    {
+    cat <<MEOW
 #!/usr/bin/execlineb -P
 pipeline {
 s6-setuidgid "$SLUGNAME"
 cd "$slugdir/${service_handler}"
 MEOW
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
-  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
-  >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+  | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
 echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" + .value' \
-      | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json" \
-      >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
-    cat <<PURR >> "/etc/services.d/${SLUGNAME}-${service_name}/run"
+      | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
+    cat <<PURR
 fdmove -c 2 1
 chill serve
 } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
 PURR
-
+    } > "/etc/services.d/${SLUGNAME}-${service_name}/run"
     chmod +x "/etc/services.d/${SLUGNAME}-${service_name}/run"
+
     command -v rc-update > /dev/null \
       && rc-update add "${SLUGNAME}-${service_name}" default \
       || echo "INFO $script_name: Skipping call to 'rc-update add ${SLUGNAME}-${service_name} default'"

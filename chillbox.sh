@@ -341,7 +341,7 @@ shift $((OPTIND - 1))
 sub_command=${1:-interactive}
 # Shift the sub_command off the $@ so any other args can be passed down to other
 # commands.
-test "${#@}" -eq "0" || shift 1
+test "$1" != "$sub_command" || shift 1
 
 export CHILLBOX_INSTANCE="$chillbox_instance"
 export WORKSPACE="$workspace"

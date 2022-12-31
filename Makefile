@@ -52,4 +52,4 @@ build/MANIFEST: build/create-manifest.sh $(manifest_files)
 
 .PHONY: test
 test: ## Run the test script
-	./tests/test.sh
+	INTERACTIVE=n ./tests/test.sh

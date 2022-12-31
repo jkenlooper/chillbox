@@ -6,8 +6,6 @@ set -o errexit
 # in a container can install the same package dependencies as the chillbox
 # server. See the referenced file in https://github.com/jkenlooper/cookiecutters
 
-script_name="$(basename "$0")"
-
 # Support python services and python Pillow
 apk add --no-cache \
   -q --no-progress \
@@ -51,4 +49,4 @@ gunicorn_version="20.1.0"
 /usr/bin/python3 -m pip download \
   --disable-pip-version-check \
   --destination-directory /var/lib/chillbox/python \
-  gunicorn[gevent,setproctitle]=="$gunicorn_version"
+  'gunicorn[gevent,setproctitle]'=="$gunicorn_version"

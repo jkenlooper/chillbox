@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     tags:
-      - "*.*.*-*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
@@ -16,8 +16,6 @@ jobs:
         run: sudo apt install jq
 
       - name: Shellcheck and test shell scripts
-        # TODO enable tests
-        if: false
         run: make test
 
       - name: Create dist
@@ -26,6 +24,7 @@ jobs:
       - name: Rename dist
         run: mv dist/chillbox-cli-*.tar.gz dist/chillbox-cli.tar.gz
 
+      # https://github.com/softprops/action-gh-release
       - uses: softprops/action-gh-release@v1
         with:
           draft: true
