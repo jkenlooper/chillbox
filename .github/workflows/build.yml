@@ -23,8 +23,11 @@ jobs:
       - name: Create dist
         run: make dist
 
+      - name: Rename dist
+        run: mv dist/chillbox-cli-*.tar.gz dist/chillbox-cli.tar.gz
+
       - uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: "dist/chillbox-cli-*.tar.gz"
+          files: "dist/chillbox-cli.tar.gz"
           fail_on_unmatched_files: true
