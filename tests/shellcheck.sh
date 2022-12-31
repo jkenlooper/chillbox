@@ -12,7 +12,7 @@ export CHILLBOX_BATS_IMAGE="${CHILLBOX_BATS_IMAGE:-chillbox-bats:latest}"
 "$project_dir/tests/_docker_build_chillbox_bats.sh"
 
 echo "Running shellcheck on all scripts."
-docker run -it --rm \
+docker run -t --rm \
   --mount "type=bind,src=${project_dir}/build,dst=/code/build,readonly=true" \
   --mount "type=bind,src=${project_dir}/chillbox.sh,dst=/code/chillbox.sh,readonly=true" \
   --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
@@ -20,7 +20,7 @@ docker run -it --rm \
   --entrypoint="sh" \
   "$CHILLBOX_BATS_IMAGE" -c "find . -type f -not \( -name '*Dockerfile' -o -name 'README*' \) | xargs -I {} grep -l '$shebang_line_to_match' {} | xargs -I {} shellcheck -f quiet {}" \
   || \
-    (docker run -it --rm \
+    (docker run -t --rm \
       --mount "type=bind,src=${project_dir}/build,dst=/code/build,readonly=true" \
       --mount "type=bind,src=${project_dir}/chillbox.sh,dst=/code/chillbox.sh,readonly=true" \
       --mount "type=bind,src=${project_dir}/src,dst=/code/src,readonly=true" \
