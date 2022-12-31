@@ -15,8 +15,10 @@ jobs:
       - name: Install dependencies
         run: sudo apt install jq
 
-      - name: Shellcheck and test shell scripts
-        run: make test
+      # Skip run of tests/test.sh because there is little benefit for running
+      # the shell tests at this point.
+      - name: Shellcheck the scripts
+        run: ./tests/shellcheck.sh
 
       - name: Create dist
         run: make dist
