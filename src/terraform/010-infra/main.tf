@@ -108,6 +108,8 @@ resource "local_sensitive_file" "bootstrap_chillbox_init_credentials" {
     tf_chillbox_artifact : var.chillbox_artifact
     tf_s3_endpoint_url : "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/",
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
+    tf_environment : lower(var.environment),
+    tf_acme_server : var.acme_server,
   })
 }
 

@@ -8,3 +8,6 @@ tech_email        = "tech@example.test"
 # Change 'chill.box' to a domain that you own
 domain = "chill.box"
 sub_domain = "production.example."
+
+# https://github.com/acmesh-official/acme.sh/wiki/Server
+acme_server = "letsencrypt"

@@ -9,3 +9,5 @@ tech_email        = "tech@example.test"
 domain = "chill.box"
 sub_domain = "acceptance.example."
 
+# https://github.com/acmesh-official/acme.sh/wiki/Server
+acme_server = "letsencrypt"

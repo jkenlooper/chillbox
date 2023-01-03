@@ -83,6 +83,12 @@ variable "tech_email" {
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
 }
 
+variable "acme_server" {
+  description = "The ACME (Automated Certificate Management Environment) server to use when acme.sh is getting certificates. See the acme.sh wiki https://github.com/acmesh-official/acme.sh/wiki/Server for valid values."
+  type        = string
+  default     = "letsencrypt_test"
+}
+
 variable "sites_artifact" {
   description = "The sites artifact file."
   type        = string

@@ -5,7 +5,7 @@ source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 setup_file() {
   test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
   export TECH_EMAIL="test@example.com"
-  export LETS_ENCRYPT_SERVER="letsencrypt_test"
+  export ACME_SERVER="letsencrypt_test"
   export SKIP_INSTALL_ACMESH="y"
 
   mkdir -p /etc/chillbox/sites
@@ -43,13 +43,8 @@ main() {
   "${BATS_TEST_DIRNAME}"/../bin/issue-and-install-letsencrypt-certs.sh
 }
 
-@test "fail when LETS_ENCRYPT_SERVER is empty" {
-  export LETS_ENCRYPT_SERVER=""
-  run main
-  assert_failure
-}
-@test "fail when LETS_ENCRYPT_SERVER is not the test one" {
-  export LETS_ENCRYPT_SERVER="llama"
+@test "fail when ACME_SERVER is empty" {
+  export ACME_SERVER=""
   run main
   assert_failure
 }

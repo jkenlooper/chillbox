@@ -7,12 +7,9 @@ TECH_EMAIL=${TECH_EMAIL:-$2}
 test -n "${TECH_EMAIL}" || (echo "ERROR $0: TECH_EMAIL variable is empty" && exit 1)
 echo "INFO $0: Using TECH_EMAIL '${TECH_EMAIL}'"
 
-LETS_ENCRYPT_SERVER=${LETS_ENCRYPT_SERVER:-$1}
-test -n "${LETS_ENCRYPT_SERVER}" || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable is empty" && exit 1)
-test "${LETS_ENCRYPT_SERVER}" = "letsencrypt" \
-  || test "${LETS_ENCRYPT_SERVER}" = "letsencrypt_test" \
-  || (echo "ERROR $0: LETS_ENCRYPT_SERVER variable should be either letsencrypt or letsencrypt_test" && exit 1)
-echo "INFO $0: Using LETS_ENCRYPT_SERVER '${LETS_ENCRYPT_SERVER}'"
+ACME_SERVER=${ACME_SERVER:-$1}
+test -n "${ACME_SERVER}" || (echo "ERROR $0: ACME_SERVER variable is empty" && exit 1)
+echo "INFO $0: Using ACME_SERVER '${ACME_SERVER}'"
 
 # UPKEEP due: "2022-11-14" label: "Update acme.sh version" interval: "+3 months"
 # https://github.com/acmesh-official/acme.sh/releases
@@ -45,7 +42,7 @@ apk add openssl
 
 acme.sh --install \
   --email "$TECH_EMAIL" \
-  --server "$LETS_ENCRYPT_SERVER" \
+  --server "$ACME_SERVER" \
   --no-profile
   #--home /etc/acmesh \
   #--accountconf /etc/acmesh/account.conf \
