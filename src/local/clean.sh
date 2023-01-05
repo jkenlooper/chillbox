@@ -76,6 +76,7 @@ if [ -d "$encrypted_secrets_dir" ]; then
   else
     printf '\n%s\n' "The $0 script will delete the encrypted secrets in the directory '$encrypted_secrets_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
     printf '\n%s\n' "$encrypted_secrets_file_list"
+    printf '\n%s\n' "These encrypted secrets can only be decrypted by the private key that was created on the chillbox server. They should have already been uploaded to the artifact bucket under the path: /chillbox/encrypted-secrets/"
     printf '\n%s\n' "Delete the encrypted secrets in the $encrypted_secrets_dir directory? [y/n]"
     read -r confirm
     if [ "$confirm" = "y" ]; then
@@ -88,6 +89,12 @@ fi
 
 env_config="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/env"
 if [ -f "${env_config}" ]; then
+  # Variables that are exported from the env config file.
+  # TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE
+  # TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE
+  # PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST
+  # PUBLIC_SSH_KEY_LOCATIONS
+  # SITES_ARTIFACT_URL
   # shellcheck source=/dev/null
   . "${env_config}"
 else

@@ -71,17 +71,21 @@
       "value": "/immutable-example/v1/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
+      "name": "IMMUTABLE_EXAMPLE_HOST",
+      "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME"
+    },
+    {
       "name": "IMMUTABLE_EXAMPLE_URL",
       "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
     },
     {
       "name": "IMMUTABLE_EXAMPLE_HASH",
-      "value": "replaced-with-cmd-to-get-hash",
+      "value": "",
       "cmd": "make --silent --directory=immutable-example --no-print-directory inspect.HASH"
     },
     {
       "name": "PROXY_CACHE_VALID",
-      "value": "1s"
+      "value": "1y"
     }
   ],
   "crontab": [
@@ -139,6 +143,7 @@
       "name": "chillstatic",
       "lang": "chill",
       "handler": "chill-static-example",
+      "manifest": "MANIFEST",
       "environment": [
         {
           "name": "freeze",
@@ -162,6 +167,7 @@
       "name": "chilldynamic",
       "lang": "chill",
       "handler": "chill-dynamic-example",
+      "manifest": "MANIFEST",
       "environment": [
         {
           "name": "freeze",

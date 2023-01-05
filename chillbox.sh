@@ -54,7 +54,7 @@ Files:
     $chillbox_data_home/encrypted-secrets
     $chillbox_data_home/terraform_state_backup
 
-  State (deleted with 'clean' sub-command):
+  State:
     $chillbox_state_home/build_artifact_logs/
     $chillbox_state_home/<other cache files and directories>
 
@@ -191,6 +191,12 @@ export TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraf
 HERE
   fi
 
+  # Variables that are exported from the env config file.
+  # TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE
+  # TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE
+  # PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST
+  # PUBLIC_SSH_KEY_LOCATIONS
+  # SITES_ARTIFACT_URL
   # shellcheck source=/dev/null
   . "${env_config}"
 
@@ -219,7 +225,32 @@ HERE
   fi
 }
 
+download_file() {
+  has_wget="$(command -v wget || echo "")"
+  has_wget=""
+  has_curl="$(command -v curl || echo "")"
+  remote_file_url="$1"
+  output_file="$2"
+  test -n "$remote_file_url" || (echo "ERROR $script_name: no remote file URL arg (first arg)" && exit 1)
+  test -n "$output_file" || (echo "ERROR $script_name: no output file arg (second arg)" && exit 1)
+  test ! -e "$output_file" || (echo "ERROR $script_name: output file already exists: $output_file" && exit 1)
+  if [ -n "$has_wget" ]; then
+    wget -q -O "$output_file" "$remote_file_url" \
+      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
+  elif [ -n "$has_curl" ]; then
+    curl --location --output "$output_file" --silent --show-error --fail "$remote_file_url" \
+      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
+  else
+    echo "ERROR $script_name: No wget or curl commands found."
+    exit 1
+  fi
+}
+
 create_example_site_tar_gz() {
+  # UPKEEP due: "2023-05-05" label: "chillbox example site (site1)" interval: "+4 months"
+  # https://github.com/jkenlooper/chillbox-example-site1/releases
+  example_site_version="0.1.0-alpha.8"
+
   printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
@@ -237,9 +268,15 @@ create_example_site_tar_gz() {
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
   cp -R "$project_dir/example/sites" "$tmp_example_sites_dir/"
-  # TODO Finalize the example site that will be included.
+  if [ ! -e "$chillbox_state_home/site1-$example_site_version.tar.gz" ]; then
+    echo "INFO $script_name: No local cached copy of example site1. Downloading new one from https://github.com/jkenlooper/chillbox-example-site1/releases"
+    download_file \
+      "https://github.com/jkenlooper/chillbox-example-site1/releases/download/$example_site_version/site1.tar.gz" \
+      "$chillbox_state_home/site1-$example_site_version.tar.gz"
+  fi
+  echo "INFO $script_name: Updating example site1.site.json to use $chillbox_state_home/site1-$example_site_version.tar.gz"
   jq \
-    --arg jq_release_file_path "$project_dir/example/site1-0.1.0-alpha.8+00f0640c61565afb213f939aa8459f39.tar.gz" \
+    --arg jq_release_file_path "$chillbox_state_home/site1-$example_site_version.tar.gz" \
     '.release |= $jq_release_file_path' \
     < "$project_dir/example/sites/site1.site.json" \
     > "$tmp_example_sites_dir/sites/site1.site.json"
