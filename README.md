@@ -86,6 +86,16 @@ The grep command to find all upkeep comments with their line numbers.
 ```bash
 # Search for UPKEEP comments.
 grep -r -n -E "^\W+UPKEEP\W+(due:\W?\".*?\"|label:\W?\".*?\"|interval:\W?\".*?\")" .
+
+# Or
+docker run --rm \
+  --mount "type=bind,src=$PWD,dst=/tmp/upkeep,readonly=true" \
+  --workdir=/tmp/upkeep \
+  alpine \
+  grep -r -n -E "^\W+UPKEEP\W+(due:\W?\".*?\"|label:\W?\".*?\"|interval:\W?\".*?\")" .
+
+# Or show only past due UPKEEP comments.
+make upkeep
 ```
 
 

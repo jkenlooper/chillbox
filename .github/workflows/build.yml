@@ -20,6 +20,9 @@ jobs:
       - name: Shellcheck the scripts
         run: ./tests/shellcheck.sh
 
+      - name: Check if any UPKEEP comments are past due
+        run: make upkeep
+
       - name: Create dist
         run: make dist
 
