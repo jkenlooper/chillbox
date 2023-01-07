@@ -37,7 +37,7 @@ Types of changes
 
 
 <!-- TODO
-[unreleased]: https://github.com/jkenlooper/chillbox/compare/v0.0.1...HEAD
-[0.0.2]: https://github.com/jkenlooper/chillbox/compare/v0.0.1...v0.0.2
-[0.0.1]: https://github.com/jkenlooper/chillbox/releases/tag/v0.0.1
+[Unreleased]: https://github.com/jkenlooper/chillbox/compare/0.0.1...HEAD
+[0.0.2]: https://github.com/jkenlooper/chillbox/compare/0.0.1...0.0.2
+[0.0.1]: https://github.com/jkenlooper/chillbox/releases/tag/0.0.1
 -->

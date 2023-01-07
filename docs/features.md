@@ -16,19 +16,39 @@ This is a list of notable features that have currently been implemented.
 - Supported language handlers for services
   - Python 3 WSGI managed by Gunicorn (Planning to support ASGI as well)
   - [Chill] with dynamic or static deployment (Python 3)
+  - Immutable services that have their resources stored on S3 object storage
+- The build and install of Python service dependencies only use local
+    dependencies referenced by a requirements.txt file in the versioned
+    artifact. The 
+    `[pip install --no-index ...](https://github.com/jkenlooper/chillbox/blob/main/src/chillbox/bin/site-init-service-object.sh#L123)`
+    command is used when installing Python services on the chillbox server for
+    better security.
 - Website services run on [Alpine Linux] and don't use [systemd]
   - [OpenRC] and [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].
-- Shell scripts are [POSIX] compliant and mostly have unit tests with [Bats-core] (Bash Automated Testing System)
-- A JSON Schema has been defined for the site.json files a website uses for configuration.
+- Shell scripts are [POSIX] compliant
+  - Linting via [Shellcheck]
+  - Unit tests via [Bats-core] (Bash Automated Testing System)
+- A [JSON Schema] has been defined for the site.json files a website uses for configuration.
+    - TODO: Publish [src/local/verify-sites/site.schema.json](../src/local/verify-sites/site.schema.json)
 - No remote build pipeline, all builds happen on the local host machine
+    - Secrets are encrypted and stored securely on the host machine
+    - Secrets used on the chillbox server are encrypted to a public key, the
+        private key is generated on the chillbox server and never stored
+        elsewhere.
 - [Terraform] has been isolated inside containers on the local host machine and the state files are encrypted on data volumes
 - Deployment to [DigitalOcean] cloud hosting provider
 - The user-data script added to the deployed server is encrypted. [Ansible] is
     used to bootstrap the server by decrypting the user-data script and
-    executing it as defined in the playbook file. 
+    executing it as defined in the playbook file. This plaintext user-data script is
+    deleted after successfully bootstrapping a server.
+- After the chillbox user-data script has been downloaded from the metadata
+    service (http://169.254.169.254/metadata/v1/user-data for DO) the access to
+    169.254.169.254 is blocked. This is done as part of the custom [Alpine Linux
+    image setup
+    script](https://github.com/jkenlooper/alpine-droplet/blob/master/setup.sh#L38).
 - [Ansible] is isolated to a container much like Terraform. It is used
-    to initialize the chillbox server when first deploying. The Alpine Linux
-    image used for [DigitalOcean] does not include [cloud-init] and I see no
+    to initialize the chillbox server when first deploying. The [custom Alpine Linux
+    image] used for [DigitalOcean] does not include [cloud-init] and I see no
     reason to have it.
 - [Ansible] is used to manage the deployed chillbox server with security updates and such.
   - Manually connecting with ssh to the deployed chillbox server is done within the
@@ -46,9 +66,8 @@ Upcoming list of features that will be implemented.
 ### Other Ideas for New Features
 
 These ideas might be a bit outside of the goals and are not part of any
-immediate use case that I currently have. It may be better to adopt a different
-solution (kubernetes) if the below features are needed. These are the things I
-would be tempted to implement.
+immediate use case that I currently have. These are the things I would be
+tempted to implement.
 
 - Option to use other cloud hosting instead of only [DigitalOcean]
   - [Linode] 
@@ -66,8 +85,6 @@ would be tempted to implement.
 - Batching large jobs by spinning up temporary resources
 - Support for running OpenFaaS functions with [faasd](https://docs.openfaas.com/deployment/faasd/)
 - Monitoring and ability to easily view logs without being on the server
-- The build and install of Python service dependencies are done locally and
-    cached to avoid running `pip install` on the server.
 - Static code analysis done locally as part of the deployment
   - Check for known vulnerabilities (pip-audit, sonarqube, socket.dev, others?)
   - Code quality
@@ -115,3 +132,7 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [Deno]: https://deno.land/
 [cloud-init]: https://cloud-init.io/
 [Ansible]: https://docs.ansible.com/
+[Shellcheck]: https://github.com/koalaman/shellcheck
+[JSON Schema]: https://json-schema.org/
+[custom Alpine Linux]: https://github.com/jkenlooper/alpine-droplet
+    image
