@@ -20,7 +20,7 @@ This is a list of notable features that have currently been implemented.
 - The build and install of Python service dependencies only use local
     dependencies referenced by a requirements.txt file in the versioned
     artifact. The 
-    `[pip install --no-index ...](https://github.com/jkenlooper/chillbox/blob/main/src/chillbox/bin/site-init-service-object.sh#L123)`
+    [pip install --no-index ...](https://github.com/jkenlooper/chillbox/blob/main/src/chillbox/bin/site-init-service-object.sh#L123)
     command is used when installing Python services on the chillbox server for
     better security.
 - Website services run on [Alpine Linux] and don't use [systemd]
@@ -42,7 +42,7 @@ This is a list of notable features that have currently been implemented.
     executing it as defined in the playbook file. This plaintext user-data script is
     deleted after successfully bootstrapping a server.
 - After the chillbox user-data script has been downloaded from the metadata
-    service (http://169.254.169.254/metadata/v1/user-data for DO) the access to
+    service (169.254.169.254/metadata/v1/user-data for DO) the access to
     169.254.169.254 is blocked. This is done as part of the custom [Alpine Linux
     image setup
     script](https://github.com/jkenlooper/alpine-droplet/blob/master/setup.sh#L38).
@@ -134,5 +134,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [Ansible]: https://docs.ansible.com/
 [Shellcheck]: https://github.com/koalaman/shellcheck
 [JSON Schema]: https://json-schema.org/
-[custom Alpine Linux]: https://github.com/jkenlooper/alpine-droplet
-    image
+[custom Alpine Linux image]: https://github.com/jkenlooper/alpine-droplet
