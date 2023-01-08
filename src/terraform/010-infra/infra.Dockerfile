@@ -30,6 +30,9 @@ ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/terraform.tfstate.json.asc"
 
 RUN <<SETUP
 set -o errexit
+# TODO Set the specific id to use for dev user
+#addgroup -g 44444 dev
+#adduser -u 44444 -G dev -s /bin/sh -D dev
 addgroup dev
 adduser -G dev -D dev
 chown -R dev:dev .

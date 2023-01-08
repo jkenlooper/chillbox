@@ -41,6 +41,7 @@ Sub commands:
   push        - Pushes the Terraform state files to the Terraform containers.
   clean       - Removes state files that were saved for the instance and workspace.
   secrets     - Encrypt and upload the site secrets to the s3 object storage.
+  credentials - Delete the encrypted credential files.
   ansible     - Run ansible playbooks or ssh into the server
 
 Files:
@@ -80,6 +81,7 @@ check_args_and_environment_vars() {
     [ "$sub_command" != "push" ] && \
     [ "$sub_command" != "clean" ] && \
     [ "$sub_command" != "ansible" ] && \
+    [ "$sub_command" != "credentials" ] && \
     [ "$sub_command" != "secrets" ]; then
     echo "ERROR $script_name: This command ($sub_command) is not supported in this script."
     exit 1
@@ -438,6 +440,11 @@ elif [ "$sub_command" = "secrets" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to encrypt and upload secrets."
   "$project_dir/src/local/encrypt-and-upload-secrets.sh" -h
   "$project_dir/src/local/encrypt-and-upload-secrets.sh"
+
+elif [ "$sub_command" = "credentials" ]; then
+  printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to delete credentials."
+  "$project_dir/src/local/delete-credentials.sh" -h
+  "$project_dir/src/local/delete-credentials.sh"
 
 elif [ "$sub_command" = "ansible" ]; then
   # TODO Maybe show a list of playbooks and select which one to run?

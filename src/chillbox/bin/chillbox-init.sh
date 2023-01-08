@@ -15,7 +15,7 @@ chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
 s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
 # TODO The environment is not currently being used for anything at this time.
-# environment="${ENVIRONMENT:-}"
+environment="${ENVIRONMENT:-}"
 acme_server="${ACME_SERVER:-letsencrypt_test}"
 
 if [ -z "$developer_public_ssh_keys" ]; then
