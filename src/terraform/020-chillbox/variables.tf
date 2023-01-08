@@ -25,12 +25,6 @@ variable "do_chillbox_spaces_secret_access_key" {
   sensitive   = true
 }
 
-variable "chillbox_gpg_passphrase" {
-  type        = string
-  description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."
-  sensitive   = true
-}
-
 variable "tech_email" {
   type        = string
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
@@ -66,10 +60,18 @@ variable "sites_manifest" {
 variable "sites_artifact" {
   description = "The sites artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.sites_artifact))
+    error_message = "The filename needs to end with '.tar.gz' and only have versioned filename characters."
+  }
 }
 variable "chillbox_artifact" {
   description = "The chillbox artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^chillbox\\.[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.chillbox_artifact))
+    error_message = "The filename needs to start with 'chillbox.' and end with '.tar.gz' and only have versioned filename characters."
+  }
 }
 
 variable "developer_ips" {
@@ -196,7 +198,6 @@ variable "dns_ttl" {
 }
 
 variable "chillbox_count" {
-  default     = 1
   description = "Chillbox server count."
   type        = number
   validation {
@@ -205,11 +206,20 @@ variable "chillbox_count" {
     error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
   }
 }
-variable "user_data_password" {
-  type = string
+variable "bootstrap_chillbox_pass" {
+  type        = string
   description = "User-data password."
 }
 variable "initial_dev_user_password" {
-  type = string
+  type        = string
   description = "Initial dev user password."
+}
+variable "chillbox_ansibledev_pass" {
+  type        = list(string)
+  description = "Passwords for ansibledev user on each chillbox server that is used when automating with Ansible."
+}
+
+variable "GPG_KEY_NAME" {
+  type        = string
+  description = "Gnupg key name."
 }

@@ -1,3 +1,0 @@
-# API example for site1
-
-...

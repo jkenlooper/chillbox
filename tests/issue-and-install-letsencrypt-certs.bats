@@ -5,11 +5,13 @@ source "${BATS_TEST_DIRNAME}"/bats-logging-level.sh
 setup_file() {
   test "${LOGGING_LEVEL}" -le $WARNING && echo -e "# \n# ${BATS_TEST_FILENAME}" >&3
   export TECH_EMAIL="test@example.com"
-  export LETS_ENCRYPT_SERVER="letsencrypt_test"
+  export ACME_SERVER="letsencrypt_test"
   export SKIP_INSTALL_ACMESH="y"
 
-  mkdir -p /etc/chillbox/
-  cp -R "${BATS_TEST_DIRNAME}"/fixtures/sites /etc/chillbox/
+  mkdir -p /etc/chillbox/sites
+  jq --null-input '{
+    domain_list: [ "test.example.local", "anothertest.example.local" ]
+  }' > /etc/chillbox/sites/example.site.json
 }
 teardown_file() {
   rm -rf /etc/chillbox/sites
@@ -21,28 +23,28 @@ setup() {
   load '/opt/bats-mock/load'
 
   mock_acmesh="$(mock_create)"
-  ln -s "${mock_acmesh}" $BATS_RUN_TMPDIR/acme.sh
+  ln -s "${mock_acmesh}" "$BATS_RUN_TMPDIR/acme.sh"
+
+  mock_chown="$(mock_create)"
+  ln -s "${mock_chown}" "$BATS_RUN_TMPDIR/chown"
 
   PATH="$BATS_RUN_TMPDIR:$PATH"
 }
 teardown() {
   rm -rf /var/lib/acmesh
 
-  test -L $BATS_RUN_TMPDIR/acme.sh \
-    && rm -f $BATS_RUN_TMPDIR/acme.sh
+  test -L "$BATS_RUN_TMPDIR/acme.sh" \
+    && rm -f "$BATS_RUN_TMPDIR/acme.sh"
+  test -L "$BATS_RUN_TMPDIR/chown" \
+    && rm -f "$BATS_RUN_TMPDIR/chown"
 }
 
 main() {
   "${BATS_TEST_DIRNAME}"/../bin/issue-and-install-letsencrypt-certs.sh
 }
 
-@test "fail when LETS_ENCRYPT_SERVER is empty" {
-  export LETS_ENCRYPT_SERVER=""
-  run main
-  assert_failure
-}
-@test "fail when LETS_ENCRYPT_SERVER is not the test one" {
-  export LETS_ENCRYPT_SERVER="llama"
+@test "fail when ACME_SERVER is empty" {
+  export ACME_SERVER=""
   run main
   assert_failure
 }

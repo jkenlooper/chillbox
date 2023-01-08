@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4.1
+# syntax=docker/dockerfile:1.4.3
 
 # UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
 # docker pull hashicorp/terraform:1.2.7
@@ -13,40 +13,29 @@ apk update
 apk add \
   jq \
   vim \
-  mandoc man-pages \
+  mandoc man-pages docs \
   coreutils \
   unzip \
   gnupg \
   gnupg-dirmngr
 
-install_aws_cli_dir="$(mktemp -d)"
-
-# UPKEEP due: "2022-10-08" label: "install-aws-cli gist" interval: "+3 months"
-# https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0
-# Based on https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-install_aws_cli_dir="$(mktemp -d)"
-wget https://gist.github.com/jkenlooper/78dcbea2cfe74231a7971d8d66fa4bd0/archive/0951e80d092960cf27f893aaa12d5ed754dc3bed.zip \
-  -O "$install_aws_cli_dir/install-aws-cli.zip"
-echo "9006755dfbc2cdaf192029a3a2f60941beecc868157ea265c593f11e608a906a5928dcad51a815c676e8f77593e5847e9b6023b47c28bc87b5ffeecd5708e9ac  $install_aws_cli_dir/install-aws-cli.zip" | sha512sum --strict -c \
-  || ( \
-    echo "Cleaning up in case errexit is not set." \
-    && mv --verbose "$install_aws_cli_dir/install-aws-cli.zip" "$install_aws_cli_dir/install-aws-cli.zip.INVALID" \
-    && exit 1 \
-    )
-unzip -j "$install_aws_cli_dir/install-aws-cli.zip" -d "$install_aws_cli_dir"
-chmod +x "$install_aws_cli_dir/install-aws-cli.sh"
-"$install_aws_cli_dir/install-aws-cli.sh"
-rm -rf "$install_aws_cli_dir"
+# UPKEEP due: "2023-01-01" label: "s5cmd for s3 object storage" interval: "+3 months"
+s5cmd_release_url="https://github.com/peak/s5cmd/releases/download/v2.0.0/s5cmd_2.0.0_Linux-64bit.tar.gz"
+s5cmd_tar="$(basename "$s5cmd_release_url")"
+s5cmd_tmp_dir="$(mktemp -d)"
+wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
+tar x -o -f "$s5cmd_tmp_dir/$s5cmd_tar" -C "/usr/local/bin" s5cmd
+rm -rf "$s5cmd_tmp_dir"
 
 INSTALL
 
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
 set -o errexit
-# UPKEEP due: "2022-11-14" label: "Alpine Linux custom image" interval: "+3 months"
+# UPKEEP due: "2023-01-23" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-08-14-1528/alpine-virt-image-2022-08-14-1528.qcow2.bz2"
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-10-23-1351/alpine-virt-image-2022-10-23-1351.qcow2.bz2"
 echo "INFO: Using alpine custom image $alpine_custom_image"
-alpine_custom_image_checksum="3a37457517fe456930901d7794666f1e25b5bd78b663c61e86975127a1e49b9b7d0e55f4d34efc66bc093af998065ce3c329a79fe38144696a7551324c968575"
+alpine_custom_image_checksum="f229495ff2f6344a0d0e73b7e94492748b8aed9a964a7287a2e2e111193211c0713130f45008b45dca1db0c9339b59f529e51667fe4bb50c8b78e28f75e783a3"
 echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
 
 set -o errexit
@@ -64,7 +53,8 @@ alpine_custom_image = "${alpine_custom_image_file}"
 HERE
 WGET_ALPINE_CUSTOM_IMAGE
 
-ENV GPG_KEY_NAME="chillbox_doterra"
+ENV GPG_KEY_NAME="chillbox_local"
+ENV TF_VAR_GPG_KEY_NAME="$GPG_KEY_NAME"
 ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
 ENV ENCRYPTED_TFSTATE="/var/lib/terraform-020-chillbox/terraform.tfstate.json.asc"
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
@@ -106,7 +96,9 @@ COPY --chown=dev:dev 020-chillbox/.terraform.lock.hcl .
 
 RUN <<TERRAFORM_INIT
 set -o errexit
-su dev -c "terraform init"
+# Use 'terraform init -upgrade' since the tf files may have been updated with
+# a newer provider version.
+su dev -c "terraform init -upgrade"
 
 # A Terraform workspace is required so that there is a directory created for the
 # terraform state location instead of a file.  This way a docker volume can be
@@ -123,6 +115,10 @@ ENV CHILLBOX_ARTIFACT="$CHILLBOX_ARTIFACT"
 ARG SITES_MANIFEST
 ENV SITES_MANIFEST="$SITES_MANIFEST"
 
+COPY --chown=dev:dev 020-chillbox/init-chillbox.sh.tftpl .
+COPY --chown=dev:dev 020-chillbox/host_inventory.ansible.cfg.tftpl .
+COPY --chown=dev:dev 020-chillbox/ansible-etc-hosts-snippet.tftpl .
+COPY --chown=dev:dev 020-chillbox/ansible_ssh_config.tftpl .
 COPY --chown=dev:dev 020-chillbox/upload-artifacts.sh .
 COPY --chown=dev:dev bin bin
 COPY --chown=dev:dev 020-chillbox/bin/ bin/

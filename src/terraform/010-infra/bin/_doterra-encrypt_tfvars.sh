@@ -6,6 +6,10 @@
 
 set -o errexit
 
+# Any files or directories created from this script should only be accessible by
+# the user executing the script.
+umask 0077
+
 secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
 
 # Sanity check that these were set.
@@ -17,9 +21,8 @@ test -d "$secure_tmp_secrets_dir" || (echo "ERROR $0: The path '$secure_tmp_secr
 encrypted_do_token=/var/lib/doterra/secrets/do_token.tfvars.json.asc
 encrypted_terraform_spaces=/var/lib/doterra/secrets/terraform_spaces.tfvars.json.asc
 encrypted_chillbox_spaces=/var/lib/doterra/secrets/chillbox_spaces.tfvars.json.asc
-encrypted_chillbox_gpg_passphrase=/var/lib/doterra/secrets/chillbox_gpg_passphrase.tfvars.json.asc
 
-if [ -f "${encrypted_do_token}" ] && [ -f "${encrypted_terraform_spaces}" ] && [ -f "${encrypted_chillbox_spaces}" ] && [ -f "${encrypted_chillbox_gpg_passphrase}" ]; then
+if [ -f "${encrypted_do_token}" ] && [ -f "${encrypted_terraform_spaces}" ] && [ -f "${encrypted_chillbox_spaces}" ]; then
   echo "INFO $0: The encrypted secrets already exist at /var/lib/doterra/secrets/. Skipping the creation of a new files."
 fi
 
@@ -37,7 +40,6 @@ trap cleanup EXIT
 mkdir -p "$(dirname "$encrypted_do_token")"
 mkdir -p "$(dirname "$encrypted_terraform_spaces")"
 mkdir -p "$(dirname "$encrypted_chillbox_spaces")"
-mkdir -p "$(dirname "$encrypted_chillbox_gpg_passphrase")"
 
 echo "Enter secrets that will be encrypted to the /var/lib/doterra/secrets/ directory."
 echo "Characters entered are not shown."
@@ -112,27 +114,6 @@ else
     }' > "$secret_tfvars_json"
   gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "${encrypted_chillbox_spaces}" \
     --comment "Chillbox doterra secrets chillbox_spaces tfvars" \
-    --comment "Date: $(date)" \
-    "$secret_tfvars_json"
-  shred -z -u "$secret_tfvars_json" || rm -f "$secret_tfvars_json"
-fi
-
-if [ -f "${encrypted_chillbox_gpg_passphrase}" ]; then
-  echo "INFO $0: The '${encrypted_chillbox_gpg_passphrase}' file already exists. Skipping the creation of a new one."
-else
-  printf '\n%s\n' "Passphrase for new gpg key for chillbox server to use:"
-  stty -echo
-  read -r chillbox_gpg_passphrase
-  stty echo
-  secret_tfvars_json="${secure_tmp_secrets_dir}/secrets/chillbox_gpg_passphrase.tfvars.json"
-  mkdir -p "$(dirname "$secret_tfvars_json")"
-  jq --null-input \
-    --arg jq_chillbox_gpg_passphrase "$chillbox_gpg_passphrase" \
-    '{
-      chillbox_gpg_passphrase: $jq_chillbox_gpg_passphrase,
-    }' > "$secret_tfvars_json"
-  gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "${encrypted_chillbox_gpg_passphrase}" \
-    --comment "Chillbox doterra secrets chillbox_gpg_passphrase tfvars" \
     --comment "Date: $(date)" \
     "$secret_tfvars_json"
   shred -z -u "$secret_tfvars_json" || rm -f "$secret_tfvars_json"

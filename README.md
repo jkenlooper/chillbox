@@ -5,7 +5,7 @@
 
 **_Work in Progress_. This is under active development and is not complete.**
 
-Deployment scripts for websites that use [Chill] and custom Python [Flask] services
+Deployment scripts for websites that use [Chill] and custom Python WSGI services
 that are on an [Alpine Linux] server and backed by s3 object storage.
 Supports deployments to [DigitalOcean] with [Terraform] and plans to
 support other cloud hosting providers like [Linode], and [Vultr].
@@ -60,6 +60,9 @@ Please contact me or create an issue.
 
 ## Testing and Development
 
+Checkout the project source code at [https://github.com/jkenlooper/chillbox]()
+which includes all the files and further documentation.
+
 Tests and [shellcheck] can be performed via the [tests/test.sh](./tests/test.sh) shell script. This
 uses [Bats-core] for running the shell testing where that works. Most of the
 shell scripts are also checked for any issues with [shellcheck]. An optional
@@ -69,15 +72,30 @@ integration test is done at the end of the test which will deploy to
 ## Maintenance
 
 Where possible, an upkeep comment has been added to various parts of the source
-code that are known areas that will require updates over time to reduce
+code. These are known areas that will require updates over time to reduce
 software rot. The upkeep comment follows this pattern to make it easier for
 commands like grep to find these comments.
 
+Example UPKEEP comment has at least a 'due:' or 'label:' or 'interval:' value
+surrounded by double quotes (").
+````
+Example-> # UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
+````
 
+The grep command to find all upkeep comments with their line numbers.
 ```bash
-# Search for upkeep comments.
-find . \( -name '*.sh' -o -name '*Dockerfile' \) -exec \
-grep --line-number --fixed-strings 'UPKEEP' '{}' +
+# Search for UPKEEP comments.
+grep -r -n -E "^\W+UPKEEP\W+(due:\W?\".*?\"|label:\W?\".*?\"|interval:\W?\".*?\")" .
+
+# Or
+docker run --rm \
+  --mount "type=bind,src=$PWD,dst=/tmp/upkeep,readonly=true" \
+  --workdir=/tmp/upkeep \
+  alpine \
+  grep -r -n -E "^\W+UPKEEP\W+(due:\W?\".*?\"|label:\W?\".*?\"|interval:\W?\".*?\")" .
+
+# Or show only past due UPKEEP comments.
+make upkeep
 ```
 
 

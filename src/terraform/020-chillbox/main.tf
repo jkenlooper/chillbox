@@ -1,8 +1,10 @@
 terraform {
   required_providers {
+    # UPKEEP due: "2022-12-04" label: "Terraform provider digitalocean/digitalocean" interval: "+2 months"
+    # https://registry.terraform.io/providers/digitalocean/digitalocean/latest
     digitalocean = {
       source  = "digitalocean/digitalocean"
-      version = "~> 2.0"
+      version = "2.22.3"
     }
   }
 }
@@ -94,16 +96,29 @@ resource "digitalocean_firewall" "web" {
 resource "local_file" "host_inventory" {
   filename        = "/var/lib/terraform-020-chillbox/host_inventory.ansible.cfg"
   file_permission = "0400"
-  content         = <<-HOST_INVENTORY
-  [all:vars]
-  tech_email=${var.tech_email}
+  content = templatefile("host_inventory.ansible.cfg.tftpl", {
+    template_source_file : abspath("host_inventory.ansible.cfg.tftpl"),
+    chillbox_name_ipv4address_map : zipmap(digitalocean_droplet.chillbox.*.name, digitalocean_droplet.chillbox.*.ipv4_address),
+    tech_email : var.tech_email,
+    sub_domain : var.sub_domain,
+    domain : var.domain,
+  })
+}
 
-  [chillbox]
-  %{for ipv4_address in compact(flatten([digitalocean_droplet.chillbox[*].ipv4_address]))~}
-  ${ipv4_address}
-  %{endfor~}
+resource "local_file" "ansible_etc_hosts_snippet" {
+  filename        = "/var/lib/terraform-020-chillbox/ansible-etc-hosts-snippet"
+  file_permission = "0400"
+  content = templatefile("ansible-etc-hosts-snippet.tftpl", {
+    template_source_file : abspath("ansible-etc-hosts-snippet.tftpl"),
+    chillbox_name_ipv4address_map : zipmap(digitalocean_droplet.chillbox.*.name, digitalocean_droplet.chillbox.*.ipv4_address)
+  })
+}
 
-  [chillbox:vars]
-  domain_name=${var.sub_domain}${var.domain}
-  HOST_INVENTORY
+resource "local_file" "ansible_ssh_config" {
+  filename        = "/var/lib/terraform-020-chillbox/ansible_ssh_config"
+  file_permission = "0400"
+  content = templatefile("ansible_ssh_config.tftpl", {
+    template_source_file : abspath("ansible_ssh_config.tftpl"),
+    chillbox_name_ipv4address_map : zipmap(digitalocean_droplet.chillbox.*.name, digitalocean_droplet.chillbox.*.ipv4_address)
+  })
 }

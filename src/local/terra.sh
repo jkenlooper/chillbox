@@ -4,6 +4,8 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 terraform_command=${1:-interactive}
 if [ "$terraform_command" != "interactive" ] && [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
   echo "ERROR $0: This command ($terraform_command) is not supported in this script."
@@ -17,14 +19,9 @@ chillbox_artifact_version="$(make --silent -C "$project_dir" inspect.VERSION)"
 
 SKIP_UPLOAD="${SKIP_UPLOAD:-n}"
 
-export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
-
-export WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  echo "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
-  exit 1
-fi
+# This script shouldn't be run directly. Do a sanity check still.
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 
 chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_ARTIFACT"
 chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
@@ -87,15 +84,19 @@ docker run \
   -i --tty \
   --name "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
-  --mount "type=bind,src=${terraform_infra_dir}/user_data_chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/user_data_chillbox.sh.tftpl" \
   --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
   --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   --entrypoint="" \
-  "$INFRA_IMAGE" doterra-init.sh
+  "$INFRA_IMAGE" doterra-init.sh || (
+    exitcode="$?"
+    echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+    read -r docker_continue_confirm
+    test "$docker_continue_confirm" = "y" || exit $exitcode
+  )
 
 # TODO How to prevent updating the .terraform.lock.hcl file?
 #      Move this action to 'make'?
@@ -119,18 +120,25 @@ docker_run_infra_container() {
     --hostname "${INFRA_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=false" \
     --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=${terraform_infra_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_infra_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_infra_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
+    --mount "type=bind,src=${terraform_infra_dir}/bootstrap-chillbox-init-credentials.sh.tftpl,dst=/usr/local/src/chillbox-terraform/bootstrap-chillbox-init-credentials.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
     --entrypoint="" \
-    "$INFRA_IMAGE" "$@"
+    "$INFRA_IMAGE" "$@" || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
 }
 docker_run_infra_container
 
@@ -148,7 +156,13 @@ docker run \
   --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
   --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$TERRAFORM_CHILLBOX_IMAGE" init
+  "$TERRAFORM_CHILLBOX_IMAGE" init || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
+
 docker cp "${TERRAFORM_CHILLBOX_CONTAINER}:/usr/local/src/chillbox-terraform/.terraform.lock.hcl" "${terraform_chillbox_dir}/"
 docker rm "${TERRAFORM_CHILLBOX_CONTAINER}"
 
@@ -169,7 +183,7 @@ docker_run_chillbox_container() {
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
-    --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+    --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
     --mount "type=volume,src=chillbox-${INFRA_CONTAINER}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
@@ -177,6 +191,11 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=${terraform_chillbox_dir}/chillbox.tf,dst=/usr/local/src/chillbox-terraform/chillbox.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/variables.tf,dst=/usr/local/src/chillbox-terraform/variables.tf" \
     --mount "type=bind,src=${terraform_chillbox_dir}/main.tf,dst=/usr/local/src/chillbox-terraform/main.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/init-chillbox.sh.tftpl,dst=/usr/local/src/chillbox-terraform/init-chillbox.sh.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/host_inventory.ansible.cfg.tftpl,dst=/usr/local/src/chillbox-terraform/host_inventory.ansible.cfg.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/ansible-etc-hosts-snippet.tftpl,dst=/usr/local/src/chillbox-terraform/ansible-etc-hosts-snippet.tftpl" \
+    --mount "type=bind,src=${terraform_chillbox_dir}/ansible_ssh_config.tftpl,dst=/usr/local/src/chillbox-terraform/ansible_ssh_config.tftpl" \
     --mount "type=bind,src=${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
     --mount "type=bind,src=$site_domains_file,dst=/usr/local/src/chillbox-terraform/site_domains.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$ssh_keys_file,dst=/usr/local/src/chillbox-terraform/developer-public-ssh-keys.auto.tfvars.json,readonly=true" \
@@ -187,6 +206,12 @@ docker_run_chillbox_container() {
     --mount "type=bind,src=$dist_sites_dir,dst=/usr/local/src/chillbox-terraform/dist/sites,readonly=true" \
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
     --entrypoint="" \
-    "$TERRAFORM_CHILLBOX_IMAGE" "$@"
+    "$TERRAFORM_CHILLBOX_IMAGE" "$@" || (
+      exitcode="$?"
+      echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+      read -r docker_continue_confirm
+      test "$docker_continue_confirm" = "y" || exit $exitcode
+    )
+
 }
 docker_run_chillbox_container

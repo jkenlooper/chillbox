@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4.1
+# syntax=docker/dockerfile:1.4.3
 
 # UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
 # docker pull hashicorp/terraform:1.2.7
@@ -11,9 +11,10 @@ apk update
 apk add \
   jq \
   vim \
-  mandoc man-pages \
+  mandoc man-pages docs \
   coreutils \
   openssl \
+  openssh-keygen \
   gnupg \
   gnupg-dirmngr
 
@@ -22,7 +23,8 @@ INSTALL
 WORKDIR /usr/local/src/chillbox-terraform
 
 ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
-ENV GPG_KEY_NAME="chillbox_doterra"
+ENV GPG_KEY_NAME="chillbox_local"
+ENV TF_VAR_GPG_KEY_NAME="$GPG_KEY_NAME"
 ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
 ENV ENCRYPTED_TFSTATE="/var/lib/terraform-010-infra/terraform.tfstate.json.asc"
 
@@ -50,12 +52,15 @@ ENV SITES_ARTIFACT="$SITES_ARTIFACT"
 
 COPY --chown=dev:dev 010-infra/variables.tf ./
 COPY --chown=dev:dev 010-infra/main.tf ./
-COPY --chown=dev:dev 010-infra/user_data_chillbox.sh.tftpl .
+COPY --chown=dev:dev 010-infra/outputs.tf ./
+COPY --chown=dev:dev 010-infra/bootstrap-chillbox-init-credentials.sh.tftpl .
 COPY --chown=dev:dev 010-infra/.terraform.lock.hcl ./
 RUN <<TERRAFORM_INIT
 set -o errexit
 # Creates the /home/dev/.terraform.d directory.
-su dev -c "terraform init"
+# Use 'terraform init -upgrade' since the tf files may have been updated with
+# a newer provider version.
+su dev -c "terraform init -upgrade"
 
 # A Terraform workspace is required so that there is a directory created for the
 # terraform state location instead of a file.  This way a docker volume can be

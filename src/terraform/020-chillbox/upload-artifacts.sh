@@ -44,27 +44,19 @@ eval "$(jq -r '@sh "
 } >> "$LOG_FILE"
 
 # Upload chillbox artifact file
-chillbox_artifact_exists="$(aws \
-  --endpoint-url "$endpoint_url" \
-  s3 ls \
+chillbox_artifact_exists="$(s5cmd ls \
   "s3://${artifact_bucket_name}/chillbox/$CHILLBOX_ARTIFACT" 2>> "$LOG_FILE" || printf "")"
 if [ -z "$chillbox_artifact_exists" ]; then
-  aws \
-    --endpoint-url "$endpoint_url" \
-    s3 cp "$working_dir/dist/$CHILLBOX_ARTIFACT" \
+  s5cmd cp "$working_dir/dist/$CHILLBOX_ARTIFACT" \
     "s3://${artifact_bucket_name}/chillbox/$CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 else
   echo "INFO $0: No changes to existing chillbox artifact: $CHILLBOX_ARTIFACT" >> "$LOG_FILE"
 fi
 # Upload site artifact file
-sites_artifact_exists="$(aws \
-  --endpoint-url "$endpoint_url" \
-  s3 ls \
+sites_artifact_exists="$(s5cmd ls \
   "s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT" 2>> "$LOG_FILE" || printf "")"
 if [ -z "$sites_artifact_exists" ]; then
-  aws \
-    --endpoint-url "$endpoint_url" \
-    s3 cp "$working_dir/dist/$SITES_ARTIFACT" \
+  s5cmd cp "$working_dir/dist/$SITES_ARTIFACT" \
     "s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT" >> "$LOG_FILE"
 else
   echo "INFO $0: No changes to existing site artifact: $SITES_ARTIFACT" >> "$LOG_FILE"
@@ -76,15 +68,11 @@ jq -r '.[]' "$sites_manifest_file" \
     slugname="$(dirname "$artifact_file")"
     artifact="$(basename "$artifact_file")"
 
-    artifact_exists="$(aws \
-      --endpoint-url "$endpoint_url" \
-      s3 ls \
+    artifact_exists="$(s5cmd ls \
       "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" 2>> "$LOG_FILE" || printf "")"
     if [ -z "$artifact_exists" ]; then
       echo "INFO $0: Uploading artifact: $artifact_file" >> "$LOG_FILE"
-      aws \
-        --endpoint-url "$endpoint_url" \
-        s3 cp "$working_dir/dist/sites/$artifact_file" \
+      s5cmd cp "$working_dir/dist/sites/$artifact_file" \
         "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" >> "$LOG_FILE"
     else
       echo "INFO $0: No changes to existing artifact: $artifact_file" >> "$LOG_FILE"

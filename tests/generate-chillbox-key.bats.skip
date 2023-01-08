@@ -13,37 +13,28 @@ setup() {
   load '/opt/bats-assert/load'
   load '/opt/bats-mock/load'
 
-  mock_aws="$(mock_create)"
-  mock_set_output "${mock_aws}" "something" 0
-  ln -s "${mock_aws}" $BATS_RUN_TMPDIR/aws
+  mock_s5cmd="$(mock_create)"
+  mock_set_output "${mock_s5cmd}" "something" 0
+  ln -s "${mock_s5cmd}" $BATS_RUN_TMPDIR/s5cmd
 
   PATH="$BATS_RUN_TMPDIR:$PATH"
 
-  # Use an ephemeral directory for gpg home for testing
-  tmp_gpg_home="$(mktemp -d)"
-  export GNUPGHOME="$tmp_gpg_home"
-  export S3_ARTIFACT_ENDPOINT_URL="test"
   export S3_ENDPOINT_URL="test"
   export ARTIFACT_BUCKET_NAME="test"
-  export CHILLBOX_GPG_KEY_NAME="chillbox-test"
   export AWS_PROFILE="test"
 }
 teardown() {
-  rm -rf "$tmp_gpg_home"
-
-  test -L $BATS_RUN_TMPDIR/aws \
-    && rm -f $BATS_RUN_TMPDIR/aws
+  test -L $BATS_RUN_TMPDIR/s5cmd \
+    && rm -f $BATS_RUN_TMPDIR/s5cmd
 }
 
 main() {
-  CHILLBOX_GPG_KEY_NAME="chillbox-test" \
-  CHILLBOX_GPG_PASSPHRASE="test" \
-    "${BATS_TEST_DIRNAME}"/../bin/generate-chillbox-key.sh
+  "${BATS_TEST_DIRNAME}"/../bin/generate-chillbox-key.sh
 }
 
 @test "pass when chillbox gpg key is generated" {
   run main
   assert_success
 
-  test "$(mock_get_call_num "${mock_aws}")" -eq 1
+  test "$(mock_get_call_num "${mock_s5cmd}")" -eq 1
 }

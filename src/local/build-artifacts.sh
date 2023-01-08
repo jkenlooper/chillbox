@@ -46,9 +46,9 @@ test -f "$output_file" || (echo "ERROR $script_name: The output-file ($output_fi
 # terraform external data source.
 test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
 test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
-chillbox_state_dir="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
-build_artifacts_logs_dir="${chillbox_state_dir}/build_artifacts_logs"
+build_artifacts_logs_dir="${chillbox_state_home}/build_artifacts_logs"
 mkdir -p "$build_artifacts_logs_dir"
 log_timestamp="$(date -I)"
 log_file="${build_artifacts_logs_dir}/${log_timestamp}.log"
@@ -74,13 +74,13 @@ echo "chillbox_artifact: $chillbox_artifact" >> "$log_file"
 chillbox_dist_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$chillbox_artifact"
 
 sites_manifest_json="sites.manifest.json"
-sites_manifest_json_file="$chillbox_state_dir/$sites_manifest_json"
+sites_manifest_json_file="$chillbox_state_home/$sites_manifest_json"
 
 sites_artifact="$(basename "${sites_artifact_url}")"
 echo "sites_artifact=$sites_artifact" >> "$log_file"
 
-sites_artifact_file="$chillbox_state_dir/$sites_artifact"
-mkdir -p "$chillbox_state_dir"
+sites_artifact_file="$chillbox_state_home/$sites_artifact"
+mkdir -p "$chillbox_state_home"
 
 # Create the chillbox artifact file
 if [ ! -f "$chillbox_dist_file" ]; then
@@ -90,6 +90,7 @@ if [ ! -f "$chillbox_dist_file" ]; then
     nginx/nginx.conf \
     nginx/templates \
     bin \
+    keys \
     VERSION
 else
   echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$log_file"
@@ -102,7 +103,7 @@ if [ -f "$sites_artifact_file" ]; then
 else
   # Reset the verified sites marker file since the sites artifact file doesn't
   # exist.
-  rm -f "$chillbox_state_dir/verified_sites_artifact/$sites_artifact"
+  rm -f "$chillbox_state_home/verified_sites_artifact/$sites_artifact"
 
   # Support using a local sites artifact if the first character is a '/';
   # otherwise it should be a downloadable URL.
@@ -216,9 +217,9 @@ else
       rm -rf "$tmp_dir_for_env_cmd"
     )
 
-    mkdir -p "${chillbox_state_dir}/sites/${slugname}"
-    dist_immutable_archive_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.immutable.tar.gz"
-    dist_artifact_file="$chillbox_state_dir/sites/$slugname/$slugname-$version.artifact.tar.gz"
+    mkdir -p "${chillbox_state_home}/sites/${slugname}"
+    dist_immutable_archive_file="$chillbox_state_home/sites/$slugname/$slugname-$version.immutable.tar.gz"
+    dist_artifact_file="$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz"
     if [ -f "$dist_immutable_archive_file" ] && [ -f "$dist_artifact_file" ]; then
       {
       echo "The immutable archive file and site artifact file already exist:"
@@ -228,7 +229,7 @@ else
       } >> "$log_file"
       continue
     fi
-    find "${chillbox_state_dir}/sites/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
+    find "${chillbox_state_home}/sites/${slugname}" -type f \( -name "${slugname}-*.immutable.tar.gz" -o -name "${slugname}-*.artifact.tar.gz" \) -delete \
       || echo "No existing archive files to delete for ${slugname}" >> "$log_file"
 
     tmp_dir="$(mktemp -d)"
@@ -237,7 +238,8 @@ else
     chmod --recursive u+rw "$tmp_dir"
 
     echo "Running the 'make' command for $slugname which should make dist/immutable.tar.gz and dist/artifact.tar.gz" >> "$log_file"
-    make -C "$tmp_dir/$slugname" >> "$log_file"
+    make --silent -C "$tmp_dir/$slugname" >> "$log_file"
+    chmod --recursive u+rw "$tmp_dir"
 
     immutable_archive_file="$tmp_dir/$slugname/dist/immutable.tar.gz"
     test -f "$immutable_archive_file" || (echo "ERROR $script_name: No file at $immutable_archive_file" >> "$log_file" && exit 1)

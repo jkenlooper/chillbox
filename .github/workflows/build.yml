@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt install jq
+
+      # Skip run of tests/test.sh because there is little benefit for running
+      # the shell tests at this point.
+      - name: Shellcheck the scripts
+        run: ./tests/shellcheck.sh
+
+      - name: Check if any UPKEEP comments are past due
+        run: make upkeep
+
+      - name: Create dist
+        run: make dist
+
+      - name: Rename dist
+        run: mv dist/chillbox-cli-*.tar.gz dist/chillbox-cli.tar.gz
+
+      # https://github.com/softprops/action-gh-release
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: "dist/chillbox-cli.tar.gz"
+          fail_on_unmatched_files: true

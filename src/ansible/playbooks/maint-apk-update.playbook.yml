@@ -1,0 +1,14 @@
+
+---
+- name: Update installed packages
+  hosts: chillbox
+  #remote_user: ansibledev
+  # TODO Set ssh_pass via file in host_vars directory.
+  #ansible_ssh_pass: "? chillbox_ansibledev_pass"
+  vars_files:
+    - /run/tmp/ansible/terraform/vars.json
+  tasks:
+    - name: Update all installed packages to the latest versions
+      become: true
+      community.general.apk:
+        upgrade: true

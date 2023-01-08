@@ -12,9 +12,11 @@ if [ -z "${sites_artifact_file}" ]; then
   echo "INFO $script_name: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 fi
 
-export S3_ARTIFACT_ENDPOINT_URL="${S3_ARTIFACT_ENDPOINT_URL}"
-test -n "${S3_ARTIFACT_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ARTIFACT_ENDPOINT_URL variable is empty" && exit 1)
-echo "INFO $script_name: Using S3_ARTIFACT_ENDPOINT_URL '${S3_ARTIFACT_ENDPOINT_URL}'"
+export S3_ENDPOINT_URL="${S3_ENDPOINT_URL}"
+test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
+echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
+
+test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exit 1)
 
 export ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME}"
 test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
@@ -40,8 +42,7 @@ trap cleanup EXIT
 if [ -z "${sites_artifact_file}" ]; then
   echo "INFO $script_name: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
   tmp_sites_artifact="$(mktemp)"
-  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
+  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
     "$tmp_sites_artifact"
 else
   test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at ${sites_artifact_file}" && exit 1)
@@ -55,10 +56,10 @@ tar x -z -f "$tmp_sites_artifact" -C /etc/chillbox/sites --strip-components 1 si
 # Most likely the nginx user has been added when the nginx package was
 # installed.
 if id -u nginx; then
-  echo "nginx user already added."
+  echo "INFO $script_name: nginx user already added."
 else
-  echo "Adding nginx user."
-  adduser -D -h /dev/null -H "nginx" || printf "Ignoring adduser error"
+  echo "INFO $script_name: Adding nginx user."
+  adduser -D -h /dev/null -H "nginx" || echo "WARNING $script_name: Ignoring adduser error"
 fi
 
 export SERVER_PORT="$CHILLBOX_SERVER_PORT"
@@ -77,7 +78,15 @@ for site_json in $sites; do
   cd "$current_working_dir"
 
   # no home, or password for user
-  adduser -D -h /dev/null -H "$SLUGNAME" || printf "Ignoring adduser error"
+  if id -u "$SLUGNAME"; then
+    echo "INFO $script_name: $SLUGNAME user already added."
+  else
+    echo "INFO $script_name: Adding $SLUGNAME user."
+    adduser -D -h /dev/null -H "$SLUGNAME" || echo "WARNING $script_name: Ignoring adduser error"
+  fi
+
+  # TODO Check if there are any newer secrets in the s3 bucket for the site.
+  # If there are newer secrets; delete the version.txt file.
 
   VERSION="$(jq -r '.version' "$site_json")"
   export VERSION
@@ -95,8 +104,7 @@ for site_json in $sites; do
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
 
   tmp_artifact="$(mktemp)"
-  aws --endpoint-url "$S3_ARTIFACT_ENDPOINT_URL" \
-    s3 cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
+  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
     "$tmp_artifact"
 
   slugdir="$current_working_dir/$SLUGNAME"

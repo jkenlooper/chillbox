@@ -5,6 +5,12 @@ set -o errexit
 script_name="$(basename "$0")"
 project_dir="$(dirname "$(realpath "$0")")"
 
+# These variables are updated later, but can be shown in the help output.
+chillbox_config_home="${XDG_CONFIG_HOME:-"$HOME/.config"}/chillbox/<instance_name>/<workspace>"
+env_config="$chillbox_config_home/env"
+chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/<instance_name>/<workspace>"
+chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/<instance_name>/<workspace>"
+
 usage() {
   cat <<HERE
 
@@ -35,6 +41,22 @@ Sub commands:
   push        - Pushes the Terraform state files to the Terraform containers.
   clean       - Removes state files that were saved for the instance and workspace.
   secrets     - Encrypt and upload the site secrets to the s3 object storage.
+  ansible     - Run ansible playbooks or ssh into the server
+
+Files:
+
+  Configuration:
+    $env_config
+    $chillbox_config_home/terraform-010-infra.private.auto.tfvars
+    $chillbox_config_home/terraform-020-chillbox.private.auto.tfvars
+
+  Data:
+    $chillbox_data_home/encrypted-secrets
+    $chillbox_data_home/terraform_state_backup
+
+  State:
+    $chillbox_state_home/build_artifact_logs/
+    $chillbox_state_home/<other cache files and directories>
 
 HERE
 }
@@ -57,6 +79,7 @@ check_args_and_environment_vars() {
     [ "$sub_command" != "pull" ] && \
     [ "$sub_command" != "push" ] && \
     [ "$sub_command" != "clean" ] && \
+    [ "$sub_command" != "ansible" ] && \
     [ "$sub_command" != "secrets" ]; then
     echo "ERROR $script_name: This command ($sub_command) is not supported in this script."
     exit 1
@@ -119,7 +142,7 @@ init_and_source_chillbox_config() {
       gh_public_ssh_key_url="https://github.com/${gh_username}.keys"
       wget "$gh_public_ssh_key_url" -O - \
         | while read -r pub_ssh_key; do
-              printf "%s\n" "$("$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
+              printf "%s\n" "$(echo "$pub_ssh_key" | ssh-keygen -l -E sha256 -f - || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
           done
       pub_ssh_key_urls="$gh_public_ssh_key_url"
     fi
@@ -133,6 +156,15 @@ init_and_source_chillbox_config() {
         pub_ssh_key_files="$HOME/.ssh/id_rsa.pub"
       fi
     fi
+
+    # Generate the ssh key pair that will be used by ansible when connecting to
+    # the deployed chillbox server. This will also create the chillbox_local gpg
+    # key that encrypts the credentials used for the hosting service
+    # (DigitalOcean) and that ssh private key for ansible.
+    public_key_for_ansible="$chillbox_config_home/ansible.pem.pub"
+    "$project_dir/src/local/init-gnupg-keys.sh" "$public_key_for_ansible"
+    printf "%s\n" "$(ssh-keygen -l -E sha256 -f "$public_key_for_ansible" || echo "")" >> "$fingerprint_sha256_accept_list_tmp"
+
     fingerprint_sha256_accept_list="$(cat "$fingerprint_sha256_accept_list_tmp")"
     rm -f "$fingerprint_sha256_accept_list_tmp"
 
@@ -140,12 +172,12 @@ init_and_source_chillbox_config() {
 # Change the sites artifact URL to be an absolute file path (starting with a '/') or a URL to download from.
 # export SITES_ARTIFACT_URL="/absolute/path/to/site1-0.1-example-sites.tar.gz"
 # export SITES_ARTIFACT_URL="https://example.test/site1-0.1-example-sites.tar.gz"
-# Setting this to 'example' will just use the example site in $project_dir
+# Setting this to 'example' will use the example site in $project_dir/example directory.
 export SITES_ARTIFACT_URL="example"
 
 # The PUBLIC_SSH_KEY_LOCATIONS is a list of URLs or absolute file paths to the
 # public ssh keys that will be added to the deployed chillbox server.
-export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files"
+export PUBLIC_SSH_KEY_LOCATIONS="$pub_ssh_key_urls $pub_ssh_key_files $public_key_for_ansible"
 
 # Only include the public ssh keys that match the fingerprint in the accept
 # list. These are compared with the
@@ -159,14 +191,20 @@ export TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraf
 HERE
   fi
 
+  # Variables that are exported from the env config file.
+  # TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE
+  # TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE
+  # PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST
+  # PUBLIC_SSH_KEY_LOCATIONS
+  # SITES_ARTIFACT_URL
   # shellcheck source=/dev/null
   . "${env_config}"
 
   if [ ! -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" ] || [ ! -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" ]; then
     test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
+      || cp "$project_dir/example/chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
     test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
-      || cp "$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
+      || cp "$project_dir/example/chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars" "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE"
     printf "\n%s\n" "Example configuration files have been created. The files shown below should be updated using your text editor ($EDITOR)."
     printf "\n\n#### %s\n\n" "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
     cat "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE"
@@ -187,7 +225,32 @@ HERE
   fi
 }
 
+download_file() {
+  has_wget="$(command -v wget || echo "")"
+  has_wget=""
+  has_curl="$(command -v curl || echo "")"
+  remote_file_url="$1"
+  output_file="$2"
+  test -n "$remote_file_url" || (echo "ERROR $script_name: no remote file URL arg (first arg)" && exit 1)
+  test -n "$output_file" || (echo "ERROR $script_name: no output file arg (second arg)" && exit 1)
+  test ! -e "$output_file" || (echo "ERROR $script_name: output file already exists: $output_file" && exit 1)
+  if [ -n "$has_wget" ]; then
+    wget -q -O "$output_file" "$remote_file_url" \
+      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
+  elif [ -n "$has_curl" ]; then
+    curl --location --output "$output_file" --silent --show-error --fail "$remote_file_url" \
+      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
+  else
+    echo "ERROR $script_name: No wget or curl commands found."
+    exit 1
+  fi
+}
+
 create_example_site_tar_gz() {
+  # UPKEEP due: "2023-05-05" label: "chillbox example site (site1)" interval: "+4 months"
+  # https://github.com/jkenlooper/chillbox-example-site1/releases
+  example_site_version="0.1.0-alpha.8"
+
   printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
@@ -199,30 +262,34 @@ create_example_site_tar_gz() {
   echo "INFO $script_name: Continuing to use example sites artifact."
   tmp_example_sites_dir="$(mktemp -d)"
   trap 'rm -rf "$tmp_example_sites_dir"' EXIT
-  example_sites_version="$(make --silent --directory="$project_dir" inspect.VERSION)"
+  example_sites_version="$(make --silent --directory="$project_dir" --no-print-directory inspect.VERSION)"
   echo "example_sites_version ($example_sites_version)"
   export SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
   # Copy and modify the site json release field for this example site so it can
   # be a file path instead of the https://example.test/ URL.
-  cp -R "$project_dir/tests/fixtures/sites" "$tmp_example_sites_dir/"
-  site1_version="$(make --silent --directory="$project_dir/tests/fixtures/site1" inspect.VERSION)"
-  echo "site1_version ($site1_version)"
+  cp -R "$project_dir/example/sites" "$tmp_example_sites_dir/"
+  if [ ! -e "$chillbox_state_home/site1-$example_site_version.tar.gz" ]; then
+    echo "INFO $script_name: No local cached copy of example site1. Downloading new one from https://github.com/jkenlooper/chillbox-example-site1/releases"
+    download_file \
+      "https://github.com/jkenlooper/chillbox-example-site1/releases/download/$example_site_version/site1.tar.gz" \
+      "$chillbox_state_home/site1-$example_site_version.tar.gz"
+  fi
+  echo "INFO $script_name: Updating example site1.site.json to use $chillbox_state_home/site1-$example_site_version.tar.gz"
   jq \
-    --arg jq_release_file_path "$tmp_example_sites_dir/site1-$site1_version.tar.gz" \
+    --arg jq_release_file_path "$chillbox_state_home/site1-$example_site_version.tar.gz" \
     '.release |= $jq_release_file_path' \
-    < "$project_dir/tests/fixtures/sites/site1.site.json" \
+    < "$project_dir/example/sites/site1.site.json" \
     > "$tmp_example_sites_dir/sites/site1.site.json"
   tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
-  tar c -z -f "$tmp_example_sites_dir/site1-$site1_version.tar.gz" -C "$project_dir/tests/fixtures" site1
 }
 
 validate_environment_vars() {
   printf "\n\n%s\n" "INFO $script_name: Validating environment variables."
   test -n "${SITES_ARTIFACT_URL}" || (echo "ERROR $script_name: SITES_ARTIFACT_URL variable is empty" && exit 1)
   test -n "${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE:-}" \
-    || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
+    || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config. See the default file in the tests directory: '$project_dir/example/chillbox-config/$WORKSPACE/terraform-010-infra/example-private.auto.tfvars'." && exit 1)
   test -n "${TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE:-}" \
-    || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config.  See the default file in the tests directory: '$project_dir/tests/fixtures/example-chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars'." && exit 1)
+    || (echo "ERROR $script_name: The environment variable: TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE has not been set in $env_config.  See the default file in the tests directory: '$project_dir/example/chillbox-config/$WORKSPACE/terraform-020-chillbox/example-private.auto.tfvars'." && exit 1)
   test -f "$TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" \
     || (echo "ERROR $script_name: The environment variable: TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE is set to a file that doesn't exist: $TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE" && exit 1)
   test -f "$TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE" \
@@ -242,13 +309,16 @@ build_artifacts() {
   printf "\n\n%s\n" "INFO $script_name: Build artifacts locally for sites artifact $SITES_ARTIFACT_URL"
   mkdir -p "$chillbox_state_home"
 
+sites_artifact="$(basename "${SITES_ARTIFACT_URL}")"
+sites_artifact_file="$chillbox_state_home/$sites_artifact"
+
   # The artifacts are built locally by executing the src/local/build-artifacts.sh.
   SITES_ARTIFACT=""
   CHILLBOX_ARTIFACT=""
   SITES_MANIFEST=""
   build_artifacts_log_file=""
   output_env="$(mktemp)"
-  "${project_dir}/src/local/build-artifacts.sh" -s "$SITES_ARTIFACT_URL" -o "$output_env"
+  "${project_dir}/src/local/build-artifacts.sh" -s "$SITES_ARTIFACT_URL" -o "$output_env" || (echo "ERROR $script_name: The build-artifacts.sh failed. Removing the $sites_artifact_file if it exists to ensure a clean build." && rm -f "$sites_artifact_file" && exit 1)
   eval "$(jq -r '@sh "
       export SITES_ARTIFACT=\(.sites_artifact)
       export CHILLBOX_ARTIFACT=\(.chillbox_artifact)
@@ -306,6 +376,9 @@ while getopts "hw:i:" OPTION ; do
 done
 shift $((OPTIND - 1))
 sub_command=${1:-interactive}
+# Shift the sub_command off the $@ so any other args can be passed down to other
+# commands.
+test "$1" != "$sub_command" || shift 1
 
 export CHILLBOX_INSTANCE="$chillbox_instance"
 export WORKSPACE="$workspace"
@@ -340,8 +413,13 @@ if [ "$sub_command" = "interactive" ] || \
   printf "\n\n%s\n" "INFO $script_name: Dropping into terraform container with '$sub_command' sub command."
   "$project_dir/src/local/terra.sh" "$sub_command"
 
-  # TODO Run a src/local/ansible.sh script to run Ansible playbooks for the
-  # server.
+  # Always run the bootstrap playbook for ansible to init the chillbox server if
+  # it hasn't been done yet.
+  if [ "$sub_command" = "apply" ]; then
+    "$project_dir/src/local/ansible.sh" /usr/local/src/chillbox-ansible/bin/doit.sh -s playbook -- playbooks/bootstrap-chillbox-init-credentials.playbook.yml
+  elif [ "$sub_command" = "interactive" ]; then
+    "$project_dir/src/local/ansible.sh"
+  fi
 
 elif [ "$sub_command" = "clean" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command."
@@ -360,6 +438,12 @@ elif [ "$sub_command" = "secrets" ]; then
   printf "\n\n%s\n" "INFO $script_name: Executing '$sub_command' sub command to encrypt and upload secrets."
   "$project_dir/src/local/encrypt-and-upload-secrets.sh" -h
   "$project_dir/src/local/encrypt-and-upload-secrets.sh"
+
+elif [ "$sub_command" = "ansible" ]; then
+  # TODO Maybe show a list of playbooks and select which one to run?
+  # The default command to run in the ansible container is to bootstrap.
+
+  "$project_dir/src/local/ansible.sh" "$@"
 
 else
   echo "ERROR $script_name: the sub command '$sub_command' was not handled."

@@ -1,0 +1,195 @@
+{
+  "name": "Site One",
+  "release": "https://example.test/this_whole_string_is_replaced_with_an_absolute_file_path_in_terra.sh",
+  "contact": {
+    "owner": "site1@example.test",
+    "technical": "site1@example.test"
+  },
+  "server_name": "site1.example.chill.box",
+  "domain_list": [
+    "site1.example.chill.box"
+  ],
+  "env": [
+    {
+      "name": "CHILL_STATIC_EXAMPLE_TRY_FILES_LAST_PARAM",
+      "value": "=404"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_PATH",
+      "value": "/"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_HOST",
+      "value": "localhost"
+    },
+    {
+      "name": "CHILL_STATIC_EXAMPLE_PORT",
+      "value": "38011"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_PATH",
+      "value": "/dynamic/"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_PORT",
+      "value": "38012"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "CHILL_DYNAMIC_EXAMPLE_HOST",
+      "value": "localhost"
+    },
+    {
+      "name": "API_PATH",
+      "value": "/api/"
+    },
+    {
+      "name": "API_PORT",
+      "value": "38013"
+    },
+    {
+      "name": "API_SCHEME",
+      "value": "http"
+    },
+    {
+      "name": "API_HOST",
+      "value": "localhost"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_PORT",
+      "value": "38014"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_PATH",
+      "value": "/immutable-example/v1/$IMMUTABLE_EXAMPLE_HASH/"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_HOST",
+      "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_URL",
+      "value": "https://$IMMUTABLE_BUCKET_DOMAIN_NAME/$SLUGNAME/immutable/immutable-example/$IMMUTABLE_EXAMPLE_HASH/"
+    },
+    {
+      "name": "IMMUTABLE_EXAMPLE_HASH",
+      "value": "",
+      "cmd": "make --silent --directory=immutable-example --no-print-directory inspect.HASH"
+    },
+    {
+      "name": "PROXY_CACHE_VALID",
+      "value": "1y"
+    }
+  ],
+  "crontab": [
+    "13 5 * * 6 echo 'do something'"
+  ],
+  "services": [
+    {
+      "name": "immutable-example",
+      "lang": "immutable",
+      "handler": "immutable-example",
+      "environment": [
+        {
+          "name": "HOST",
+          "value": "$IMMUTABLE_EXAMPLE_HOST"
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "lang": "python",
+      "handler": "api",
+      "secrets_config": "api.secrets.cfg",
+      "secrets_export_dockerfile": "secrets.Dockerfile",
+      "niceness": 10,
+      "worker_class": "gevent",
+      "workers": 2,
+      "max_requests": 50,
+      "max_requests_jitter": 11,
+      "log_level": "debug",
+      "manifest": "MANIFEST",
+      "environment": [
+        {
+          "name": "HOST",
+          "value": "$API_HOST"
+        },
+        {
+          "name": "PORT",
+          "value": "$API_PORT"
+        },
+        {
+          "name": "FLASK_APP",
+          "value": "site1_api.app"
+        },
+        {
+          "name": "FLASK_DEBUG",
+          "value": "false"
+        },
+        {
+          "name": "FLASK_INSTANCE_PATH",
+          "value": "/var/lib/$SLUGNAME/api"
+        }
+      ]
+    },
+    {
+      "name": "chillstatic",
+      "lang": "chill",
+      "handler": "chill-static-example",
+      "manifest": "MANIFEST",
+      "environment": [
+        {
+          "name": "freeze",
+          "value": "true"
+        },
+        {
+          "name": "HOST",
+          "value": "$CHILL_STATIC_EXAMPLE_HOST"
+        },
+        {
+          "name": "CHILL_HOST",
+          "value": "localhost"
+        },
+        {
+          "name": "CHILL_PORT",
+          "value": "$CHILL_STATIC_EXAMPLE_PORT"
+        }
+      ]
+    },
+    {
+      "name": "chilldynamic",
+      "lang": "chill",
+      "handler": "chill-dynamic-example",
+      "manifest": "MANIFEST",
+      "environment": [
+        {
+          "name": "freeze",
+          "value": "false"
+        },
+        {
+          "name": "HOST",
+          "value": "$CHILL_DYNAMIC_EXAMPLE_HOST"
+        },
+        {
+          "name": "CHILL_HOST",
+          "value": "localhost"
+        },
+        {
+          "name": "CHILL_PORT",
+          "value": "$CHILL_DYNAMIC_EXAMPLE_PORT"
+        },
+        {
+          "name": "CHILL_PUBLIC_URL_PREFIX",
+          "value": "$CHILL_DYNAMIC_EXAMPLE_PATH"
+        }
+      ]
+    }
+  ]
+}

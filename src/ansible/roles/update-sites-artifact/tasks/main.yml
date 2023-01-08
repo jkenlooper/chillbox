@@ -1,0 +1,18 @@
+---
+# Replacing the chillbox.config will trigger the chillbox-trigger-update
+# service that runs the /etc/chillbox/bin/update.sh script.
+- name: Replace /etc/chillbox/chillbox.config
+  ansible.builtin.template:
+    backup: true
+    src: chillbox.config.jinja2
+    dest: /etc/chillbox/chillbox.config
+    force: true
+    group: chillconf
+    mode: '0660'
+
+# TODO Remove this task when the update.sh script properly stops running services.
+#- name: Reboot as workaround on update.sh not stopping processes
+#  become: true
+#  ansible.builtin.reboot:
+#    pre_reboot_delay: 30
+#    post_reboot_delay: 10

@@ -35,7 +35,7 @@ fi
 
 chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
-encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted_secrets}"
+encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted-secrets}"
 
 # TODO what variables does this script need?
 # Allow setting defaults from an env file
@@ -86,47 +86,47 @@ docker build \
   -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
   "${project_dir}/src/local/secrets"
 
-s3_download_gpg_pubkeys_image="chillbox-s3-download-gpg_pubkeys:latest"
-s3_download_gpg_pubkeys_container="chillbox-s3-download-gpg_pubkeys"
-docker rm "${s3_download_gpg_pubkeys_container}" || printf ""
-docker image rm "$s3_download_gpg_pubkeys_image" || printf ""
+s3_download_pubkeys_image="chillbox-s3-download-pubkeys:latest"
+s3_download_pubkeys_container="chillbox-s3-download-pubkeys"
+docker rm "${s3_download_pubkeys_container}" || printf ""
+docker image rm "$s3_download_pubkeys_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
-  -t "$s3_download_gpg_pubkeys_image" \
-  -f "${project_dir}/src/local/secrets/s3-download-gpg_pubkeys.Dockerfile" \
+  -t "$s3_download_pubkeys_image" \
+  -f "${project_dir}/src/local/secrets/s3-download-pubkeys.Dockerfile" \
   "${project_dir}/src/local/secrets"
+# Echo out something after a docker build to clear/reset the stdout.
+clear && echo "INFO $script_name: finished docker build of $s3_download_pubkeys_image"
 
-gpg_pubkey_dir="$(mktemp -d)"
+pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
 
 cleanup() {
   rm -rf "$tmp_sites_dir"
-  rm -rf "$gpg_pubkey_dir"
+  rm -rf "$pubkey_dir"
 }
 trap cleanup EXIT
 
 docker run \
   -i --tty \
   --rm \
-  --name "$s3_download_gpg_pubkeys_container" \
+  --name "$s3_download_pubkeys_container" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=true" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=bind,src=$gpg_pubkey_dir,dst=/var/lib/gpg_pubkey" \
+  --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_download_gpg_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of gpg pubkeys."
+  "$s3_download_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
+# Echo out something after a docker run to clear/reset the stdout.
+clear && echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
 
-# TODO Remove temporary local gpg pubkeys
-echo "TODO: Adding temporary local gpg pubkey 'chillbox-temp-local'"
-gpg --yes --armor --output "$gpg_pubkey_dir/chillbox-temp-local.gpg" --export "chillbox-temp-local"
-echo "TODO: Adding temporary local gpg pubkey 'chillbox'"
-gpg --yes --armor --output "$gpg_pubkey_dir/chillbox.gpg" --export "chillbox"
+# Provide encrypt-file script for the service handler container to use.
+cp "$project_dir/src/local/secrets/encrypt-file" "$pubkey_dir"
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
 chmod --recursive u+rw "$tmp_sites_dir"
-
 
 site_json_files="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 for site_json in $site_json_files; do
@@ -143,18 +143,25 @@ for site_json in $site_json_files; do
     service_handler="$(echo "$service_obj" | jq -r '.handler')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
     test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
-    encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/${secrets_config}.asc"
-    encrypted_secret_service_dir="$(dirname "$encrypted_secret_file")"
 
+    encrypted_secret_service_dir="$encrypted_secrets_dir/$slugname/$service_handler"
     mkdir -p "$encrypted_secret_service_dir"
 
-    if [ -e "$encrypted_secret_file" ]; then
-      echo "The encrypted file for $slugname $service_handler already exists: $encrypted_secret_file"
-      echo "Replace this file? y/n"
-      read -r replace_secret_file
-      test "$replace_secret_file" = "y" || continue
-    fi
-    rm -f "$encrypted_secret_file"
+    chillbox_hostnames="$(find "$pubkey_dir" -depth -maxdepth 1 -type f -name '*.public.pem' -exec basename {} .public.pem \;)"
+    replace_secret_files=""
+    for chillbox_hostname in $chillbox_hostnames; do
+      encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/$chillbox_hostname/$secrets_config"
+
+      if [ -e "$encrypted_secret_file" ]; then
+        echo "The encrypted file $slugname/$service_handler/$chillbox_hostname/$secrets_config already exists in $encrypted_secrets_dir"
+        echo "Replace this file? y/n"
+        read -r replace_secret_file
+        test "$replace_secret_file" = "y" || continue
+      fi
+      replace_secret_files="y"
+    done
+    test "$replace_secret_files" = "y" || continue
+    find "$encrypted_secrets_dir/$slugname/$service_handler" -depth -mindepth 2 -maxdepth 2 -type f -delete
 
     tmp_service_dir="$(mktemp -d)"
     tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
@@ -165,13 +172,13 @@ for site_json in $site_json_files; do
     tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$no_metadata_version-$service_handler"
     tmpfs_dir="/run/tmp/$service_image_name"
     service_persistent_dir="/var/lib/$slugname-$service_handler"
-    chillbox_gpg_pubkey_dir="/var/lib/chillbox_gpg_pubkey"
+    chillbox_pubkey_dir="/var/lib/chillbox/public-keys"
 
     docker image rm "$service_image_name" || printf ""
     export DOCKER_BUILDKIT=1
     docker build \
       --build-arg SECRETS_CONFIG="$secrets_config" \
-      --build-arg CHILLBOX_GPG_PUBKEY_DIR="$chillbox_gpg_pubkey_dir" \
+      --build-arg CHILLBOX_PUBKEY_DIR="$chillbox_pubkey_dir" \
       --build-arg TMPFS_DIR="$tmpfs_dir" \
       --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
       --build-arg SLUGNAME="$slugname" \
@@ -180,22 +187,33 @@ for site_json in $site_json_files; do
       -t "$service_image_name" \
       -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" \
       "$tmp_service_dir/$slugname/$service_handler/"
+    # Echo out something after a docker build to clear/reset the stdout.
+    clear && echo "INFO $script_name: finished docker build of $service_image_name"
 
+    clear && echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile"
     docker run \
       -i --tty \
       --rm \
       --name "$tmp_container_name" \
       --mount "type=tmpfs,dst=$tmpfs_dir" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
-      --mount "type=bind,src=$gpg_pubkey_dir,dst=$chillbox_gpg_pubkey_dir,readonly=true" \
-      "$service_image_name"
+      --mount "type=bind,src=$pubkey_dir,dst=$chillbox_pubkey_dir,readonly=true" \
+      "$service_image_name" || (
+        exitcode="$?"
+        echo "docker exited with $exitcode exitcode. Continue? [y/n]"
+        read -r docker_continue_confirm
+        test "$docker_continue_confirm" = "y" || exit $exitcode
+      )
 
     docker run \
       -d \
       --name "$tmp_container_name-sleeper" \
       --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
-      "$sleeper_image"
-    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted_secrets/." "$encrypted_secret_service_dir/"
+      "$sleeper_image" || (
+        exitcode="$?"
+        echo "docker exited with $exitcode exitcode. Ignoring"
+      )
+    docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted-secrets/." "$encrypted_secret_service_dir/" || echo "Ignore docker cp error."
     docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
     docker rm "$tmp_container_name-sleeper" || printf ""
 
@@ -220,9 +238,9 @@ docker run \
   --name "$s3_upload_encrypted_secrets_container" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
-  --mount "type=volume,src=chillbox-terraform-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
+  --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
   --mount "type=volume,src=chillbox-terraform-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/doterra,readonly=false" \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
-  --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted_secrets" \
+  --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted-secrets" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
   "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")

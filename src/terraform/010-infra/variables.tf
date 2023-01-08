@@ -25,12 +25,6 @@ variable "do_chillbox_spaces_secret_access_key" {
   sensitive   = true
 }
 
-variable "chillbox_gpg_passphrase" {
-  type        = string
-  description = "GPG key is created on the chillbox server; set the passphrase for it here. Keep this secure and use best practices when using these."
-  sensitive   = true
-}
-
 variable "bucket_region" {
   type        = string
   description = "Bucket region."
@@ -89,13 +83,32 @@ variable "tech_email" {
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
 }
 
+variable "acme_server" {
+  description = "The ACME (Automated Certificate Management Environment) server to use when acme.sh is getting certificates. See the acme.sh wiki https://github.com/acmesh-official/acme.sh/wiki/Server for valid values."
+  type        = string
+  default     = "letsencrypt_test"
+}
+
 variable "sites_artifact" {
   description = "The sites artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.sites_artifact))
+    error_message = "The filename needs to end with '.tar.gz' and only have versioned filename characters."
+  }
 }
 variable "chillbox_artifact" {
   description = "The chillbox artifact file."
   type        = string
+  validation {
+    condition     = can(regex("^chillbox\\.[a-zA-Z0-9+_.-]+\\.tar\\.gz$", var.chillbox_artifact))
+    error_message = "The filename needs to start with 'chillbox.' and end with '.tar.gz' and only have versioned filename characters."
+  }
+}
+variable "sites_manifest" {
+  type        = string
+  description = "The sites manifest."
+  default     = "dist/sites.manifest.json"
 }
 variable "domain" {
   default     = "example.com"
@@ -114,4 +127,20 @@ variable "sub_domain" {
     condition     = can(regex("|[a-zA-Z0-9_][a-zA-Z0-9._-]+[a-zA-Z0-9_]\\.", var.sub_domain))
     error_message = "The sub domain must be blank or be a valid sub domain label. The last character should be a '.' since it will be prepended to the domain variable."
   }
+}
+
+variable "chillbox_count" {
+  default     = 1
+  description = "Chillbox server count. Added here so any resources for individual chillbox servers can be made before hand."
+  type        = number
+  validation {
+    # TODO Future feature is to support scaling out with a load balancer.
+    condition     = can(var.chillbox_count <= 1)
+    error_message = "Only 0 or 1 values accepted; otherwise a load balancer should be used."
+  }
+}
+
+variable "GPG_KEY_NAME" {
+  type        = string
+  description = "Gnupg key name."
 }

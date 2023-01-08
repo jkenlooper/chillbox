@@ -14,11 +14,4 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$tmp_dir"
-# The manifest file will include every file in the project with the exception of
-# git specific files.
-find . \
-  -type f \
-  -not -path './.git/*' \
-  -not -path './.github/*' \
-  -not -name '.gitignore' \
-  > "$working_dir/build/MANIFEST"
+./build/list-manifest-files.sh > "$working_dir/build/MANIFEST"
