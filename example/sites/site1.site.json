@@ -11,39 +11,39 @@
   ],
   "env": [
     {
-      "name": "CHILL_STATIC_EXAMPLE_TRY_FILES_LAST_PARAM",
+      "name": "CHILL_STATIC_TRY_FILES_LAST_PARAM",
       "value": "=404"
     },
     {
-      "name": "CHILL_STATIC_EXAMPLE_PATH",
+      "name": "CHILL_STATIC_PATH",
       "value": "/"
     },
     {
-      "name": "CHILL_STATIC_EXAMPLE_SCHEME",
+      "name": "CHILL_STATIC_SCHEME",
       "value": "http"
     },
     {
-      "name": "CHILL_STATIC_EXAMPLE_HOST",
+      "name": "CHILL_STATIC_HOST",
       "value": "localhost"
     },
     {
-      "name": "CHILL_STATIC_EXAMPLE_PORT",
+      "name": "CHILL_STATIC_PORT",
       "value": "38011"
     },
     {
-      "name": "CHILL_DYNAMIC_EXAMPLE_PATH",
+      "name": "CHILL_DYNAMIC_PATH",
       "value": "/dynamic/"
     },
     {
-      "name": "CHILL_DYNAMIC_EXAMPLE_PORT",
+      "name": "CHILL_DYNAMIC_PORT",
       "value": "38012"
     },
     {
-      "name": "CHILL_DYNAMIC_EXAMPLE_SCHEME",
+      "name": "CHILL_DYNAMIC_SCHEME",
       "value": "http"
     },
     {
-      "name": "CHILL_DYNAMIC_EXAMPLE_HOST",
+      "name": "CHILL_DYNAMIC_HOST",
       "value": "localhost"
     },
     {
@@ -151,7 +151,7 @@
         },
         {
           "name": "HOST",
-          "value": "$CHILL_STATIC_EXAMPLE_HOST"
+          "value": "$CHILL_STATIC_HOST"
         },
         {
           "name": "CHILL_HOST",
@@ -159,7 +159,7 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "$CHILL_STATIC_EXAMPLE_PORT"
+          "value": "$CHILL_STATIC_PORT"
         }
       ]
     },
@@ -175,7 +175,7 @@
         },
         {
           "name": "HOST",
-          "value": "$CHILL_DYNAMIC_EXAMPLE_HOST"
+          "value": "$CHILL_DYNAMIC_HOST"
         },
         {
           "name": "CHILL_HOST",
@@ -183,11 +183,11 @@
         },
         {
           "name": "CHILL_PORT",
-          "value": "$CHILL_DYNAMIC_EXAMPLE_PORT"
+          "value": "$CHILL_DYNAMIC_PORT"
         },
         {
           "name": "CHILL_PUBLIC_URL_PREFIX",
-          "value": "$CHILL_DYNAMIC_EXAMPLE_PATH"
+          "value": "$CHILL_DYNAMIC_PATH"
         }
       ]
     }

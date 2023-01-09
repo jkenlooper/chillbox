@@ -21,6 +21,7 @@ for site_json in $sites; do
     set -- "$@" --domain "$domain"
   done
 
+  set -x
   acme.sh --issue \
     --server "$ACME_SERVER" \
     "$@" \
@@ -32,4 +33,5 @@ for site_json in $sites; do
     --cert-file "/var/lib/acmesh/$slugname.cer" \
     --key-file "/var/lib/acmesh/$slugname.key" \
     --reloadcmd 'nginx -t && rc-service nginx reload'
+  set +x
 done

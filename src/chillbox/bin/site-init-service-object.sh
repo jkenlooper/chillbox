@@ -68,13 +68,13 @@ eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$SLUGNAME" '@sh "
 service_secrets_config_file=""
 
 if [ -n "$service_secrets_config" ]; then
-  service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config"
+  service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config"
   service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
   mkdir -p "$service_secrets_config_dir"
   chown -R "$SLUGNAME":dev "$service_secrets_config_dir"
   chmod -R 770 "$service_secrets_config_dir"
 
-  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_handler/$service_secrets_config"
+  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_name/$service_secrets_config"
 fi
 # Need to check if this secrets config file was successfully downloaded since it
 # might not exist yet. Secrets are added to the s3 bucket in a different process.
@@ -89,10 +89,10 @@ fi
 
 # Extract just the new service handler directory from the tmp_artifact
 cd "$(dirname "$slugdir")"
-tar x -z -f "$tmp_artifact" "$SLUGNAME/${service_handler}"
+tar x -z -f "$tmp_artifact" "$SLUGNAME/$service_name"
 chown -R "$SLUGNAME":"$SLUGNAME" "$slugdir"
 # Save the service object for later use when updating or removing the service.
-echo "$service_obj" | jq -c '.' > "$slugdir/$service_handler.service_handler.json"
+echo "$service_obj" | jq -c '.' > "$slugdir/$service_name.service.json"
 
 eval "$(jq -r '.env // [] | .[] | "export " + .name + "=" + (.value | @sh)' "/etc/chillbox/sites/$SLUGNAME.site.json" \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json")"
@@ -103,29 +103,29 @@ freeze=""
 eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .name + "=" + (.value | @sh)' \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json")"
 
-cd "$slugdir/${service_handler}"
+cd "$slugdir/${service_name}"
 # This should support any WSGI or ASGI python applications.
 if [ "${service_lang_template}" = "python" ]; then
 
-  mkdir -p "/var/lib/${SLUGNAME}/${service_handler}"
+  mkdir -p "/var/lib/${SLUGNAME}/${service_name}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
   python -m venv .venv
   # Support gunicorn with option to use gevent.
   # TODO Support uvicorn for ASGI python apps.
-  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
+  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     --find-links /var/lib/chillbox/python \
     'gunicorn[gevent,setproctitle]'
   # The requirements.txt file should include find-links that are relative to the
-  # service_handler directory. Ideally, this is where the deps/ directory is
+  # service_name directory. Ideally, this is where the deps/ directory is
   # used.
-  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
+  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
-    -r "$slugdir/$service_handler/requirements.txt"
-  "$slugdir/$service_handler/.venv/bin/pip" install --disable-pip-version-check --compile \
+    -r "$slugdir/$service_name/requirements.txt"
+  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
-    "$slugdir/$service_handler"
+    "$slugdir/$service_name"
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 
@@ -163,7 +163,7 @@ PURR
   cat <<PURR
 #!/usr/bin/execlineb -P
 s6-setuidgid $SLUGNAME
-cd $slugdir/${service_handler}
+cd $slugdir/${service_name}
 PURR
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
@@ -177,9 +177,9 @@ s6-env ARTIFACT_BUCKET_NAME=${ARTIFACT_BUCKET_NAME}
 s6-env IMMUTABLE_BUCKET_NAME=${IMMUTABLE_BUCKET_NAME}
 fdmove -c 2 1
 nice -n $service_niceness
-$slugdir/${service_handler}/.venv/bin/gunicorn \
+$slugdir/${service_name}/.venv/bin/gunicorn \
     --name ${SLUGNAME}_${service_name}_app \
-    --chdir $slugdir/${service_handler} \
+    --chdir $slugdir/${service_name} \
     --workers $service_workers \
     --worker-class $service_worker_class \
     --max-requests $service_max_requests \
@@ -233,10 +233,10 @@ elif [ "${service_lang_template}" = "chill" ]; then
   su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name ''chill-*.yaml'' -exec chill load --yaml {} \;'
 
   if [ "${freeze}" = "true" ]; then
-    echo "INFO $script_name: freeze - $SLUGNAME $service_name $service_handler"
+    echo "INFO $script_name: freeze - $SLUGNAME $service_name $service_name"
     su -p -s /bin/sh "$SLUGNAME" -c 'chill freeze'
   else
-    echo "INFO $script_name: dynamic - $SLUGNAME $service_name $service_handler"
+    echo "INFO $script_name: dynamic - $SLUGNAME $service_name $service_name"
 
     # Only for openrc
     mkdir -p /etc/init.d
@@ -260,7 +260,7 @@ PURR
 #!/usr/bin/execlineb -P
 pipeline {
 s6-setuidgid "$SLUGNAME"
-cd "$slugdir/${service_handler}"
+cd "$slugdir/${service_name}"
 MEOW
 jq -r '.env // [] | .[] | "s6-env " + .name + "=" + .value' "/etc/chillbox/sites/$SLUGNAME.site.json" \
   | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"

@@ -23,10 +23,10 @@ cd "$(dirname "${slugdir}")"
 echo "INFO $script_name: Stopping site services for: ${SLUGNAME}"
 
 # Stop all services in the $SLUGNAME directory and make backups
-find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler.json' \
-  | while read -r existing_service_handler; do
-    echo "INFO $script_name: Stopping existing service handler: $existing_service_handler"
-    test -f "${existing_service_handler}" || (echo "ERROR $script_name: Failed to read file '${existing_service_handler}'" && exit 1)
+find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service.json' \
+  | while read -r existing_service; do
+    echo "INFO $script_name: Stopping existing service handler: $existing_service"
+    test -f "${existing_service}" || (echo "ERROR $script_name: Failed to read file '${existing_service}'" && exit 1)
     service_name=""
     service_lang_template=""
     service_handler=""
@@ -36,7 +36,7 @@ find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler
     service_lang_template=\(.lang)
     service_handler=\(.handler)
     service_secrets_config=\(.secrets_config)
-    "' "$existing_service_handler")"
+    "' "$existing_service")"
     echo "$service_lang_template"
     rc-service "${SLUGNAME}-${service_name}" stop || printf "Ignoring"
     # TODO Stopping the service doesn't work correctly. Need to configure the s6
@@ -45,20 +45,20 @@ find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service_handler
     rm -f "/etc/init.d/${SLUGNAME}-${service_name}" || printf "Ignoring"
     rm -rf "/etc/services.d/${SLUGNAME}-${service_name}" || printf "Ignoring"
 
-    rm -rf "$slugdir/${service_handler}.bak.tar.gz"
-    rm -rf "$slugdir/${service_handler}.service_handler.json.bak"
-    mv "$slugdir/${service_handler}.service_handler.json" "$slugdir/${service_handler}.service_handler.json.bak"
-    test -e "$slugdir/${service_handler}" \
-      && tar c -f "$slugdir/${service_handler}.bak.tar.gz" "$SLUGNAME/${service_handler}" \
-      || echo "INFO $script_name: No existing $slugdir/${service_handler} directory to backup"
+    rm -rf "$slugdir/${service_name}.bak.tar.gz"
+    rm -rf "$slugdir/${service_name}.service.json.bak"
+    mv "$slugdir/${service_name}.service.json" "$slugdir/${service_name}.service.json.bak"
+    test -e "$slugdir/${service_name}" \
+      && tar c -f "$slugdir/${service_name}.bak.tar.gz" "$SLUGNAME/${service_name}" \
+      || echo "INFO $script_name: No existing $slugdir/${service_name} directory to backup"
 
     # Stopping the service will require removing any secrets config file as
     # well. A new one should be downloaded from s3 and decrypted to start the
     # service back up.
-    if [ -e "/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config" ]; then
-      echo "INFO $script_name: Shredding /run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config file"
-      shred -fu "/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config" \
-        || rm -f "/run/tmp/chillbox_secrets/$SLUGNAME/$service_handler/$service_secrets_config"
+    if [ -e "/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config" ]; then
+      echo "INFO $script_name: Shredding /run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config file"
+      shred -fu "/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config" \
+        || rm -f "/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config"
     fi
 done
 

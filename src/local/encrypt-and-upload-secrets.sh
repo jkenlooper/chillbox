@@ -141,19 +141,20 @@ for site_json in $site_json_files; do
     secrets_config="$(echo "$service_obj" | jq -r '.secrets_config // ""')"
     test -n "$secrets_config" || continue
     service_handler="$(echo "$service_obj" | jq -r '.handler')"
+    service_name="$(echo "$service_obj" | jq -r '.name')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
     test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
 
-    encrypted_secret_service_dir="$encrypted_secrets_dir/$slugname/$service_handler"
+    encrypted_secret_service_dir="$encrypted_secrets_dir/$slugname/$service_name"
     mkdir -p "$encrypted_secret_service_dir"
 
     chillbox_hostnames="$(find "$pubkey_dir" -depth -maxdepth 1 -type f -name '*.public.pem' -exec basename {} .public.pem \;)"
     replace_secret_files=""
     for chillbox_hostname in $chillbox_hostnames; do
-      encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_handler/$chillbox_hostname/$secrets_config"
+      encrypted_secret_file="$encrypted_secrets_dir/$slugname/$service_name/$chillbox_hostname/$secrets_config"
 
       if [ -e "$encrypted_secret_file" ]; then
-        echo "The encrypted file $slugname/$service_handler/$chillbox_hostname/$secrets_config already exists in $encrypted_secrets_dir"
+        echo "The encrypted file $slugname/$service_name/$chillbox_hostname/$secrets_config already exists in $encrypted_secrets_dir"
         echo "Replace this file? y/n"
         read -r replace_secret_file
         test "$replace_secret_file" = "y" || continue
@@ -161,17 +162,17 @@ for site_json in $site_json_files; do
       replace_secret_files="y"
     done
     test "$replace_secret_files" = "y" || continue
-    find "$encrypted_secrets_dir/$slugname/$service_handler" -depth -mindepth 2 -maxdepth 2 -type f -delete
+    find "$encrypted_secrets_dir/$slugname/$service_name" -depth -mindepth 2 -maxdepth 2 -type f -delete
 
     tmp_service_dir="$(mktemp -d)"
-    tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_handler}"
+    tar x -z -f "$chillbox_state_home/sites/$slugname/$slugname-$version.artifact.tar.gz" -C "$tmp_service_dir" "$slugname/${service_name}"
 
-    test -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" && exit 1)
+    test -f "$tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile" || (echo "ERROR: No secrets export dockerfile extracted at path: $tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile" && exit 1)
 
-    service_image_name="$slugname-$no_metadata_version-$service_handler-$CHILLBOX_INSTANCE-$WORKSPACE"
-    tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$no_metadata_version-$service_handler"
+    service_image_name="$slugname-$no_metadata_version-$service_name-$CHILLBOX_INSTANCE-$WORKSPACE"
+    tmp_container_name="$(basename "$tmp_service_dir")-$slugname-$no_metadata_version-$service_name"
     tmpfs_dir="/run/tmp/$service_image_name"
-    service_persistent_dir="/var/lib/$slugname-$service_handler"
+    service_persistent_dir="/var/lib/$slugname-$service_name"
     chillbox_pubkey_dir="/var/lib/chillbox/public-keys"
 
     docker image rm "$service_image_name" || printf ""
@@ -183,20 +184,20 @@ for site_json in $site_json_files; do
       --build-arg SERVICE_PERSISTENT_DIR="$service_persistent_dir" \
       --build-arg SLUGNAME="$slugname" \
       --build-arg VERSION="$version" \
-      --build-arg SERVICE_HANDLER="$service_handler" \
+      --build-arg SERVICE_NAME="$service_name" \
       -t "$service_image_name" \
-      -f "$tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile" \
-      "$tmp_service_dir/$slugname/$service_handler/"
+      -f "$tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile" \
+      "$tmp_service_dir/$slugname/$service_name/"
     # Echo out something after a docker build to clear/reset the stdout.
     clear && echo "INFO $script_name: finished docker build of $service_image_name"
 
-    clear && echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_handler/$secrets_export_dockerfile"
+    clear && echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile"
     docker run \
       -i --tty \
       --rm \
       --name "$tmp_container_name" \
       --mount "type=tmpfs,dst=$tmpfs_dir" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_name,dst=$service_persistent_dir" \
       --mount "type=bind,src=$pubkey_dir,dst=$chillbox_pubkey_dir,readonly=true" \
       "$service_image_name" || (
         exitcode="$?"
@@ -208,7 +209,7 @@ for site_json in $site_json_files; do
     docker run \
       -d \
       --name "$tmp_container_name-sleeper" \
-      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_handler,dst=$service_persistent_dir" \
+      --mount "type=volume,src=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE-$slugname-$service_name,dst=$service_persistent_dir" \
       "$sleeper_image" || (
         exitcode="$?"
         echo "docker exited with $exitcode exitcode. Ignoring"

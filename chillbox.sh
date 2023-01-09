@@ -249,9 +249,9 @@ download_file() {
 }
 
 create_example_site_tar_gz() {
-  # UPKEEP due: "2023-05-05" label: "chillbox example site (site1)" interval: "+4 months"
+  # UPKEEP due: "2023-05-09" label: "chillbox example site (site1)" interval: "+4 months"
   # https://github.com/jkenlooper/chillbox-example-site1/releases
-  example_site_version="0.1.0-alpha.8"
+  example_site_version="0.1.0-alpha.9"
 
   printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"

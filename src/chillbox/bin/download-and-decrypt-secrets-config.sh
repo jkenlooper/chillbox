@@ -8,7 +8,7 @@ script_name="$(basename "$0")"
 test -n "${SLUGNAME}" || (echo "ERROR $script_name: SLUGNAME variable is empty" && exit 1)
 echo "INFO $script_name: Using slugname '${SLUGNAME}'"
 
-# $SLUGNAME/$service_handler/$service_secrets_config
+# $SLUGNAME/$service_name/$service_secrets_config
 service_secrets_config_path="$1"
 test -n "$service_secrets_config_path" || (echo "ERROR $0: No arg passed in for service secrets config path. Exiting" && exit 1)
 service_secrets_config_file_name="$(basename "$service_secrets_config_path")"

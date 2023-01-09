@@ -51,7 +51,7 @@ setup() {
 
   service_obj="$(jq -c '.services[0]' "${BATS_TEST_DIRNAME}"/fixtures/sites/site1.site.json)"
   # Make an existing service handler dir and json file
-  echo $service_obj | jq -c '.' > $slugdir/api.service_handler.json
+  echo $service_obj | jq -c '.' > $slugdir/api.service.json
   mkdir -p $slugdir/api
   touch $slugdir/api/fake-file1
   touch $slugdir/api/fake-file2
@@ -60,8 +60,8 @@ setup() {
 }
 
 teardown() {
-	rm -f $slugdir/api.service_handler.json
-	rm -f $slugdir/api.service_handler.json.bak
+	rm -f $slugdir/api.service.json
+	rm -f $slugdir/api.service.json.bak
   rm -f $slugdir/api.bak.tar.gz
 
   rm -f $BATS_RUN_TMPDIR/rc-service
@@ -116,8 +116,8 @@ main() {
   test "$(mock_get_call_num "${mock_rc_service}")" -eq 1
   test "$(mock_get_call_num "${mock_rc_update}")" -eq 1
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a backup $slugdir/api.service_handler.json.bak" >&3
-  test -f $slugdir/api.service_handler.json.bak
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a backup $slugdir/api.service.json.bak" >&3
+  test -f $slugdir/api.service.json.bak
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates a backup $slugdir/api.bak.tar.gz" >&3
   test -f $slugdir/api.bak.tar.gz
