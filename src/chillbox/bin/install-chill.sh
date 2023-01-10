@@ -3,6 +3,7 @@
 set -o errexit
 
 # UPKEEP due: "2022-11-09" label: "chill version" interval: "+4 months"
+# TODO use chill 0.10.x
 chill_version="0.9.0"
 
 # Prevent reinstalling chill by checking the version.
@@ -32,8 +33,10 @@ ln -s -f /usr/bin/python3 /usr/bin/python
 
 # Output the python version to verify tests.
 python --version
-pip install --upgrade --quiet pip
+# TODO Use a venv and not root when using pip install
+python -m pip install --upgrade --quiet pip
 echo "INFO $0: Installing chill version $chill_version"
+# TODO Install from local dep directory
 python -m pip install --quiet --disable-pip-version-check "chill==$chill_version"
 
 # Output the chill version to verify tests.

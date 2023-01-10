@@ -229,13 +229,14 @@ HERE
 
 download_file() {
   has_wget="$(command -v wget || echo "")"
-  has_wget=""
   has_curl="$(command -v curl || echo "")"
   remote_file_url="$1"
   output_file="$2"
   test -n "$remote_file_url" || (echo "ERROR $script_name: no remote file URL arg (first arg)" && exit 1)
   test -n "$output_file" || (echo "ERROR $script_name: no output file arg (second arg)" && exit 1)
   test ! -e "$output_file" || (echo "ERROR $script_name: output file already exists: $output_file" && exit 1)
+  output_file_dir="$(dirname "$output_file")"
+  mkdir -p "$output_file_dir"
   if [ -n "$has_wget" ]; then
     wget -q -O "$output_file" "$remote_file_url" \
       || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)

@@ -11,10 +11,10 @@ ACME_SERVER=${ACME_SERVER:-$1}
 test -n "${ACME_SERVER}" || (echo "ERROR $0: ACME_SERVER variable is empty" && exit 1)
 echo "INFO $0: Using ACME_SERVER '${ACME_SERVER}'"
 
-# UPKEEP due: "2022-11-14" label: "Update acme.sh version" interval: "+3 months"
+# UPKEEP due: "2023-04-10" label: "Update acme.sh version" interval: "+3 months"
 # https://github.com/acmesh-official/acme.sh/releases
-acme_sh_version="3.0.4"
-acme_sh_checksum="919987ac026366d245fa2730edf1212deafb051129811f35b482a30af9b0034a802baa218a35048e030795127cfeae03b4c3d4f12e580cd82edbacdd72e588e7"
+acme_sh_version="3.0.5"
+acme_sh_checksum="882768c84182a8b11f4f315a9b429cd84399145a97b64772a42e0c7fc478c6c5f93a6c73289410b4d2108786a7c275e99f2e47991bdca315fd7d80a4282eefc9"
 echo "INFO $0: Installing letsencrypt acme.sh version $acme_sh_version"
 mkdir -p /usr/local/bin/
 cd /usr/local/bin/
@@ -29,6 +29,8 @@ echo "$acme_sh_checksum  $tmp_acme_tar" | sha512sum --strict -c \
     && exit 1 \
     )
 tar x -z -f "$tmp_acme_tar" --strip-components 1 "acme.sh-$acme_sh_version/acme.sh"
+
+# acme.sh requires the 'socat' command
 
 #mkdir -p /etc/acmesh
 #mkdir -p /etc/acmesh/certs

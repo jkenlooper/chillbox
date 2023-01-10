@@ -73,7 +73,7 @@ resource "random_string" "chillbox_ansibledev_pass" {
   min_numeric = 13
 
   provisioner "local-exec" {
-    command    = "openssl passwd -6 '${self[count.index].result}' > /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
+    command    = "openssl passwd -6 '${self.result}' > /var/lib/terraform-010-infra/chillbox_ansibledev_pass_hashed-${count.index}"
     on_failure = fail
   }
   provisioner "local-exec" {

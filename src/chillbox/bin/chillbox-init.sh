@@ -147,6 +147,9 @@ apk update
 apk upgrade
 apk add sed attr grep coreutils jq entr
 
+# Include socat for acme.sh
+apk add socat
+
 # Need to use passwd command from the shadow-utils so the password can be set to
 # expire.
 apk add shadow
