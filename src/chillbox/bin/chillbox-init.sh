@@ -147,14 +147,12 @@ apk update
 apk upgrade
 apk add sed attr grep coreutils jq entr
 
-# Include socat for acme.sh
-apk add socat
-
 # Need to use passwd command from the shadow-utils so the password can be set to
 # expire.
 apk add shadow
 
 apk add gnupg gnupg-dirmngr
+apk add openssl
 
 # Add other tools that are helpful when troubleshooting.
 apk add mandoc man-pages docs
@@ -346,10 +344,14 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox --strip-components 1 nginx
 mkdir -p /etc/chillbox/bin
 tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 bin
 
+# dep/ -> /var/lib/chillbox/python/
+mkdir -p /var/lib/chillbox/python
+tar x -z -f "$tmp_chillbox_artifact" -C /var/lib/chillbox/python --strip-components 1 dep
+
 ## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
-/etc/chillbox/bin/install-acme.sh
+/etc/chillbox/bin/install-certbot.sh
 
 ## Compile deno scripts and install in the /etc/chillbox/bin directory.
 # The deno scripts have been replaced with shell scripts that wrap around the
@@ -404,7 +406,6 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 n
 /etc/chillbox/bin/site-init.sh
 /etc/chillbox/bin/reload-templates.sh
 
-## acme.sh certs
 /etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh || echo "ERROR (ignored): Failed to run issue-and-install-letsencrypt-certs.sh"
 
 nginx -t

@@ -14,4 +14,9 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$tmp_dir"
+
+# The python packages are not tracked by git and need to be created.
+"$working_dir/build/update-dep.sh"
+cp -R "$working_dir"/src/chillbox/dep/* "$tmp_dir/src/chillbox/dep/"
+
 ./build/list-manifest-files.sh > "$working_dir/build/MANIFEST"

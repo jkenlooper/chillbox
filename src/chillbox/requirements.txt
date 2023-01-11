@@ -1,0 +1,11 @@
+# Update this file and run the build/update-dep.sh script to download
+# dependencies to the src/chillbox/dep/ directory and create the
+# src/chillbox/requirements.txt file.
+
+
+# UPKEEP due: "2023-04-10" label: "Update certbot version" interval: "+3 months"
+certbot==2.1.0
+
+# UPKEEP due: "2022-11-09" label: "chill version" interval: "+4 months"
+# TODO use chill 0.10.x
+#chill==0.10.0

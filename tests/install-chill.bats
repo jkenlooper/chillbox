@@ -22,7 +22,7 @@ main() {
   # docker 'bash:latest' base image which is alpine 3.15. Alpine 3.15 uses
   # python 3.9. Only check that at least python 3 has been installed.
   assert_output --partial "Python 3"
-  assert_output --partial "Chill 0.9.0"
+  assert_output --partial "Chill 0.10."
   assert_success
 }
 
@@ -30,6 +30,6 @@ main() {
   run main
   assert_output --partial "Skipping reinstall of chill version"
   assert_output --partial "Python 3"
-  assert_output --partial "Chill 0.9.0"
+  assert_output --partial "Chill 0.10."
   assert_success
 }
