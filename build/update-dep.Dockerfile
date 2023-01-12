@@ -125,13 +125,13 @@ RUN <<UPDATE_REQUIREMENTS
 # container.
 set -o errexit
 # Change to the app directory so the find-links can be relative.
-cd /home/dev/app
+cd /home/dev/app/dep
 pip-compile --generate-hashes \
     --resolver=backtracking \
     --allow-unsafe \
-    --no-index --find-links="./dep" \
-    --output-file ./dep/requirements.txt \
-    ./requirements.txt
+    --no-index --find-links="." \
+    --output-file ./requirements.txt \
+    ../requirements.txt
 UPDATE_REQUIREMENTS
 
 RUN <<AUDIT
