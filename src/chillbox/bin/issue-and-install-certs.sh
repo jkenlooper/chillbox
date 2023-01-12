@@ -9,4 +9,3 @@ echo "INFO $0: Using ACME_SERVER '${ACME_SERVER}'"
 echo "TODO $0: Not implemented."
 exit 1
 
-# https://eff-certbot.readthedocs.io/en/stable/using.html#webroot

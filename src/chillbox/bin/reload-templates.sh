@@ -60,6 +60,22 @@ for site_json in $sites; do
     fallback_nginx_conf "$slugname_nginx_conf"
   fi
 
+  # Always ensure that the $SLUGNAME.ssl_cert.include file exists so the
+  # $SLUGNAME.nginx.conf file can reference it with an 'include' nginx directive.
+  if [ -e "/etc/letsencrypt/live/$SLUGNAME/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/$SLUGNAME/privkey.pem" ]; then
+    {
+      echo "# TLS certs created from certbot letsencrypt"
+      echo "listen 443 ssl http2;"
+      echo "ssl_certificate /etc/letsencrypt/live/$SLUGNAME/fullchain.pem;"
+      echo "ssl_certificate_key /etc/letsencrypt/live/$SLUGNAME/privkey.pem;"
+    } > "/etc/nginx/conf.d/$SLUGNAME.ssl_cert.include"
+  else
+    {
+      echo "# No /etc/letsencrypt/live/$SLUGNAME/fullchain.pem file found."
+      echo "# No /etc/letsencrypt/live/$SLUGNAME/privkey.pem file found."
+    } > "/etc/nginx/conf.d/$SLUGNAME.ssl_cert.include"
+  fi
+
   if nginx -t; then
     if [ -f "/etc/nginx/conf.d/$slugname_nginx_conf" ]; then
       echo "INFO $script_name Passed test of nginx configuration"

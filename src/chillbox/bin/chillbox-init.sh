@@ -406,7 +406,8 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 n
 /etc/chillbox/bin/site-init.sh
 /etc/chillbox/bin/reload-templates.sh
 
-/etc/chillbox/bin/issue-and-install-letsencrypt-certs.sh || echo "ERROR (ignored): Failed to run issue-and-install-letsencrypt-certs.sh"
+/etc/chillbox/bin/issue-and-install-certs.sh || echo "WARNING: Failed to run issue-and-install-certs.sh"
+/etc/chillbox/bin/reload-templates.sh
 
 nginx -t
 rc-update add nginx default

@@ -30,6 +30,18 @@ server {
   }
 
   location = /healthcheck/ {
+    limit_except GET {
+      deny all;
+    }
     return 200 "ok";
   }
+
+  # For SSL cert validation using webroot plugin.
+  location /.well-known/acme-challenge/ {
+    limit_except GET {
+      deny all;
+    }
+    root /srv/chillbox;
+  }
+
 }
