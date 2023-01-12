@@ -9,5 +9,5 @@ tech_email        = "tech@example.test"
 domain = "chill.box"
 sub_domain = "production.example."
 
-# https://github.com/acmesh-official/acme.sh/wiki/Server
-acme_server = "letsencrypt"
+# https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server
+acme_server = "https://acme-v02.api.letsencrypt.org/directory"

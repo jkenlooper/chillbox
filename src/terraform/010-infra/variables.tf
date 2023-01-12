@@ -84,9 +84,9 @@ variable "tech_email" {
 }
 
 variable "acme_server" {
-  description = "The ACME (Automated Certificate Management Environment) server to use when acme.sh is getting certificates. See the acme.sh wiki https://github.com/acmesh-official/acme.sh/wiki/Server for valid values."
+  description = "The ACME (Automated Certificate Management Environment) server to use when certbot is getting certificates. See the https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server."
   type        = string
-  default     = "letsencrypt_test"
+  default     = "https://acme-staging-v02.api.letsencrypt.org/directory"
 }
 
 variable "sites_artifact" {

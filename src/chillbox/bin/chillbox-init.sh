@@ -16,7 +16,7 @@ s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
 # TODO The environment is not currently being used for anything at this time.
 environment="${ENVIRONMENT:-}"
-acme_server="${ACME_SERVER:-letsencrypt_test}"
+acme_server="${ACME_SERVER:-}"
 
 if [ -z "$developer_public_ssh_keys" ]; then
   printf '\n%s\n' "No DEVELOPER_PUBLIC_SSH_KEYS variable set."
@@ -130,7 +130,7 @@ fi
 
 if [ -z "$acme_server" ]; then
   printf '\n%s\n' "No ACME_SERVER variable set."
-  printf '\n%s\n' "Enter the server to use when acme.sh is getting certificates: letsencrypt_test, letsencrypt, or others listed at https://github.com/acmesh-official/acme.sh/wiki/Server for valid values acme.sh wiki."
+  printf '\n%s\n' "Enter the server to use when certbot is getting certificates."
   test -z "$INTERACTIVE" || read -r acme_server
   test -n "$acme_server" || (echo "No ACME server set. Exiting" && exit 1)
 fi
