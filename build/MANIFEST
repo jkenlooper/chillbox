@@ -31,7 +31,6 @@
 ./src/chillbox/bin/generate-chillbox-key.sh
 ./src/chillbox/bin/generate-new-chillbox-keys
 ./src/chillbox/bin/init-nginx.sh
-./src/chillbox/bin/install-acme.sh
 ./src/chillbox/bin/install-cerbot.sh
 ./src/chillbox/bin/install-chillbox-packages.sh
 ./src/chillbox/bin/install-chill.sh
@@ -45,7 +44,7 @@
 ./src/chillbox/bin/update.sh
 ./src/chillbox/bin/upload-immutable-files-from-artifact.sh
 ./src/chillbox/bin/watch-chillbox-config.sh
-./src/chillbox/dep/acme-2.1.0-py3-none-any.whl
+./src/chillbox/dep/acme-2.2.0-py3-none-any.whl
 ./src/chillbox/dep/certbot-2.1.0-py3-none-any.whl
 ./src/chillbox/dep/certifi-2022.12.7-py3-none-any.whl
 ./src/chillbox/dep/cffi-1.15.1-cp310-cp310-musllinux_1_1_x86_64.whl
@@ -65,7 +64,7 @@
 ./src/chillbox/dep/pytz-2022.7-py2.py3-none-any.whl
 ./src/chillbox/dep/requests-2.28.1-py3-none-any.whl
 ./src/chillbox/dep/requirements.txt
-./src/chillbox/dep/setuptools-65.6.3-py3-none-any.whl
+./src/chillbox/dep/setuptools-65.7.0-py3-none-any.whl
 ./src/chillbox/dep/six-1.16.0-py2.py3-none-any.whl
 ./src/chillbox/dep/urllib3-1.26.14-py2.py3-none-any.whl
 ./src/chillbox/dep/wheel-0.38.4-py3-none-any.whl
