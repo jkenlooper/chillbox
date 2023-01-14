@@ -400,6 +400,10 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx --strip-components 1 nginx/ng
 mkdir -p /etc/nginx/conf.d
 tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 nginx/default.nginx.conf
 
+# nginx/chillbox.ssl_cert.include -> /etc/nginx/conf.d/chillbox.ssl_cert.include
+mkdir -p /etc/nginx/conf.d
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 nginx/chillbox.ssl_cert.include
+
 ## RUN NGINX_CONF
 /etc/chillbox/bin/init-nginx.sh
 

@@ -35,6 +35,25 @@ fallback_nginx_conf() {
   fi
 }
 
+create_ssl_cert_include() {
+  slugname="$1"
+  # Always ensure that the $slugname.ssl_cert.include file exists so the
+  # $slugname.nginx.conf file can reference it with an 'include' nginx directive.
+  if [ -e "/etc/letsencrypt/live/$slugname/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/$slugname/privkey.pem" ]; then
+    {
+      echo "# TLS certs created from certbot letsencrypt"
+      echo "listen 443 ssl http2;"
+      echo "ssl_certificate /etc/letsencrypt/live/$slugname/fullchain.pem;"
+      echo "ssl_certificate_key /etc/letsencrypt/live/$slugname/privkey.pem;"
+    } > "/etc/nginx/conf.d/$slugname.ssl_cert.include"
+  else
+    {
+      echo "# No /etc/letsencrypt/live/$slugname/fullchain.pem file found."
+      echo "# No /etc/letsencrypt/live/$slugname/privkey.pem file found."
+    } > "/etc/nginx/conf.d/$slugname.ssl_cert.include"
+  fi
+}
+
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   SLUGNAME="$(basename "$site_json" .site.json)"
@@ -60,21 +79,7 @@ for site_json in $sites; do
     fallback_nginx_conf "$slugname_nginx_conf"
   fi
 
-  # Always ensure that the $SLUGNAME.ssl_cert.include file exists so the
-  # $SLUGNAME.nginx.conf file can reference it with an 'include' nginx directive.
-  if [ -e "/etc/letsencrypt/live/$SLUGNAME/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/$SLUGNAME/privkey.pem" ]; then
-    {
-      echo "# TLS certs created from certbot letsencrypt"
-      echo "listen 443 ssl http2;"
-      echo "ssl_certificate /etc/letsencrypt/live/$SLUGNAME/fullchain.pem;"
-      echo "ssl_certificate_key /etc/letsencrypt/live/$SLUGNAME/privkey.pem;"
-    } > "/etc/nginx/conf.d/$SLUGNAME.ssl_cert.include"
-  else
-    {
-      echo "# No /etc/letsencrypt/live/$SLUGNAME/fullchain.pem file found."
-      echo "# No /etc/letsencrypt/live/$SLUGNAME/privkey.pem file found."
-    } > "/etc/nginx/conf.d/$SLUGNAME.ssl_cert.include"
-  fi
+  create_ssl_cert_include "$SLUGNAME"
 
   if nginx -t; then
     if [ -f "/etc/nginx/conf.d/$slugname_nginx_conf" ]; then
@@ -100,12 +105,13 @@ fi
 # shellcheck disable=SC2016
 envsubst '$CHILLBOX_SERVER_NAME $CHILLBOX_SERVER_PORT' < "$template_path" > "/etc/nginx/conf.d/$chillbox_nginx_conf"
 
-
 if [ -n "$(grep "$var_curly_regex" "/etc/nginx/conf.d/$chillbox_nginx_conf" || printf "")" ]; then
   echo "ERROR $script_name: Not all env variables were replaced from $template_path" >&2
   grep -H -n "$var_curly_regex" "/etc/nginx/conf.d/$chillbox_nginx_conf"
   fallback_nginx_conf "$chillbox_nginx_conf"
 fi
+
+create_ssl_cert_include chillbox
 
 if nginx -t; then
   if [ -f "/etc/nginx/conf.d/$chillbox_nginx_conf" ]; then
