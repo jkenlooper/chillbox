@@ -119,6 +119,7 @@ docker_run_infra_container() {
     --name "${INFRA_CONTAINER}" \
     --hostname "${INFRA_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
+    --mount "type=tmpfs,dst=/etc/letsencrypt,tmpfs-mode=0777" \
     --mount "type=tmpfs,dst=/usr/local/src/chillbox-terraform/terraform.tfstate.d,tmpfs-mode=0700" \
     --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
     --mount "type=volume,src=chillbox-terraform-dev-terraformdotd--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.terraform.d,readonly=false" \
@@ -130,8 +131,10 @@ docker_run_infra_container() {
     --mount "type=bind,src=${terraform_infra_dir}/outputs.tf,dst=/usr/local/src/chillbox-terraform/outputs.tf" \
     --mount "type=bind,src=${terraform_infra_dir}/bootstrap-chillbox-init-credentials.sh.tftpl,dst=/usr/local/src/chillbox-terraform/bootstrap-chillbox-init-credentials.sh.tftpl" \
     --mount "type=bind,src=${TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/private.auto.tfvars" \
+    --mount "type=bind,src=${TERRAFORM_INFRA_ACME_SERVER_AUTO_TFVARS_FILE},dst=/usr/local/src/chillbox-terraform/acme_server.auto.tfvars.json" \
     --mount "type=bind,src=${chillbox_instance_and_environment_file},dst=/usr/local/src/chillbox-terraform/chillbox-instance-and-environment.auto.tfvars.json,readonly=true" \
     --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
+    --mount "type=bind,src=$project_dir/src/chillbox/dep,dst=/var/lib/chillbox/python,readonly=true" \
     --entrypoint="" \
     "$INFRA_IMAGE" "$@" || (
       exitcode="$?"

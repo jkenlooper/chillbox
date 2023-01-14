@@ -189,6 +189,7 @@ export PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST="$fingerprint_sha256_accept_list"
 
 # Update these files as needed.
 export TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-010-infra.private.auto.tfvars"
+export TERRAFORM_INFRA_ACME_SERVER_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-010-infra.acme_server.auto.tfvars.json"
 export TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE="$chillbox_config_home/terraform-020-chillbox.private.auto.tfvars"
 HERE
   fi
@@ -196,6 +197,7 @@ HERE
   # Variables that are exported from the env config file.
   # TERRAFORM_CHILLBOX_PRIVATE_AUTO_TFVARS_FILE
   # TERRAFORM_INFRA_PRIVATE_AUTO_TFVARS_FILE
+  # TERRAFORM_INFRA_ACME_SERVER_AUTO_TFVARS_FILE
   # PUBLIC_SSH_KEY_FINGERPRINT_ACCEPT_LIST
   # PUBLIC_SSH_KEY_LOCATIONS
   # SITES_ARTIFACT_URL
@@ -224,6 +226,9 @@ HERE
         exit 0
       fi
     fi
+  fi
+  if [ ! -f "$TERRAFORM_INFRA_ACME_SERVER_AUTO_TFVARS_FILE" ]; then
+    cp "$project_dir/example/chillbox-config/$WORKSPACE/terraform-010-infra/acme_server.auto.tfvars.json" "$TERRAFORM_INFRA_ACME_SERVER_AUTO_TFVARS_FILE"
   fi
 }
 

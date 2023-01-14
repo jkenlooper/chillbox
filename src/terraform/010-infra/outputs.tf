@@ -29,6 +29,10 @@ output "sub_domain" {
   value       = var.sub_domain
   description = "Sub domain name."
 }
+output "acme_server" {
+  value       = var.acme_server
+  description = "ACME server that certbot will use for certs."
+}
 output "initial_dev_user_password" {
   value       = random_string.initial_dev_user_password.result
   sensitive   = true

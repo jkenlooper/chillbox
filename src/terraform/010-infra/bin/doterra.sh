@@ -127,6 +127,13 @@ sync_encrypted_tfstate() {
 }
 trap sync_encrypted_tfstate EXIT
 
+# Create these dirs to support running 'certbot register' as dev user.
+mkdir -p /etc/letsencrypt/accounts
+chown -R dev:dev /etc/letsencrypt/accounts
+mkdir -p /var/log/letsencrypt
+chown -R dev:dev /var/log/letsencrypt
+mkdir -p /var/lib/letsencrypt
+chown -R dev:dev /var/lib/letsencrypt
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \
   GPG_KEY_NAME=$GPG_KEY_NAME \
   _doterra_as_dev_user.sh \"$terraform_command\" \"$ciphertext_terraform_010_infra_output_file\""

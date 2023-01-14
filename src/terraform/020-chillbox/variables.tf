@@ -30,6 +30,11 @@ variable "tech_email" {
   description = "Contact email address to use for notifying the person in charge of fixing stuff. This is usually the person that can also break all the things. Use your cat's email address here if you have a cat in the house."
 }
 
+variable "acme_server" {
+  description = "The ACME (Automated Certificate Management Environment) server to use when certbot is getting certificates. See the https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server."
+  type        = string
+}
+
 variable "alpine_custom_image" {
   description = "file name of the built alpine image from jkenlooper/alpine-droplet repo."
   type        = string

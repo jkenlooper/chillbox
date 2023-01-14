@@ -18,11 +18,16 @@ apk add \
   gnupg \
   gnupg-dirmngr
 
+# Only needs python when using certbot tool to register the account.
+apk add \
+  python3 \
+  py3-pip
+ln -s -f /usr/bin/python3 /usr/bin/python
+
 INSTALL
 
 WORKDIR /usr/local/src/chillbox-terraform
 
-ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 ENV GPG_KEY_NAME="chillbox_local"
 ENV TF_VAR_GPG_KEY_NAME="$GPG_KEY_NAME"
 ENV DECRYPTED_TFSTATE="/run/tmp/secrets/doterra/terraform.tfstate.json"
@@ -49,6 +54,20 @@ mkdir -p /var/lib/terraform-010-infra
 chown -R dev:dev /var/lib/terraform-010-infra
 chmod -R 0700 /var/lib/terraform-010-infra
 SETUP
+
+RUN  <<PYTHON_VIRTUALENV
+# Setup for python virtual env
+set -o errexit
+mkdir -p /usr/local/src/chillbox-terraform
+/usr/bin/python3 -m venv /usr/local/src/chillbox-terraform/.venv
+# The dev user will need write access since pip install will be adding files to
+# the .venv directory.
+chown -R dev:dev /usr/local/src/chillbox-terraform/.venv
+PYTHON_VIRTUALENV
+
+# Activate python virtual env by updating the PATH
+ENV VIRTUAL_ENV=/usr/local/src/chillbox-terraform/.venv
+ENV PATH=/usr/local/src/chillbox-terraform/bin:$VIRTUAL_ENV/bin:${PATH}
 
 ARG SITES_ARTIFACT
 ENV SITES_ARTIFACT="$SITES_ARTIFACT"

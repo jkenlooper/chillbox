@@ -10,4 +10,4 @@ domain = "chill.box"
 sub_domain = "test.example."
 
 # https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server
-acme_server = "https://acme-staging-v02.api.letsencrypt.org/directory"
+# acme_server is set in acme_server.auto.tfvars.json

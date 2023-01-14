@@ -110,6 +110,7 @@ resource "local_sensitive_file" "bootstrap_chillbox_init_credentials" {
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
     tf_environment : lower(var.environment),
     tf_acme_server : var.acme_server,
+    tf_letsencrypt_accounts_directory_tar_b64 : file("/run/tmp/secrets/doterra/letsencrypt-accounts-directory.tar.b64"),
   })
 }
 
