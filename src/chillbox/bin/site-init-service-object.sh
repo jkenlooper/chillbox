@@ -44,7 +44,6 @@ echo "INFO $script_name: Running site init for service object: ${service_obj}"
 # Extract and set shell variables from JSON input
 service_name=""
 service_lang_template=""
-service_handler=""
 service_secrets_config=""
 service_niceness=""
 service_workers=""
@@ -55,7 +54,6 @@ service_log_level=""
 eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$SLUGNAME" '@sh "
   service_name=\(.name)
   service_lang_template=\(.lang)
-  service_handler=\(.handler)
   service_secrets_config=\( .secrets_config // "" )
   service_niceness=\( .niceness // 0 )
   service_worker_class=\( .worker_class // "sync" )
@@ -87,7 +85,7 @@ if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file
   echo "WARNING $script_name: No service secrets config file was able to be downloaded and decrypted."
 fi
 
-# Extract just the new service handler directory from the tmp_artifact
+# Extract just the new service directory from the tmp_artifact
 cd "$(dirname "$slugdir")"
 tar x -z -f "$tmp_artifact" "$SLUGNAME/$service_name"
 chown -R "$SLUGNAME":"$SLUGNAME" "$slugdir"

@@ -8,6 +8,10 @@ ACME_SERVER="${ACME_SERVER:-''}"
 test -n "${ACME_SERVER}" || (echo "ERROR $script_name: ACME_SERVER variable is empty" && exit 1)
 echo "INFO $script_name: Using ACME_SERVER '${ACME_SERVER}'"
 
+# Should not need to be root when running certbot commands.
+current_user="$(id -u -n)"
+test "$current_user" != "root" || (echo "ERROR $script_name: Must not be root. This script is executing certbot commands and should not require root." && exit 1)
+
 # Conditionally get cert for chillbox. Only one domain is used for chillbox.
 if [ -e "/etc/letsencrypt/live/chillbox/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/chillbox/privkey.pem" ]; then
   echo "INFO $script_name: Using existing ssl certs for chillbox."
@@ -23,7 +27,7 @@ else
     --webroot-path "/srv/chillbox" \
     --cert-name "chillbox" \
     --domain "$CHILLBOX_SERVER_NAME" \
-      || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox" && exit 1)
+  || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox" && exit 1)
 fi
 
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
@@ -61,7 +65,7 @@ for site_json in $sites; do
     --webroot \
     --webroot-path "/srv/$slugname" \
     --cert-name "$slugname" \
-    "$@" || (echo "WARNING $script_name: Failed to get new ssl cert for $slugname" && continue)
+    "$@" || continue
   set +x
   # Only create the domain_list_hash file if getting a ssl cert was successful.
   printf "%s" "$domain_list_hash" > "/etc/chillbox/sites/.$slugname-domain_list_hash"

@@ -25,7 +25,7 @@ chown root:ansibledev "$chillbox_update_log"
 
 /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 
-/etc/chillbox/bin/issue-and-install-certs.sh || echo "WARNING: Failed to run issue-and-install-certs.sh"
+su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
 /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 
 nginx -t >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)

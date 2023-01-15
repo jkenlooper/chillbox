@@ -60,7 +60,7 @@ tar c \
 # Delete the account as it is no longer needed here.
 chmod -R u+w /etc/letsencrypt/accounts/
 find "/etc/letsencrypt/accounts/$acme_hostname" -type f \
-  -exec sh -c "shred -z -u '{}' || rm -f '{}'" \;
+  -exec sh -c 'shred -z -u "$1" || rm -f "$1"' shell {} \;
 
 gpg --encrypt --recipient "${GPG_KEY_NAME}" --armor --output "$encrypted_letsencrypt_account_archive" \
   --comment "letsencrypt accounts directory" \

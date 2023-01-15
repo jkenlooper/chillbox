@@ -122,7 +122,7 @@ docker run \
 # Echo out something after a docker run to clear/reset the stdout.
 clear && echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
 
-# Provide encrypt-file script for the service handler container to use.
+# Provide encrypt-file script for the container to use.
 cp "$project_dir/src/local/secrets/encrypt-file" "$pubkey_dir"
 
 tar x -f "$sites_artifact_file" -C "$tmp_sites_dir" sites
@@ -140,7 +140,6 @@ for site_json in $site_json_files; do
     test -n "${service_obj}" || continue
     secrets_config="$(echo "$service_obj" | jq -r '.secrets_config // ""')"
     test -n "$secrets_config" || continue
-    service_handler="$(echo "$service_obj" | jq -r '.handler')"
     service_name="$(echo "$service_obj" | jq -r '.name')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
     test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)

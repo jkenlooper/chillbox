@@ -27,7 +27,6 @@ Options:
 HERE
 }
 
-slugname=""
 interactive="n"
 
 while getopts "hi" OPTION ; do

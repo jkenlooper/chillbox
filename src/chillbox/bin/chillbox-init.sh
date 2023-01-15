@@ -321,9 +321,6 @@ cp "$HOME/.aws/credentials" /home/dev/.aws/credentials
 chmod 0600 /home/dev/.aws/credentials
 chown dev:dev /home/dev/.aws/credentials
 
-#export AWS_PROFILE=chillbox_object_storage
-#export S3_ENDPOINT_URL="${s3_endpoint_url}"
-
 # UPKEEP due: "2023-01-01" label: "s5cmd for s3 object storage" interval: "+3 months"
 s5cmd_release_url="https://github.com/peak/s5cmd/releases/download/v2.0.0/s5cmd_2.0.0_Linux-64bit.tar.gz"
 s5cmd_tar="$(basename "$s5cmd_release_url")"
@@ -410,12 +407,20 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/nginx/conf.d --strip-components 1 n
 /etc/chillbox/bin/site-init.sh
 /etc/chillbox/bin/reload-templates.sh
 
-/etc/chillbox/bin/issue-and-install-certs.sh || echo "WARNING: Failed to run issue-and-install-certs.sh"
-/etc/chillbox/bin/reload-templates.sh
-
 nginx -t
 rc-update add nginx default
 rc-service nginx start
+
+su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
+/etc/chillbox/bin/reload-templates.sh
+nginx -t && rc-service nginx reload
+
+# Set a random time that the certbot renew happens to avoid hitting limits with
+# letsencrypt ACME server. The dev user is used to run certbot renew commands.
+random_day_of_week="$(awk 'BEGIN{srand(); print int(rand()*7)}')"
+random_start_hour="$(awk 'BEGIN{srand(); print int(rand()*11)}')"
+echo "0 $random_start_hour * * $random_day_of_week su dev -c \"awk 'BEGIN{srand(); print int(rand()*((60*60*12)+1))}' | xargs sleep && certbot renew --server '$acme_server' --user-agent-comment 'chillbox/0.0' -q\" && nginx -t && rc-service nginx reload" \
+  | tee -a /etc/crontabs/root
 
 # This script shouldn't be executed again.
 chmod -x "$0"

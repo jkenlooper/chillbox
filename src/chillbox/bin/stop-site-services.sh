@@ -25,16 +25,14 @@ echo "INFO $script_name: Stopping site services for: ${SLUGNAME}"
 # Stop all services in the $SLUGNAME directory and make backups
 find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service.json' \
   | while read -r existing_service; do
-    echo "INFO $script_name: Stopping existing service handler: $existing_service"
+    echo "INFO $script_name: Stopping existing service: $existing_service"
     test -f "${existing_service}" || (echo "ERROR $script_name: Failed to read file '${existing_service}'" && exit 1)
     service_name=""
     service_lang_template=""
-    service_handler=""
     service_secrets_config=""
     eval "$(jq -r '@sh "
     service_name=\(.name)
     service_lang_template=\(.lang)
-    service_handler=\(.handler)
     service_secrets_config=\(.secrets_config)
     "' "$existing_service")"
     echo "$service_lang_template"
