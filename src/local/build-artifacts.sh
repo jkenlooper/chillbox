@@ -88,8 +88,10 @@ if [ ! -f "$chillbox_dist_file" ]; then
     -C "$project_dir/src/chillbox" \
     nginx/default.nginx.conf \
     nginx/nginx.conf \
+    nginx/chillbox.ssl_cert.include \
     nginx/templates \
     bin \
+    dep \
     keys \
     VERSION
 else

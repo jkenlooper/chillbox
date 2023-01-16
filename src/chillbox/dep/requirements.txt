@@ -9,6 +9,11 @@
 acme==2.2.0 \
     --hash=sha256:699f4efc2a012c70eff4dbfaf7ef6798b44ef7677d8b3776bd1f0058288b2219
     # via certbot
+babel==2.11.0 \
+    --hash=sha256:1ad3eca1c885218f6dce2ab67291178944f810a10a9b5f3cb8382a5a232b64fe
+    # via
+    #   -r ../requirements.txt
+    #   chill
 certbot==2.1.0 \
     --hash=sha256:0f7b7bf81bca57be9441dc90d42a589f844f7abc758ee4220ea1e3c6ccb3a4bf
     # via -r ../requirements.txt
@@ -18,9 +23,17 @@ certifi==2022.12.7 \
 cffi==1.15.1 \
     --hash=sha256:59c0b02d0a6c384d453fece7566d1c7e6b7bae4fc5874ef2ef46d56776d61c9e
     # via cryptography
-charset-normalizer==2.1.1 \
-    --hash=sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f
+charset-normalizer==3.0.1 \
+    --hash=sha256:c512accbd6ff0270939b9ac214b84fb5ada5f0409c44298361b2f5e13f9aed9e
     # via requests
+chill==0.10.0a1 \
+    --hash=sha256:e11cbc0de8cc6fea5c1b21ab104b9f1ab8d4c8b1e4f282cca976b2f9b8ff1cd8
+    # via -r ../requirements.txt
+click==8.1.3 \
+    --hash=sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48
+    # via
+    #   -r ../requirements.txt
+    #   flask
 configargparse==1.5.3 \
     --hash=sha256:18f6535a2db9f6e02bd5626cc7455eac3e96b9ab3d969d366f9aafd5c5c00fe7
     # via certbot
@@ -37,14 +50,63 @@ cryptography==39.0.0 \
 distro==1.8.0 \
     --hash=sha256:99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff
     # via certbot
+docopt==0.6.2 \
+    --hash=sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491
+    # via -r ../requirements.txt
+flask==2.2.2 \
+    --hash=sha256:b9c46cc36662a7949f34b52d8ec7bb59c0d74ba08ba6cb9ce9adc1d8676d9526
+    # via
+    #   -r ../requirements.txt
+    #   chill
+    #   frozen-flask
+flask-markdown==0.3 \
+    --hash=sha256:d8c3f02545b395ad525b86760ad721a2c50efa3b8e602a8d486a1f47f68c6250
+    # via
+    #   -r ../requirements.txt
+    #   chill
+frozen-flask==0.18 \
+    --hash=sha256:6d892fd929f6676c3270b7d91d86a1fc03c9850dc21e3b02b3946381c48ab307
+    # via -r ../requirements.txt
+gunicorn[setproctitle]==20.1.0 \
+    --hash=sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e
+    # via -r ../requirements.txt
+humanize==4.4.0 \
+    --hash=sha256:8830ebf2d65d0395c1bd4c79189ad71e023f277c2c7ae00f263124432e6f2ffa
+    # via
+    #   -r ../requirements.txt
+    #   chill
 idna==3.4 \
     --hash=sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2
     # via requests
+importlib-metadata==5.2.0 \
+    --hash=sha256:0eafa39ba42bf225fc00e67f701d71f85aead9f878569caf13c3724f704b970f
+    # via -r ../requirements.txt
+itsdangerous==2.1.2 \
+    --hash=sha256:2c2349112351b88699d8d4b6b075022c0808887cb7ad10069318a8b0bc88db44
+    # via
+    #   -r ../requirements.txt
+    #   flask
+jinja2==3.1.2 \
+    --hash=sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61
+    # via
+    #   -r ../requirements.txt
+    #   flask
 josepy==1.13.0 \
     --hash=sha256:6f64eb35186aaa1776b7a1768651b1c616cab7f9685f9660bffc6491074a5390
     # via
     #   acme
     #   certbot
+markdown==3.4.1 \
+    --hash=sha256:08fb8465cffd03d10b9dd34a5c3fea908e20391a2a90b88d66362cb05beed186
+    # via
+    #   -r ../requirements.txt
+    #   flask-markdown
+markupsafe==2.1.1 \
+    --hash=sha256:efc1913fd2ca4f334418481c7e595c00aad186563bbc1ec76067848c7ca0a933
+    # via
+    #   -r ../requirements.txt
+    #   jinja2
+    #   werkzeug
 parsedatetime==2.6 \
     --hash=sha256:cb96edd7016872f58479e35879294258c71437195760746faffedb692aef000b
     # via certbot
@@ -64,17 +126,28 @@ pyrfc3339==1.1 \
 pytz==2022.7 \
     --hash=sha256:93007def75ae22f7cd991c84e02d434876818661f8df9ad5df9e950ff4e52cfd
     # via
+    #   -r ../requirements.txt
     #   acme
+    #   babel
     #   certbot
     #   pyrfc3339
-requests==2.28.1 \
-    --hash=sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349
+pyyaml==6.0 \
+    --hash=sha256:68fb519c14306fec9720a2a5b45bc9f0c8d1b9c72adf45c37baedfcd949c35a2
+    # via
+    #   -r ../requirements.txt
+    #   chill
+requests==2.28.2 \
+    --hash=sha256:64299f4909223da747622c030b781c0d7811e359c37124b4bd368fb8c6518baa
     # via acme
-setuptools==65.7.0 \
-    --hash=sha256:8ab4f1dbf2b4a65f7eec5ad0c620e84c34111a68d3349833494b9088212214dd
+setproctitle==1.3.2 \
+    --hash=sha256:7f2719a398e1a2c01c2a63bf30377a34d0b6ef61946ab9cf4d550733af8f1ef1
+    # via gunicorn
+setuptools==66.0.0 \
+    --hash=sha256:a78d01d1e2c175c474884671dde039962c9d74c7223db7369771fcf6e29ceeab
     # via
     #   acme
     #   certbot
+    #   gunicorn
     #   josepy
 six==1.16.0 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
@@ -82,3 +155,13 @@ six==1.16.0 \
 urllib3==1.26.14 \
     --hash=sha256:75edcdc2f7d85b137124a6c3c9fc3933cdeaa12ecb9a6a959f22797a0feca7e1
     # via requests
+werkzeug==2.2.2 \
+    --hash=sha256:f979ab81f58d7318e064e99c4506445d60135ac5cd2e177a2de0089bfd4c9bd5
+    # via
+    #   -r ../requirements.txt
+    #   flask
+zipp==3.11.0 \
+    --hash=sha256:83a28fcb75844b5c0cdaf5aa4003c2d728c77e05f5aeabe8e95e56727005fbaa
+    # via
+    #   -r ../requirements.txt
+    #   importlib-metadata

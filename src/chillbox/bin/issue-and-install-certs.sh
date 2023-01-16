@@ -4,7 +4,7 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
-ACME_SERVER="${ACME_SERVER:-''}"
+ACME_SERVER="${ACME_SERVER:-}"
 test -n "${ACME_SERVER}" || (echo "ERROR $script_name: ACME_SERVER variable is empty" && exit 1)
 echo "INFO $script_name: Using ACME_SERVER '${ACME_SERVER}'"
 
@@ -71,6 +71,3 @@ for site_json in $sites; do
   printf "%s" "$domain_list_hash" > "/etc/chillbox/sites/.$slugname-domain_list_hash"
 
 done
-
-# TODO Add crontab to renew certs and reload nginx 'nginx -t && rc-service nginx reload'.
-

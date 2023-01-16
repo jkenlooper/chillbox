@@ -91,9 +91,6 @@ RUN <<PIP_INSTALL_REQ
 # Download python packages described in requirements.txt
 set -o errexit
 
-# Support packages that use git versions
-#apk add git
-
 mkdir -p "/home/dev/app/dep"
 # Change to the app directory so the find-links can be relative.
 cd /home/dev/app
