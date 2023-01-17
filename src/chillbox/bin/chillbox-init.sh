@@ -413,7 +413,23 @@ rc-service nginx start
 
 su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
 /etc/chillbox/bin/reload-templates.sh
+
+# Renew after issue-and-install-certs.sh in case it downloaded an almost expired
+# cert from s3 object storage. This helps prevent a gap from happening if the
+# cron job to renew doesn't happen in time.
+su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+
 nginx -t && rc-service nginx reload
+
+# TODO Set a certbot renew hook to upload the renewed certs to s3 and set
+# life-cycle rule to expire them in 30 days. Add the s3 upload script to the
+# /etc/letsencrypt/renewal-hooks/deploy/ directory.
+# Environment variables available to deploy hook:
+#   RENEWED_LINEAGE will equal /etc/letsencrypt/live/$cert_name directory.
+#   RENEWED_DOMAINS will equal the $domain_list
+# https://eff-certbot.readthedocs.io/en/stable/using.html#certbot-command-line-options
+# https://eff-certbot.readthedocs.io/en/stable/using.html#renewing-certificates
+# https://letsencrypt.org/docs/integration-guide/#when-to-renew
 
 # Set a random time that the certbot renew happens to avoid hitting limits with
 # letsencrypt ACME server. The dev user is used to run certbot renew commands.

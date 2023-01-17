@@ -9,6 +9,8 @@ set -o errexit
 # shellcheck disable=SC1091
 . /home/dev/.env
 
+test -n "$ACME_SERVER" || (echo "No ACME_SERVER variable set. Exiting" && exit 1)
+
 mkdir -p /usr/local/src/
 cd /usr/local/src/
 
@@ -27,6 +29,11 @@ chown root:ansibledev "$chillbox_update_log"
 
 su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
 /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
+
+# Renew after issue-and-install-certs.sh in case it downloaded an almost expired
+# cert from s3 object storage. This helps prevent a gap from happening if the
+# cron job to renew doesn't happen in time.
+su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
 
 nginx -t >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 nginx -t && rc-service nginx reload

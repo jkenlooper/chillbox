@@ -35,7 +35,7 @@ echo "INFO $0: Installing chill"
 
 python -m pip install --quiet --disable-pip-version-check \
   --no-index --find-links /var/lib/chillbox/python \
-  gunicorn[setproctitle] \
+  'gunicorn[setproctitle]' \
   Frozen-Flask \
   docopt \
   Babel \
