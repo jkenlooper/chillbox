@@ -11,3 +11,12 @@ sub_domain = "development.example."
 
 # https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server
 # acme_server is set in acme_server.auto.tfvars.json
+
+# If the terraform-020-chillbox variable 'web_ips' doesn't include "0.0.0.0" the
+# letsencrypt ACME server won't be able to perform the http challenge. Set to
+# false if this server won't be public and there is no need to use certbot.
+# enable_certbot = false
+
+# Chillbox server count. Set to 0 to destroy the server and keep other
+# infrastructure that can remain like the custom server image.
+# chillbox_count = 0

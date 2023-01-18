@@ -36,6 +36,7 @@ fallback_nginx_conf() {
 }
 
 create_ssl_cert_include() {
+  # TODO Include http to https redirect if has certs.
   slugname="$1"
   # Always ensure that the $slugname.ssl_cert.include file exists so the
   # $slugname.nginx.conf file can reference it with an 'include' nginx directive.

@@ -27,13 +27,15 @@ chown root:ansibledev "$chillbox_update_log"
 
 /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 
-su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
-/etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
+if [ "$ENABLE_CERTBOT" = "true" ]; then
+  su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
+  /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 
-# Renew after issue-and-install-certs.sh in case it downloaded an almost expired
-# cert from s3 object storage. This helps prevent a gap from happening if the
-# cron job to renew doesn't happen in time.
-su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+  # Renew after issue-and-install-certs.sh in case it downloaded an almost expired
+  # cert from s3 object storage. This helps prevent a gap from happening if the
+  # cron job to renew doesn't happen in time.
+  su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+fi
 
 nginx -t >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 nginx -t && rc-service nginx reload

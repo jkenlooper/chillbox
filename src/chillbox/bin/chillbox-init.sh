@@ -14,9 +14,11 @@ sites_artifact="${SITES_ARTIFACT:-}"
 chillbox_artifact="${CHILLBOX_ARTIFACT:-}"
 s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
+has_hostname_dns_records="${HAS_HOSTNAME_DNS_RECORDS:-false}"
 # TODO The environment is not currently being used for anything at this time.
 environment="${ENVIRONMENT:-}"
 acme_server="${ACME_SERVER:-}"
+enable_certbot="${ENABLE_CERTBOT:-}"
 
 if [ -z "$developer_public_ssh_keys" ]; then
   printf '\n%s\n' "No DEVELOPER_PUBLIC_SSH_KEYS variable set."
@@ -269,6 +271,7 @@ export CHILLBOX_SERVER_PORT=80
 export IMMUTABLE_BUCKET_DOMAIN_NAME="${immutable_bucket_domain_name}"
 export IMMUTABLE_BUCKET_NAME="${immutable_bucket_name}"
 export ACME_SERVER="${acme_server}"
+export ENABLE_CERTBOT="${enable_certbot}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"
 export SERVER_NAME="sitejsonplaceholder-server_name"
 export SERVER_PORT=80
@@ -411,32 +414,34 @@ nginx -t
 rc-update add nginx default
 rc-service nginx start
 
-su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
-/etc/chillbox/bin/reload-templates.sh
+if [ "$enable_certbot" = "true" ]; then
+  su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
+  /etc/chillbox/bin/reload-templates.sh
 
-# Renew after issue-and-install-certs.sh in case it downloaded an almost expired
-# cert from s3 object storage. This helps prevent a gap from happening if the
-# cron job to renew doesn't happen in time.
-su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+  # Renew after issue-and-install-certs.sh in case it downloaded an almost expired
+  # cert from s3 object storage. This helps prevent a gap from happening if the
+  # cron job to renew doesn't happen in time.
+  su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+
+  # TODO Set a certbot renew hook to upload the renewed certs to s3 and set
+  # life-cycle rule to expire them in 30 days. Add the s3 upload script to the
+  # /etc/letsencrypt/renewal-hooks/deploy/ directory.
+  # Environment variables available to deploy hook:
+  #   RENEWED_LINEAGE will equal /etc/letsencrypt/live/$cert_name directory.
+  #   RENEWED_DOMAINS will equal the $domain_list
+  # https://eff-certbot.readthedocs.io/en/stable/using.html#certbot-command-line-options
+  # https://eff-certbot.readthedocs.io/en/stable/using.html#renewing-certificates
+  # https://letsencrypt.org/docs/integration-guide/#when-to-renew
+
+  # Set a random time that the certbot renew happens to avoid hitting limits with
+  # letsencrypt ACME server. The dev user is used to run certbot renew commands.
+  random_day_of_week="$(awk 'BEGIN{srand(); print int(rand()*7)}')"
+  random_start_hour="$(awk 'BEGIN{srand(); print int(rand()*11)}')"
+  echo "0 $random_start_hour * * $random_day_of_week su dev -c \"awk 'BEGIN{srand(); print int(rand()*((60*60*12)+1))}' | xargs sleep && certbot renew --server '$acme_server' --user-agent-comment 'chillbox/0.0' -q\" && nginx -t && rc-service nginx reload" \
+    | tee -a /etc/crontabs/root
+fi
 
 nginx -t && rc-service nginx reload
-
-# TODO Set a certbot renew hook to upload the renewed certs to s3 and set
-# life-cycle rule to expire them in 30 days. Add the s3 upload script to the
-# /etc/letsencrypt/renewal-hooks/deploy/ directory.
-# Environment variables available to deploy hook:
-#   RENEWED_LINEAGE will equal /etc/letsencrypt/live/$cert_name directory.
-#   RENEWED_DOMAINS will equal the $domain_list
-# https://eff-certbot.readthedocs.io/en/stable/using.html#certbot-command-line-options
-# https://eff-certbot.readthedocs.io/en/stable/using.html#renewing-certificates
-# https://letsencrypt.org/docs/integration-guide/#when-to-renew
-
-# Set a random time that the certbot renew happens to avoid hitting limits with
-# letsencrypt ACME server. The dev user is used to run certbot renew commands.
-random_day_of_week="$(awk 'BEGIN{srand(); print int(rand()*7)}')"
-random_start_hour="$(awk 'BEGIN{srand(); print int(rand()*11)}')"
-echo "0 $random_start_hour * * $random_day_of_week su dev -c \"awk 'BEGIN{srand(); print int(rand()*((60*60*12)+1))}' | xargs sleep && certbot renew --server '$acme_server' --user-agent-comment 'chillbox/0.0' -q\" && nginx -t && rc-service nginx reload" \
-  | tee -a /etc/crontabs/root
 
 # This script shouldn't be executed again.
 chmod -x "$0"

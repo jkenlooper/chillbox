@@ -184,7 +184,7 @@ variable "sub_domain" {
 
 variable "manage_dns_records" {
   description = "Create DNS records for the chillbox and site domains to use."
-  default     = false
+  default     = true
   type        = bool
 }
 variable "manage_hostname_dns_records" {

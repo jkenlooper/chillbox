@@ -77,8 +77,8 @@ get_cert() {
   fi
 }
 
-# Conditionally get cert for chillbox. Only one domain is used for chillbox.
-# TODO handle hostname domains if they have been set.
+# Conditionally get cert for chillbox. Only one domain is used for chillbox at
+# this time.
 
 # Exit without trying to get other site ssl certs if getting the chillbox cert
 # fails. This means that most likely all the other requests to get certs will
@@ -86,9 +86,17 @@ get_cert() {
 get_cert chillbox "$CHILLBOX_SERVER_NAME" \
   || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox" && exit 1)
 
+# Getting hostname certs can fail if the manage_hostname_dns_records terraform variable was false.
+hostname_chillbox="$(hostname).$CHILLBOX_SERVER_NAME"
+get_cert hostname-chillbox "$hostname_chillbox" \
+  || echo "WARNING $script_name: Failed to get new ssl cert for chillbox hostname ($hostname_chillbox)."
+
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname="$(basename "$site_json" .site.json)"
   domain_list="$(jq -r '.domain_list[]' "$site_json")"
   get_cert "$slugname" "$domain_list" || continue
+  # Getting hostname certs can fail if the manage_hostname_dns_records terraform variable was false.
+  hostname_domain_list="$(jq -r --arg jq_hostname_chillbox "${hostname_chillbox}." '.domain_list[] | $jq_hostname_chillbox + .' "$site_json")"
+  get_cert "hostname-$slugname" "$hostname_domain_list" || continue
 done

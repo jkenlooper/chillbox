@@ -14,7 +14,11 @@ project_description = "Infrastructure for hosting websites that use Chill."
 # admin_ips     = ["1.2.3.4"]
 #
 # Block all outside access when in test by setting the web_ips value.
+# This could also include a load balancer IP.
 # web_ips = ["1.2.3.4"]
+#
+# If web_ips doesn't include "0.0.0.0" the letsencrypt ACME server won't be able
+# to perform the http challenge. Set 'enable_certbot' variable in terraform-010-infra.
 #
 # Plan your network https://docs.digitalocean.com/products/networking/vpc/concepts/plan-your-network/
 # cidrsubnets("192.168.136.0/24", 4, 4, 4, 4)
@@ -25,3 +29,17 @@ project_description = "Infrastructure for hosting websites that use Chill."
 #   "192.168.136.48/28",
 # ])
 vpc_ip_range = "192.168.136.16/28"
+
+# Create DNS records for the chillbox and site domains to use.
+# For environments other then production; it is typical to set this to false.
+manage_dns_records = false
+
+# Create DNS records specific to the chillbox hostname for chillbox and site
+# domains to use. Each record will be prefixed with the hostname of the server.
+# The hostname DNS records is how the development, test, and acceptance servers
+# would be accessed.
+manage_hostname_dns_records = true
+
+# DNS TTL to use for droplets. Minimum is 30 seconds. It is not recommended to
+# use a value higher than 86400 (24 hours).
+dns_ttl = 300

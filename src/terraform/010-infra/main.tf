@@ -105,11 +105,13 @@ resource "local_sensitive_file" "bootstrap_chillbox_init_credentials" {
     tf_immutable_bucket_domain_name : "${digitalocean_spaces_bucket.immutable.name}.${var.bucket_region}.digitaloceanspaces.com",
     tf_artifact_bucket_name : digitalocean_spaces_bucket.artifact.name,
     tf_sites_artifact : var.sites_artifact,
-    tf_chillbox_artifact : var.chillbox_artifact
+    tf_chillbox_artifact : var.chillbox_artifact,
     tf_s3_endpoint_url : "https://${digitalocean_spaces_bucket.artifact.region}.digitaloceanspaces.com/",
     tf_chillbox_server_name : "${var.sub_domain}${var.domain}",
+    tf_has_hostname_dns_records : var.manage_hostname_dns_records ? "true" : "false",
     tf_environment : lower(var.environment),
     tf_acme_server : var.acme_server,
+    tf_enable_certbot : var.enable_certbot ? "true" : "false",
     tf_letsencrypt_accounts_directory_tar_b64 : file("/run/tmp/secrets/doterra/letsencrypt-accounts-directory.tar.b64"),
   })
 }

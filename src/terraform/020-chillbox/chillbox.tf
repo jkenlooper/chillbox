@@ -90,6 +90,7 @@ resource "digitalocean_ssh_key" "chillbox" {
   public_key = each.value
 }
 
+# The env var CHILLBOX_SERVER_NAME is also set with the terraform variables sub_domain and domain.
 resource "digitalocean_record" "chillbox" {
   count  = var.manage_dns_records ? var.chillbox_count : 0
   domain = var.domain
