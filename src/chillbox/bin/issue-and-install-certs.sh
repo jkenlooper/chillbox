@@ -10,6 +10,12 @@ echo "INFO $script_name: Using ACME_SERVER '${ACME_SERVER}'"
 test -n "${CHILLBOX_SERVER_NAME}" || (echo "ERROR $script_name: CHILLBOX_SERVER_NAME variable is empty" && exit 1)
 echo "INFO $script_name: Using CHILLBOX_SERVER_NAME '${CHILLBOX_SERVER_NAME}'"
 
+test -n "${MANAGE_HOSTNAME_DNS_RECORDS}" || (echo "ERROR $script_name: MANAGE_HOSTNAME_DNS_RECORDS variable is empty" && exit 1)
+echo "INFO $script_name: Using MANAGE_HOSTNAME_DNS_RECORDS '${MANAGE_HOSTNAME_DNS_RECORDS}'"
+
+test -n "${MANAGE_DNS_RECORDS}" || (echo "ERROR $script_name: MANAGE_DNS_RECORDS variable is empty" && exit 1)
+echo "INFO $script_name: Using MANAGE_DNS_RECORDS '${MANAGE_DNS_RECORDS}'"
+
 # Should not need to be root when running certbot commands.
 current_user="$(id -u -n)"
 test "$current_user" != "root" || (echo "ERROR $script_name: Must not be root. This script is executing certbot commands and should not require root." && exit 1)
@@ -19,6 +25,8 @@ get_cert() {
   shift 1
 
   domain_list="$*"
+
+  echo "INFO $script_name: Get $cert_name ssl certs for domain list: $domain_list"
 
   # Optimize by only getting new certs if the domain_list has changed instead of
   # replacing certs that are still valid. The domain_list_hash is used as the
@@ -68,35 +76,43 @@ get_cert() {
     # TODO Set a life-cycle rule to expire the cert in s3 after 30 days. Certs
     # should be valid for 90 days when using letsencrypt.
     # https://letsencrypt.org/docs/integration-guide/#when-to-renew
-    has_cert="yes"
+    if [ -e "/etc/letsencrypt/live/$cert_name/fullchain.pem" ] \
+      && [ -e "/etc/letsencrypt/live/$cert_name/privkey.pem" ]; then
+        has_cert="yes"
+    fi
   fi
 
   if [ "$has_cert" = "yes" ]; then
+    echo "INFO $script_name: Success getting $cert_name ssl certs for domain list: $domain_list"
     # Only recreate the domain_list_hash file if getting a ssl cert was successful.
     printf "%s" "$domain_list" > "/etc/chillbox/sites/.$cert_name-$domain_list_hash"
   fi
 }
 
-# Conditionally get cert for chillbox. Only one domain is used for chillbox at
-# this time.
+# First try to get the certs for chillbox itself and fail early. This way the
+# script avoids trying to get certs for the site domains which would probably
+# fail as well.
 
-# Exit without trying to get other site ssl certs if getting the chillbox cert
-# fails. This means that most likely all the other requests to get certs will
-# fail.
-get_cert chillbox "$CHILLBOX_SERVER_NAME" \
-  || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox" && exit 1)
+if [ "$MANAGE_DNS_RECORDS" = "true" ]; then
+  get_cert chillbox "$CHILLBOX_SERVER_NAME" \
+    || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox ($CHILLBOX_SERVER_NAME)." && exit 1)
+fi
 
-# Getting hostname certs can fail if the manage_hostname_dns_records terraform variable was false.
 hostname_chillbox="$(hostname).$CHILLBOX_SERVER_NAME"
-get_cert hostname-chillbox "$hostname_chillbox" \
-  || echo "WARNING $script_name: Failed to get new ssl cert for chillbox hostname ($hostname_chillbox)."
+if [ "$MANAGE_HOSTNAME_DNS_RECORDS" = "true" ]; then
+  get_cert hostname-chillbox "$hostname_chillbox" \
+    || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox hostname ($hostname_chillbox)." && exit 1)
+fi
 
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname="$(basename "$site_json" .site.json)"
   domain_list="$(jq -r '.domain_list[]' "$site_json")"
-  get_cert "$slugname" "$domain_list" || continue
-  # Getting hostname certs can fail if the manage_hostname_dns_records terraform variable was false.
-  hostname_domain_list="$(jq -r --arg jq_hostname_chillbox "${hostname_chillbox}." '.domain_list[] | $jq_hostname_chillbox + .' "$site_json")"
-  get_cert "hostname-$slugname" "$hostname_domain_list" || continue
+  if [ "$MANAGE_DNS_RECORDS" = "true" ]; then
+    get_cert "$slugname" "$domain_list" || continue
+  fi
+  if [ "$MANAGE_HOSTNAME_DNS_RECORDS" = "true" ]; then
+    hostname_domain_list="$(jq -r --arg jq_hostname_chillbox "${hostname_chillbox}." '.domain_list[] | $jq_hostname_chillbox + .' "$site_json")"
+    get_cert "hostname-$slugname" "$hostname_domain_list" || continue
+  fi
 done

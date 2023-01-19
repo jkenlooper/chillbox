@@ -117,7 +117,7 @@ resource "digitalocean_record" "hostname_chillbox" {
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}" : "chillbox-${lower(var.chillbox_instance)}-${lower(var.environment)}-${count.index}.${trimsuffix(var.sub_domain, ".")}"
   type   = "A"
-  value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
+  value  = digitalocean_droplet.chillbox[count.index].ipv4_address
   ttl    = var.dns_ttl
 }
 

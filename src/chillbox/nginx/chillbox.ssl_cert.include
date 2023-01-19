@@ -1,7 +1,6 @@
-# Chillbox will replace this file with the following depending on the
-# existance of these cert files. Otherwise, it will just create a blank file
-# so the use of the nginx 'include' directive will work.
+# Chillbox replaces this file. This is only a placeholder.
 
 ## listen 443 ssl http2;
 ## ssl_certificate /etc/letsencrypt/live/chillbox/fullchain.pem;
 ## ssl_certificate_key /etc/letsencrypt/live/chillbox/privkey.pem;
+## location /.well-known/acme-challenge/ { ... }

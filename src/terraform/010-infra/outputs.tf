@@ -29,6 +29,14 @@ output "sub_domain" {
   value       = var.sub_domain
   description = "Sub domain name."
 }
+output "manage_dns_records" {
+  value       = var.manage_dns_records
+  description = "Manage DNS records and use certbot when getting SSL certificates."
+}
+output "manage_hostname_dns_records" {
+  value       = var.manage_hostname_dns_records
+  description = "Manage hostname DNS records and use certbot when getting SSL certificates."
+}
 output "acme_server" {
   value       = var.acme_server
   description = "ACME server that certbot will use for certs."

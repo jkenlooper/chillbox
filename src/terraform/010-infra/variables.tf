@@ -133,6 +133,16 @@ variable "sub_domain" {
     error_message = "The sub domain must be blank or be a valid sub domain label. The last character should be a '.' since it will be prepended to the domain variable."
   }
 }
+variable "manage_dns_records" {
+  description = "Create DNS records for the chillbox and site domains to use. Use certbot to get and renew SSL certs."
+  default     = true
+  type        = bool
+}
+variable "manage_hostname_dns_records" {
+  description = "Create DNS records specific to the chillbox hostname for chillbox and site domains to use. Each record will be prefixed with the hostname of the server. Use certbot to get and renew SSL certs."
+  default     = true
+  type        = bool
+}
 
 variable "chillbox_count" {
   default     = 1

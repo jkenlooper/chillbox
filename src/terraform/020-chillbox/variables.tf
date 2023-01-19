@@ -183,13 +183,11 @@ variable "sub_domain" {
 }
 
 variable "manage_dns_records" {
-  description = "Create DNS records for the chillbox and site domains to use."
-  default     = true
+  description = "Create DNS records for the chillbox and site domains to use. Use certbot to get and renew SSL certs."
   type        = bool
 }
 variable "manage_hostname_dns_records" {
-  description = "Create DNS records specific to the chillbox hostname for chillbox and site domains to use. Each record will be prefixed with the hostname of the server."
-  default     = true
+  description = "Create DNS records specific to the chillbox hostname for chillbox and site domains to use. Each record will be prefixed with the hostname of the server. Use certbot to get and renew SSL certs."
   type        = bool
 }
 variable "dns_ttl" {
