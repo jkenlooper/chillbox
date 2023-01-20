@@ -62,13 +62,15 @@ get_cert() {
 
     # Save the cert to /etc/letsencrypt/live/
     # https://eff-certbot.readthedocs.io/en/stable/using.html#webroot
+    # The webroot path is set to /srv/chillbox because Chillbox manages the
+    # *.ssl_cert.include file with reload-templates.sh.
     set -x
     certbot certonly \
       --user-agent-comment "chillbox/0.0" \
       --server "$ACME_SERVER" \
       --non-interactive \
       --webroot \
-      --webroot-path "/srv/$cert_name" \
+      --webroot-path "/srv/chillbox" \
       --cert-name "$cert_name" \
       "$@"
     set +x
