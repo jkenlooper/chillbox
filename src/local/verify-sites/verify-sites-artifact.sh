@@ -3,6 +3,7 @@
 set -o errexit
 
 script_name="$(basename "$0")"
+script_dir="$(dirname "$0")"
 
 SITES_ARTIFACT="${SITES_ARTIFACT:-}"
 sites_artifact_file="/var/lib/verify-sites/dist/$SITES_ARTIFACT"
@@ -32,7 +33,7 @@ sites="$(find "$tmp_sites_dir/sites" -type f -name '*.site.json')"
 
 for site_json in $sites; do
   site_json_file="$(basename "$site_json")"
-  /usr/local/src/verify-sites/bin/python /usr/local/src/verify-sites/check-json.py "$site_json" \
+  python "$script_dir/check-json.py" "$site_json" \
       || (echo "ERROR $script_name: Failed site schema for $site_json_file" && exit 1)
 
   # TODO Extract each file listed in the sites manifest and verify
