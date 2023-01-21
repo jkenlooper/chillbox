@@ -36,37 +36,21 @@ fallback_nginx_conf() {
 }
 
 create_ssl_cert_include() {
-  # TODO Include http to https redirect if has certs.
   slugname="$1"
   # Always ensure that the $slugname.ssl_cert.include file exists so the
   # $slugname.nginx.conf file can reference it with an 'include' nginx directive.
   if [ -e "/etc/letsencrypt/live/$slugname/fullchain.pem" ] && [ -e "/etc/letsencrypt/live/$slugname/privkey.pem" ]; then
     cat <<SSL_CERT_INCLUDE > "/etc/nginx/conf.d/$slugname.ssl_cert.include"
 # TLS certs created from certbot letsencrypt
-listen 443 ssl http2;
+listen 443 ssl;
 ssl_certificate /etc/letsencrypt/live/$slugname/fullchain.pem;
 ssl_certificate_key /etc/letsencrypt/live/$slugname/privkey.pem;
-
-# For SSL cert validation and renewal using webroot plugin.
-location /.well-known/acme-challenge/ {
-  limit_except GET {
-    deny all;
-  }
-  root /srv/chillbox;
-}
 SSL_CERT_INCLUDE
   else
     cat <<SSL_CERT_INCLUDE > "/etc/nginx/conf.d/$slugname.ssl_cert.include"
+listen 80;
 # No /etc/letsencrypt/live/$slugname/fullchain.pem file found.
 # No /etc/letsencrypt/live/$slugname/privkey.pem file found.
-
-# For SSL cert validation and renewal using webroot plugin.
-location /.well-known/acme-challenge/ {
-  limit_except GET {
-    deny all;
-  }
-  root /srv/chillbox;
-}
 SSL_CERT_INCLUDE
   fi
 }
