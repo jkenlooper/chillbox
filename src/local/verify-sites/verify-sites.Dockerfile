@@ -71,7 +71,7 @@ PIP_TOOLS_INSTALL
 # https://pypi.org/project/pip-audit/
 ARG PIP_AUDIT_VERSION=2.4.10
 RUN <<INSTALL_PIP_AUDIT
-# Audit packages for known vulnerabilities
+# Install pip-audit
 set -o errexit
 su dev -c "python -m pip install 'pip-audit==$PIP_AUDIT_VERSION'"
 INSTALL_PIP_AUDIT
@@ -117,7 +117,6 @@ pip-audit \
     --vulnerability-service pypi \
     -r ./requirements-hashed.txt
 pip-audit \
-    --require-hashes \
     --local \
     --strict \
     --vulnerability-service osv \

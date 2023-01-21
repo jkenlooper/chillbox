@@ -1,0 +1,25 @@
+# UPKEEP due: "2023-03-23" label: "Python pip" interval: "+3 months"
+# https://pypi.org/project/pip/
+pip==22.3.1
+
+# UPKEEP due: "2023-03-23" label: "Python wheel" interval: "+3 months"
+# https://pypi.org/project/wheel/
+wheel==0.38.4
+
+# UPKEEP due: "2023-03-23" label: "Python setuptools" interval: "+3 months"
+# https://pypi.org/project/setuptools/
+setuptools==65.7.0
+
+# UPKEEP due: "2023-03-23" label: "Python Cython" interval: "+3 months"
+# https://pypi.org/project/Cython/
+Cython==0.29.33
+
+# UPKEEP due: "2023-03-21" label: "Ansible" interval: "+2 months"
+# https://pypi.org/project/ansible/
+#ansible==6.7.0
+ansible==7.1.0
+
+# UPKEEP due: "2023-03-21" label: "Ansible Lint" interval: "+2 months"
+# https://pypi.org/project/ansible-lint/
+# ansible-lint uses the same ansible-core version that ansible package installs.
+ansible-lint==6.11.0

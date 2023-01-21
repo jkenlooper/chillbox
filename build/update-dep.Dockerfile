@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.4.3
 
-# UPKEEP due: "2023-01-10" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.16.2
+# UPKEEP due: "2023-04-21" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.17.1
 # docker image ls --digests alpine
-FROM alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad
+FROM alpine:3.17.1@sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a
 
 RUN <<DEV_USER
 addgroup -g 44444 dev
@@ -19,25 +19,21 @@ set -o errexit
 
 apk update
 /etc/chillbox/bin/install-chillbox-packages.sh
-
-ln -s /usr/bin/python3 /usr/bin/python
 SERVICE_DEPENDENCIES
 
 RUN  <<PYTHON_VIRTUALENV
 # Setup for python virtual env
 set -o errexit
 mkdir -p /home/dev/app
-/usr/bin/python3 -m venv /home/dev/app/.venv
-# The dev user will need write access since pip install will be adding files to
-# the .venv directory.
-chown -R dev:dev /home/dev/app/.venv
+chown -R dev:dev /home/dev/app
+su dev -c '/usr/bin/python3 -m venv /home/dev/app/.venv'
 PYTHON_VIRTUALENV
 # Activate python virtual env by updating the PATH
 ENV VIRTUAL_ENV=/home/dev/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-COPY ./pip-requirements.txt /home/dev/app/pip-requirements.txt
-COPY . /home/dev/app/
+COPY --chown=dev:dev ./pip-requirements.txt /home/dev/app/pip-requirements.txt
+COPY --chown=dev:dev ./dep /home/dev/app/dep
 RUN <<PIP_INSTALL
 # Install pip and wheel
 set -o errexit
@@ -59,16 +55,16 @@ ARG PIP_TOOLS_VERSION=6.12.1
 RUN <<PIP_TOOLS_INSTALL
 # Install pip-tools
 set -o errexit
-python -m pip install pip-tools=="$PIP_TOOLS_VERSION"
+su dev -c "python -m pip install 'pip-tools==$PIP_TOOLS_VERSION'"
 PIP_TOOLS_INSTALL
 
 # UPKEEP due: "2023-03-23" label: "Python auditing tool pip-audit" interval: "+3 months"
 # https://pypi.org/project/pip-audit/
 ARG PIP_AUDIT_VERSION=2.4.10
 RUN <<INSTALL_PIP_AUDIT
-# Audit packages for known vulnerabilities
+# Install pip-audit
 set -o errexit
-python -m pip install "pip-audit==$PIP_AUDIT_VERSION"
+su dev -c "python -m pip install 'pip-audit==$PIP_AUDIT_VERSION'"
 INSTALL_PIP_AUDIT
 
 RUN <<SETUP
@@ -85,26 +81,24 @@ chmod +x /home/dev/sleep.sh
 #chown -R dev:dev /home/dev/app
 SETUP
 
-COPY --chown=dev:dev . /home/dev/app/
-
-RUN <<PIP_INSTALL_REQ
+COPY --chown=dev:dev ./requirements.txt /home/dev/app/requirements.txt
+RUN <<PIP_DOWNLOAD_REQ
 # Download python packages described in requirements.txt
 set -o errexit
 
-mkdir -p "/home/dev/app/dep"
+su dev -c 'mkdir -p /home/dev/app/dep'
 # Change to the app directory so the find-links can be relative.
 cd /home/dev/app
-python -m pip download --disable-pip-version-check \
+su dev -c 'python -m pip download --disable-pip-version-check \
     --exists-action i \
     --destination-directory "./dep" \
-    -r ./requirements.txt
-PIP_INSTALL_REQ
+    -r ./requirements.txt'
+PIP_DOWNLOAD_REQ
 
 USER dev
 
 RUN <<UPDATE_REQUIREMENTS
-# Generate the hashed requirements.txt file that will be copied out of
-# container.
+# Generate hashed requirements.txt that will be copied out of container.
 set -o errexit
 # Change to the app directory so the find-links can be relative.
 cd /home/dev/app/dep
@@ -128,7 +122,6 @@ pip-audit \
     --vulnerability-service pypi \
     -r ./dep/requirements.txt
 pip-audit \
-    --require-hashes \
     --local \
     --strict \
     --vulnerability-service osv \

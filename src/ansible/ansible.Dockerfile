@@ -1,18 +1,27 @@
 # syntax=docker/dockerfile:1.4.3
 
-# UPKEEP due: "2023-01-10" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.16.2
+# UPKEEP due: "2023-04-21" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.17.1
 # docker image ls --digests alpine
-FROM alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad as build
+FROM alpine:3.17.1@sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a
 
-WORKDIR /usr/local/src/ansible
+RUN <<DEV_USER
+addgroup -g 44444 dev
+adduser -u 44444 -G dev -s /bin/sh -D dev
+DEV_USER
+
+WORKDIR /home/dev/app
 RUN <<INSTALL
+# Install dependencies
 set -o errexit
 apk update
 apk add --no-cache \
+  -q --no-progress \
   gcc \
   python3 \
   python3-dev \
+  py3-pip \
+  git \
   libffi-dev \
   build-base \
   musl-dev \
@@ -26,40 +35,12 @@ apk add --no-cache \
   gnupg \
   gnupg-dirmngr
 
-ln -s /usr/bin/python3 /usr/bin/python
-python -m venv .
-/usr/local/src/ansible/bin/pip install --upgrade pip wheel
-
-# UPKEEP due: "2022-12-17" label: "Ansible" interval: "+2 months"
-# https://pypi.org/project/ansible/
-/usr/local/src/ansible/bin/pip install --disable-pip-version-check ansible==6.5.0
-export PATH=/usr/local/src/ansible/bin:$PATH
-
-# Confirm that ansible has been installed
-which ansible
-ansible --version
-ansible-community --version
-
-# UPKEEP due: "2022-12-17" label: "Ansible Lint" interval: "+2 months"
-# https://pypi.org/project/ansible-lint/
-# ansible-lint uses the same ansible-core version that ansible package installs.
-/usr/local/src/ansible/bin/pip install --disable-pip-version-check ansible-lint==6.8.2
-export PATH=/usr/local/src/ansible/bin:$PATH
-
-# Confirm that ansible-lint has been installed
-which ansible-lint
-ansible-lint --version
-
 INSTALL
-
-ENV PATH=/usr/local/src/ansible/bin:${PATH}
 
 ENV GPG_KEY_NAME="chillbox_local"
 
 RUN <<SETUP
 set -o errexit
-addgroup dev
-adduser -G dev -D dev
 
 mkdir -p /home/dev/.gnupg
 chown -R dev:dev /home/dev/.gnupg
@@ -87,6 +68,120 @@ mv /etc/ssh/ssh_config /etc/ssh/ssh_config.bak
 ln -s /var/lib/terraform-020-chillbox/ansible_ssh_config /etc/ssh/ssh_config
 SETUP
 
+RUN  <<PYTHON_VIRTUALENV
+# Setup for python virtual env
+set -o errexit
+mkdir -p /home/dev/app
+chown -R dev:dev /home/dev/app
+su dev -c '/usr/bin/python3 -m venv /home/dev/app/.venv'
+PYTHON_VIRTUALENV
+# Activate python virtual env by updating the PATH
+ENV VIRTUAL_ENV=/home/dev/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# UPKEEP due: "2023-03-23" label: "pip-tools" interval: "+3 months"
+# https://pypi.org/project/pip-tools/
+ARG PIP_TOOLS_VERSION=6.12.1
+RUN <<PIP_TOOLS_INSTALL
+# Install pip-tools
+set -o errexit
+su dev -c "python -m pip install 'pip-tools==$PIP_TOOLS_VERSION'"
+PIP_TOOLS_INSTALL
+
+# UPKEEP due: "2023-03-23" label: "Python auditing tool pip-audit" interval: "+3 months"
+# https://pypi.org/project/pip-audit/
+ARG PIP_AUDIT_VERSION=2.4.10
+RUN <<INSTALL_PIP_AUDIT
+# Install pip-audit
+set -o errexit
+su dev -c "python -m pip install 'pip-audit==$PIP_AUDIT_VERSION'"
+INSTALL_PIP_AUDIT
+
+COPY --chown=dev:dev requirements.txt ./
+
+RUN <<PIP_DOWNLOAD_REQ
+# Download python packages that are in requirements.txt
+set -o errexit
+su dev -c 'mkdir -p /home/dev/app/dep'
+# Change to the app directory so the find-links can be relative.
+cd /home/dev/app
+su dev -c 'python -m pip download --disable-pip-version-check \
+    --exists-action i \
+    --destination-directory "./dep" \
+    -r requirements.txt'
+PIP_DOWNLOAD_REQ
+
+
+USER dev
+
+RUN <<UPDATE_REQUIREMENTS
+# Generate the hashed requirements.txt file.
+set -o errexit
+# Change to the app directory so the find-links can be relative.
+cd /home/dev/app
+pip-compile --generate-hashes \
+    --resolver=backtracking \
+    --allow-unsafe \
+    --no-index --find-links="./dep" \
+    --output-file ./requirements-hashed.txt \
+    requirements.txt
+UPDATE_REQUIREMENTS
+
+RUN <<AUDIT
+# Audit packages for known vulnerabilities
+set -o errexit
+# Change directory so the find-links can be relative.
+cd /home/dev/app
+set -- ""
+
+# UPKEEP due: "2023-04-21" label: "Vuln exception PYSEC-2020-221" interval: "+3 months"
+# Not using aws_ssm.
+# https://osv.dev/vulnerability/PYSEC-2020-221
+set -- "$@" --ignore-vuln "PYSEC-2020-221"
+
+# UPKEEP due: "2023-04-21" label: "Vuln exception PYSEC-2020-220" interval: "+3 months"
+# Not using aws_ssm.
+# https://osv.dev/vulnerability/PYSEC-2020-220
+set -- "$@" --ignore-vuln "PYSEC-2020-220"
+
+# UPKEEP due: "2023-04-21" label: "Vuln exception PYSEC-2021-125" interval: "+3 months"
+# Not applicable for current use case.
+# https://osv.dev/vulnerability/PYSEC-2021-125
+set -- "$@" --ignore-vuln "PYSEC-2021-125"
+
+pip-audit \
+    --require-hashes \
+    --local \
+    --strict \
+    --vulnerability-service pypi \
+    $@ \
+    -r ./requirements-hashed.txt
+pip-audit \
+    --local \
+    --strict \
+    --vulnerability-service osv \
+    $@ \
+    -r ./requirements-hashed.txt
+AUDIT
+
+RUN <<PIP_INSTALL_REQ
+# Install dependencies listed in hashed requirements.txt.
+set -o errexit
+
+pip install --disable-pip-version-check --compile \
+    --no-index \
+    --find-links=./dep \
+    -r ./requirements-hashed.txt
+
+# Confirm that ansible has been installed
+which ansible
+ansible --version
+ansible-community --version
+
+# Confirm that ansible-lint has been installed
+which ansible-lint
+ansible-lint --version
+PIP_INSTALL_REQ
 
 WORKDIR /usr/local/src/chillbox-ansible
 # https://docs.ansible.com/ansible/latest/installation_guide/intro_configuration.html

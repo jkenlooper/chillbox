@@ -58,6 +58,7 @@ set -- "$@" "$ANSIBLE_IMAGE"
 set -- "$@" $run_args
 docker run \
   -i --tty \
+  --user root \
   --rm \
   --name "$ANSIBLE_CONTAINER" \
   --env CHILLBOX_INSTANCE \
