@@ -26,6 +26,7 @@ export GNUPG_CONTAINER="chillbox-gnupg-$CHILLBOX_INSTANCE-$WORKSPACE"
 
 docker run \
   -i --tty \
+  --user root \
   --name "$GNUPG_CONTAINER" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-$WORKSPACE,dst=/home/dev/.gnupg,readonly=false" \

@@ -1,9 +1,14 @@
 # syntax=docker/dockerfile:1.4.3
 
-# UPKEEP due: "2022-12-14" label: "hashicorp/terraform base image" interval: "+4 months"
-# docker pull hashicorp/terraform:1.2.7
+# UPKEEP due: "2023-05-21" label: "hashicorp/terraform base image" interval: "+4 months"
+# docker pull hashicorp/terraform:1.3.7
 # docker image ls --digests hashicorp/terraform
-FROM hashicorp/terraform:1.2.7@sha256:8e4d010fc675dbae1eb6eee07b8fb4895b04d144152d2ef5ad39724857857ccb
+FROM hashicorp/terraform:1.3.7@sha256:48dbb8ae5b0d0fa63424e2eedffd92751ed8d0f2640db4e1dcaa7efc0771dc41
+
+RUN <<DEV_USER
+addgroup -g 44444 dev
+adduser -u 44444 -G dev -s /bin/sh -D dev
+DEV_USER
 
 WORKDIR /usr/local/src/artifact-modules
 
@@ -22,8 +27,6 @@ ENV PATH=/usr/local/src/chillbox-terraform/bin:${PATH}
 
 RUN <<SETUP
 set -o errexit
-addgroup dev
-adduser -G dev -D dev
 chown -R dev:dev .
 
 

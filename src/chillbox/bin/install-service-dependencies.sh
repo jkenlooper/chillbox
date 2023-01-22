@@ -29,7 +29,7 @@ ln -s -f /usr/bin/python3 /usr/bin/python
 ## # https://wiki.alpinelinux.org/wiki/Running_glibc_programs
 ## # apk add gcompat
 ##
-## # UPKEEP due: "2023-01-10" label: "Alpine Linux add glibc compatibility" interval: "+3 months"
+## # UPKEEP due: "2023-06-10" label: "Alpine Linux add glibc compatibility" interval: "+3 months"
 ## # Thanks to https://github.com/aws/aws-cli/issues/4685#issuecomment-615872019
 ## # This needs to be compatible with the current Alpine Linux version.
 ## # https://github.com/sgerrand/alpine-pkg-glibc

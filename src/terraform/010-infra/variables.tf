@@ -90,8 +90,8 @@ variable "acme_server" {
 }
 variable "enable_certbot" {
   description = "Install and enable certbot to automatically issue certificates using the ACME server. Set to false if using SSL termination feature of a load balancer, or if the server is not publicly accessible (web_ips doesn't have a '0.0.0.0' entry)."
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "sites_artifact" {

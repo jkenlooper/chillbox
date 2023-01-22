@@ -58,6 +58,7 @@ touch "$state_infra_json"
 
 docker run \
   -i --tty \
+  --user root \
   --rm \
   --name "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
@@ -88,6 +89,7 @@ touch "$state_chillbox_json"
 
 docker run \
   -i --tty \
+  --user root \
   --rm \
   --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \

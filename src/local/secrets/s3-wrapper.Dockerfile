@@ -1,9 +1,14 @@
 # syntax=docker/dockerfile:1.4.3
 
-# UPKEEP due: "2023-01-10" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.16.2
+# UPKEEP due: "2023-04-21" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.17.1
 # docker image ls --digests alpine
-FROM alpine:3.16.2@sha256:bc41182d7ef5ffc53a40b044e725193bc10142a1243f395ee852a8d9730fc2ad
+FROM alpine:3.17.1@sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a
+
+RUN <<DEV_USER
+addgroup -g 44444 dev
+adduser -u 44444 -G dev -s /bin/sh -D dev
+DEV_USER
 
 WORKDIR /usr/local/src/s3-wrapper
 
@@ -19,11 +24,19 @@ apk add \
   gnupg \
   gnupg-dirmngr
 
-# UPKEEP due: "2023-01-01" label: "s5cmd for s3 object storage" interval: "+3 months"
+# UPKEEP due: "2023-07-22" label: "s5cmd for s3 object storage" interval: "+6 months"
 s5cmd_release_url="https://github.com/peak/s5cmd/releases/download/v2.0.0/s5cmd_2.0.0_Linux-64bit.tar.gz"
+s5cmd_checksum="379d054f434bd1fbd44c0ae43a3f0f11a25e5c23fd9d7184ceeae1065e74e94ad6fa9e42dadd32d72860b919455e22cd2100b6315fd610d8bb4cfe81474621b4"
 s5cmd_tar="$(basename "$s5cmd_release_url")"
 s5cmd_tmp_dir="$(mktemp -d)"
 wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
+sha512sum "$s5cmd_tmp_dir/$s5cmd_tar"
+echo "$s5cmd_checksum  $s5cmd_tmp_dir/$s5cmd_tar" | sha512sum --strict -c \
+  || ( \
+    echo "Cleaning up in case errexit is not set." \
+    && mv --verbose "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_tmp_dir/$s5cmd_tar.INVALID" \
+    && exit 1 \
+    )
 tar x -o -f "$s5cmd_tmp_dir/$s5cmd_tar" -C "/usr/local/bin" s5cmd
 rm -rf "$s5cmd_tmp_dir"
 
@@ -41,8 +54,7 @@ DEPENDENCIES
 
 RUN <<SETUP
 set -o errexit
-addgroup dev
-adduser -G dev -D dev
+
 chown -R dev:dev .
 
 mkdir -p /run/tmp/secrets

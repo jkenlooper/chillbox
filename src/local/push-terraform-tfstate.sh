@@ -53,6 +53,7 @@ printf '\n%s\n' "Executing 'terraform state push' on ${INFRA_CONTAINER}"
 if [ -s "$state_infra_json" ]; then
   docker run \
     -i --tty \
+    --user root \
     --rm \
     --name "${INFRA_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
@@ -87,6 +88,7 @@ printf '\n%s\n' "Executing 'terraform state push' on ${TERRAFORM_CHILLBOX_CONTAI
 if [ -s "$state_chillbox_json" ]; then
   docker run \
     -i --tty \
+    --user root \
     --rm \
     --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
     --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \

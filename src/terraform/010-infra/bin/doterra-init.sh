@@ -2,6 +2,16 @@
 
 set -o errexit
 
+# Ensure backwards compatiblity of these mounted volumes.
+for volume in \
+  /home/dev/.gnupg \
+  /home/dev/.terraform.d \
+  /var/lib/doterra \
+  ; do
+  mkdir -p "$volume"
+  chown -R dev:dev "$volume"
+done
+
 # Create and encrypt the secrets/*.tfvars.json files
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"

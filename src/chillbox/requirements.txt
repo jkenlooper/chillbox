@@ -6,7 +6,7 @@
 # UPKEEP due: "2023-04-10" label: "Update certbot version" interval: "+3 months"
 certbot==2.1.0
 
-# UPKEEP due: "2022-11-09" label: "chill version" interval: "+4 months"
+# UPKEEP due: "2023-05-21" label: "chill version" interval: "+4 months"
 # TODO use chill 0.10.x
 chill==0.10.0a1
 

@@ -82,6 +82,7 @@ trap cleanup_run_tmp_secrets EXIT
 
 docker run \
   -i --tty \
+  --user root \
   --name "${INFRA_CONTAINER}" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
   --mount "type=volume,src=chillbox-dev-dotgnupg--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/home/dev/.gnupg,readonly=false" \
@@ -115,6 +116,7 @@ docker_run_infra_container() {
   fi
   docker run \
     -i --tty \
+    --user root \
     --rm \
     --name "${INFRA_CONTAINER}" \
     --hostname "${INFRA_CONTAINER}" \
@@ -144,6 +146,7 @@ docker_run_infra_container() {
     )
 }
 docker_run_infra_container
+reset
 
 # Start the chillbox terraform
 
@@ -179,6 +182,7 @@ docker_run_chillbox_container() {
   fi
   docker run \
     -i --tty \
+    --user root \
     --rm \
     --name "${TERRAFORM_CHILLBOX_CONTAINER}" \
     --hostname "${TERRAFORM_CHILLBOX_CONTAINER}" \
@@ -218,3 +222,4 @@ docker_run_chillbox_container() {
 
 }
 docker_run_chillbox_container
+reset

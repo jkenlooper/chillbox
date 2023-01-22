@@ -36,10 +36,11 @@ if [ -z "$has_qemu_x86_64" ]; then
   )
 fi
 
-# UPKEEP due: "2022-11-14" label: "Alpine Linux custom image" interval: "+3 months"
+# UPKEEP due: "2023-04-21" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2022-08-14-1528/alpine-virt-image-2022-08-14-1528.qcow2.bz2"
-alpine_custom_image_checksum="3a37457517fe456930901d7794666f1e25b5bd78b663c61e86975127a1e49b9b7d0e55f4d34efc66bc093af998065ce3c329a79fe38144696a7551324c968575"
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2023-01-21-2310/alpine-virt-image-2023-01-21-2310.qcow2.bz2"
+alpine_custom_image_checksum="6a70d976cc9d140c0c3f3a2f0bbe8307aa94786b2771f8cf68954e9810b6444b56b917cfc8b5aa7f6341934c2a17792c2d1093455690acc94f1e7bb2e86509b0"
+
 
 alpine_custom_image_file="$(basename "$alpine_custom_image")"
 cached_alpine_custom_image_file="$chillbox_cache/$alpine_custom_image_file"

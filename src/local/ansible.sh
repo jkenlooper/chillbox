@@ -36,6 +36,7 @@ export DOCKER_BUILDKIT=1
   docker build \
     -t "$sleeper_image" \
     -
+reset
 
 tmp_ansible_etc_hosts_snippet="$(mktemp)"
 docker run \

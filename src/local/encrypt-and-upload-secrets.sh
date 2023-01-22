@@ -109,6 +109,7 @@ trap cleanup EXIT
 
 docker run \
   -i --tty \
+  --user root \
   --rm \
   --name "$s3_download_pubkeys_container" \
   --mount "type=tmpfs,dst=/run/tmp/secrets,tmpfs-mode=0700" \
@@ -234,6 +235,7 @@ docker build \
 
 docker run \
   -i --tty \
+  --user root \
   --rm \
   --name "$s3_upload_encrypted_secrets_container" \
   --mount "type=tmpfs,dst=/home/dev/.aws,tmpfs-mode=0700" \
