@@ -66,6 +66,8 @@ lowercase_chillbox_instance="$(printf "%s" "$CHILLBOX_INSTANCE" | awk '{print to
 lowercase_workspace_environment="$(printf "%s" "$WORKSPACE" | awk '{print tolower($0)}')"
 
 ciphertext_ansible_private_ssh_key_file=/var/lib/chillbox-gnupg/ansible.pem.asc
+mkdir -p /var/lib/chillbox-gnupg
+chown -R dev:dev /var/lib/chillbox-gnupg
 
 secure_tmp_ssh_dir=/run/tmp/ansible/ssh
 mkdir -p "$secure_tmp_ssh_dir"

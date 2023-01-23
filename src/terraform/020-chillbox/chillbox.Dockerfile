@@ -31,7 +31,7 @@ s5cmd_tar="$(basename "$s5cmd_release_url")"
 s5cmd_tmp_dir="$(mktemp -d)"
 wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
 sha512sum "$s5cmd_tmp_dir/$s5cmd_tar"
-echo "$s5cmd_checksum  $s5cmd_tmp_dir/$s5cmd_tar" | sha512sum --strict -c \
+echo "$s5cmd_checksum  $s5cmd_tmp_dir/$s5cmd_tar" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_tmp_dir/$s5cmd_tar.INVALID" \
@@ -55,7 +55,7 @@ set -o errexit
 wget "$alpine_custom_image"
 alpine_custom_image_file="$(basename "${alpine_custom_image}")"
 sha512sum "${alpine_custom_image_file}"
-echo "${alpine_custom_image_checksum}  ${alpine_custom_image_file}" | sha512sum --strict -c \
+echo "${alpine_custom_image_checksum}  ${alpine_custom_image_file}" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "${alpine_custom_image_file}" "${alpine_custom_image_file}.INVALID" \

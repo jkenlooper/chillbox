@@ -5,9 +5,9 @@
     "owner": "site1@example.test",
     "technical": "site1@example.test"
   },
-  "server_name": "site1.example.chill.box",
+  "server_name": "site1.example.massive.xyz",
   "domain_list": [
-    "site1.example.chill.box"
+    "site1.example.massive.xyz"
   ],
   "env": [
     {

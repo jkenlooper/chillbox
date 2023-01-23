@@ -334,7 +334,7 @@ s5cmd_tar="$(basename "$s5cmd_release_url")"
 s5cmd_tmp_dir="$(mktemp -d)"
 wget -P "$s5cmd_tmp_dir" -O "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_release_url"
 sha512sum "$s5cmd_tmp_dir/$s5cmd_tar"
-echo "$s5cmd_checksum  $s5cmd_tmp_dir/$s5cmd_tar" | sha512sum --strict -c \
+echo "$s5cmd_checksum  $s5cmd_tmp_dir/$s5cmd_tar" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "$s5cmd_tmp_dir/$s5cmd_tar" "$s5cmd_tmp_dir/$s5cmd_tar.INVALID" \

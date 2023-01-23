@@ -32,7 +32,7 @@ bats_support_checksum="417a8054462a44a6f46e375526cc1c920bae54ea76ddec3ff46603fe6
 wget -O "$tmpdir/bats-support.tar.gz" \
   "https://github.com/bats-core/bats-support/archive/refs/tags/v${bats_support_version}.tar.gz"
 sha512sum $tmpdir/bats-support.tar.gz
-echo "${bats_support_checksum}  $tmpdir/bats-support.tar.gz" | sha512sum --strict -c \
+echo "${bats_support_checksum}  $tmpdir/bats-support.tar.gz" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "$tmpdir/bats-support.tar.gz" "$tmpdir/bats-support.tar.gz.INVALID" \
@@ -50,7 +50,7 @@ bats_assert_version="2.1.0"
 wget -O "$tmpdir/bats-assert.tar.gz" \
   "https://github.com/bats-core/bats-assert/archive/refs/tags/v${bats_assert_version}.tar.gz"
 sha512sum $tmpdir/bats-assert.tar.gz
-echo "${bats_assert_checksum}  $tmpdir/bats-assert.tar.gz" | sha512sum --strict -c \
+echo "${bats_assert_checksum}  $tmpdir/bats-assert.tar.gz" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "$tmpdir/bats-assert.tar.gz" "$tmpdir/bats-assert.tar.gz.INVALID" \
@@ -68,7 +68,7 @@ bats_mock_latest_commit="48fce74482a4d2bb879b904ccab31b6bc98e3224"
 wget -O "$tmpdir/bats-mock.zip" \
   "https://github.com/grayhemp/bats-mock/archive/${bats_mock_latest_commit}.zip"
 sha512sum "$tmpdir/bats-mock.zip"
-echo "${bats_mock_checksum}  $tmpdir/bats-mock.zip" | sha512sum --strict -c \
+echo "${bats_mock_checksum}  $tmpdir/bats-mock.zip" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
     && mv --verbose "$tmpdir/bats-mock.zip" "$tmpdir/bats-mock.zip.INVALID" \

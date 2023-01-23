@@ -50,7 +50,7 @@ image_file="$(basename "$cached_alpine_custom_image_file" ".bz2")"
 if [ ! -e "$image_dir/$image_file" ]; then
   wget -O "$cached_alpine_custom_image_file" "$alpine_custom_image"
   sha512sum "$cached_alpine_custom_image_file"
-  echo "$alpine_custom_image_checksum  $cached_alpine_custom_image_file" | sha512sum --strict -c \
+  echo "$alpine_custom_image_checksum  $cached_alpine_custom_image_file" | sha512sum -c \
   || (
     echo "Cleaning up in case errexit is not set." \
     && mv --force --verbose "$cached_alpine_custom_image_file" "$cached_alpine_custom_image_file.INVALID" \
