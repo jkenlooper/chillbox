@@ -26,6 +26,7 @@ test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exi
 
 echo "INFO $script_name: Checking and extracting files to immutable bucket for: ${SLUGNAME} ${VERSION}"
 
+# TODO the s5cmd ls will show a 'ERROR ...' string. Should these be hidden?
 immutable_version_file_exists=$(s5cmd ls \
   "s3://${IMMUTABLE_BUCKET_NAME}/$SLUGNAME/versions/$VERSION/version.txt" || printf '')
 if [ -n "$immutable_version_file_exists" ]; then

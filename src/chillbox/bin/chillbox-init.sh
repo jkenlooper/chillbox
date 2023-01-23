@@ -426,6 +426,8 @@ rc-update add nginx default
 rc-service nginx start
 
 if [ "$enable_certbot" = "true" ]; then
+  mkdir -p /etc/chillbox/sites/.has-certs
+  chown -R dev:dev /etc/chillbox/sites/.has-certs
   su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
   /etc/chillbox/bin/reload-templates.sh
 

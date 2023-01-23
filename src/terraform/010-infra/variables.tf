@@ -115,6 +115,7 @@ variable "sites_manifest" {
   description = "The sites manifest."
   default     = "dist/sites.manifest.json"
 }
+# TODO The combination of lt64.${sub_domain}.${domain} should not be over 64 characters since letsencrypt certbot requires at least one short domain name.
 variable "domain" {
   default     = "example.com"
   description = "The domain that will be used when creating new DNS records."

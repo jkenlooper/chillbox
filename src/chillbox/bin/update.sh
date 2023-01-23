@@ -28,6 +28,8 @@ chown root:ansibledev "$chillbox_update_log"
 /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 
 if [ "$ENABLE_CERTBOT" = "true" ]; then
+  mkdir -p /etc/chillbox/sites/.has-certs
+  chown -R dev:dev /etc/chillbox/sites/.has-certs
   su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
   /etc/chillbox/bin/reload-templates.sh >> "$chillbox_update_log" 2>&1 || (cat "$chillbox_update_log" && exit 1)
 

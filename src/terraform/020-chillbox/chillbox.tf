@@ -92,9 +92,17 @@ resource "digitalocean_ssh_key" "chillbox" {
 
 # The env var CHILLBOX_SERVER_NAME is also set with the terraform variables sub_domain and domain.
 resource "digitalocean_record" "chillbox" {
-  count  = var.manage_dns_records ? var.chillbox_count : 0
+  count  = var.manage_dns_records && var.chillbox_count > 0 ? 1 : 0
   domain = var.domain
   name   = trimsuffix(var.sub_domain, ".") == "" ? "@" : trimsuffix(var.sub_domain, ".")
+  type   = "A"
+  value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
+  ttl    = var.dns_ttl
+}
+resource "digitalocean_record" "lt64_chillbox" {
+  count  = var.manage_dns_records && var.chillbox_count > 0 ? 1 : 0
+  domain = var.domain
+  name   = trimsuffix(var.sub_domain, ".") == "" ? "lt64" : "lt64.${trimsuffix(var.sub_domain, ".")}"
   type   = "A"
   value  = one(digitalocean_droplet.chillbox[*].ipv4_address)
   ttl    = var.dns_ttl

@@ -9,6 +9,12 @@ echo "INFO $script_name: Using ACME_SERVER '${ACME_SERVER}'"
 
 test -n "${CHILLBOX_SERVER_NAME}" || (echo "ERROR $script_name: CHILLBOX_SERVER_NAME variable is empty" && exit 1)
 echo "INFO $script_name: Using CHILLBOX_SERVER_NAME '${CHILLBOX_SERVER_NAME}'"
+if [ "${#CHILLBOX_SERVER_NAME}" -gt 59 ]; then
+  echo "ERROR $script_name: The domain lt64.$CHILLBOX_SERVER_NAME is longer than 64 characters."
+  echo "At least one domain must be under 64 characters when using letsencrypt and certbot. The work around is to always include this short domain to each cert request: lt64.$CHILLBOX_SERVER_NAME"
+  echo "Reference: https://community.letsencrypt.org/t/the-server-will-not-issue-certificates-for-the-identifier-neworder-request-did-not-include-a-san-short-enough-to-fit-in-cn/156353/14"
+  exit 1
+fi
 
 test -n "${MANAGE_HOSTNAME_DNS_RECORDS}" || (echo "ERROR $script_name: MANAGE_HOSTNAME_DNS_RECORDS variable is empty" && exit 1)
 echo "INFO $script_name: Using MANAGE_HOSTNAME_DNS_RECORDS '${MANAGE_HOSTNAME_DNS_RECORDS}'"
@@ -37,7 +43,7 @@ get_cert() {
 
   if [ -e "/etc/letsencrypt/live/$cert_name/fullchain.pem" ] \
     && [ -e "/etc/letsencrypt/live/$cert_name/privkey.pem" ] \
-    && [ -e "/etc/chillbox/sites/.$cert_name-$domain_list_hash" ]; then
+    && [ -s "/etc/chillbox/sites/.has-certs/.$cert_name-$domain_list_hash" ]; then
       echo "INFO $script_name: Using existing ssl certs for $cert_name."
       has_cert="yes"
   fi
@@ -72,7 +78,8 @@ get_cert() {
       --webroot \
       --webroot-path "/srv/chillbox" \
       --cert-name "$cert_name" \
-      "$@"
+      --domain "lt64.$CHILLBOX_SERVER_NAME" \
+      $@
     set +x
     # TODO Encrypt and upload the certs to s3 under the $cert_name-$domain_list_hash prefix key.
     # TODO Set a life-cycle rule to expire the cert in s3 after 30 days. Certs
@@ -87,7 +94,7 @@ get_cert() {
   if [ "$has_cert" = "yes" ]; then
     echo "INFO $script_name: Success getting $cert_name ssl certs for domain list: $domain_list"
     # Only recreate the domain_list_hash file if getting a ssl cert was successful.
-    printf "%s" "$domain_list" > "/etc/chillbox/sites/.$cert_name-$domain_list_hash"
+    printf "%s" "$domain_list" > "/etc/chillbox/sites/.has-certs/.$cert_name-$domain_list_hash"
   fi
 }
 
@@ -109,8 +116,8 @@ fi
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname="$(basename "$site_json" .site.json)"
-  domain_list="$(jq -r '.domain_list[]' "$site_json")"
   if [ "$MANAGE_DNS_RECORDS" = "true" ]; then
+    domain_list="$(jq -r '.domain_list[]' "$site_json")"
     get_cert "$slugname" "$domain_list" || continue
   fi
   if [ "$MANAGE_HOSTNAME_DNS_RECORDS" = "true" ]; then
