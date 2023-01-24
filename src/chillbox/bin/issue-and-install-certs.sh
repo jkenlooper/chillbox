@@ -71,6 +71,7 @@ get_cert() {
     # The webroot path is set to /srv/chillbox because Chillbox manages the
     # *.ssl_cert.include file with reload-templates.sh.
     set -x
+    # shellcheck disable=SC2068
     certbot certonly \
       --user-agent-comment "chillbox/0.0" \
       --server "$ACME_SERVER" \
