@@ -1,13 +1,13 @@
 {
-  "name": "Site One",
+  "name": "Site1",
   "release": "https://example.test/this_whole_string_is_replaced_with_an_absolute_file_path_in_terra.sh",
   "contact": {
     "owner": "site1@example.test",
     "technical": "site1@example.test"
   },
-  "server_name": "site1.example.massive.xyz",
+  "server_name": "site1.example.test",
   "domain_list": [
-    "site1.example.massive.xyz"
+    "site1.example.test"
   ],
   "env": [
     {

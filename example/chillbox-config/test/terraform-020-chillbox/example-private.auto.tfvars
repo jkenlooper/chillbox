@@ -30,16 +30,6 @@ project_description = "Infrastructure for hosting websites that use Chill."
 # ])
 vpc_ip_range = "192.168.136.16/28"
 
-# Create DNS records for the chillbox and site domains to use.
-# For environments other then production; it is typical to set this to false.
-manage_dns_records = false
-
-# Create DNS records specific to the chillbox hostname for chillbox and site
-# domains to use. Each record will be prefixed with the hostname of the server.
-# The hostname DNS records is how the development, test, and acceptance servers
-# would be accessed.
-manage_hostname_dns_records = true
-
 # DNS TTL to use for droplets. Minimum is 30 seconds. It is not recommended to
 # use a value higher than 86400 (24 hours).
 dns_ttl = 300

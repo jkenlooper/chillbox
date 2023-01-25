@@ -5,9 +5,15 @@ project_description = "Infrastructure for hosting websites that use Chill."
 
 tech_email        = "tech@example.test"
 
-# Change 'chill.box' to a domain that you own
-domain = "chill.box"
-sub_domain = "test.example."
+# sub_domain for chillbox server is kept short to avoid going over the 64 char
+# limit that letsencrypt ACME server currently has. At least one domain needs to
+# be less than 64 characters.
+sub_domain = "t.cb."
+
+# Change 'example.test' to a domain that you own
+domain = "example.test"
+# Only set to true if the 'domain' variable has been set to one that you own.
+manage_dns_records = false
 
 # https://eff-certbot.readthedocs.io/en/stable/using.html#changing-the-acme-server
 # acme_server is set in acme_server.auto.tfvars.json
