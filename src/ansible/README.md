@@ -57,4 +57,10 @@ ansible-lint playbooks/*.playbook.yml
 doit.sh -s playbook -- playbooks/bootstrap-chillbox-init-credentials.playbook.yml
 ```
 
+---
+
+A list of other things that Ansible playbooks might be a good use for.
+
+- ...
+
 [Ansible documentation]: https://docs.ansible.com/

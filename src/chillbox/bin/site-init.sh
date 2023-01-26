@@ -77,7 +77,13 @@ for site_json in $sites; do
   # TODO cd is needed?
   cd "$current_working_dir"
 
-  # no home, or password for user
+  # The $SLUGNAME user will have no home directory, or password.
+  #
+  # If a $SLUGNAME user would need a home directory; it would be for having
+  # access to s3 bucket or potentially other services. A safer alternative would
+  # be to set s3 access keys for only the service that requires it instead of
+  # just relying on a /home/$SLUGNAME/.aws/credentials file. The s3 access keys
+  # should be set in the secrets file that the app uses.
   if id -u "$SLUGNAME"; then
     echo "INFO $script_name: $SLUGNAME user already added."
   else
@@ -123,6 +129,7 @@ for site_json in $sites; do
         # TODO cd is needed?
         cd "$current_working_dir"
 
+        # TODO create a tmp json file of $service_obj and pass that instead.
         "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
 
       done
