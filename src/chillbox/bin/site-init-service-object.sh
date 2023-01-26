@@ -228,7 +228,7 @@ elif [ "${service_lang_template}" = "chill" ]; then
   # chill-data.yaml that was included when the site artifact was created.
   su -p -s /bin/sh "$SLUGNAME" -c 'chill dropdb'
   su -p -s /bin/sh "$SLUGNAME" -c 'chill initdb'
-  su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name ''chill-*.yaml'' -exec chill load --yaml {} \;'
+  su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name '"'chill-*.yaml'"' -exec chill load --yaml {} \;'
 
   if [ "${freeze}" = "true" ]; then
     echo "INFO $script_name: freeze - $SLUGNAME $service_name $service_name"

@@ -113,14 +113,15 @@ if [ "$MANAGE_DNS_RECORDS" = "true" ]; then
     || (echo "ERROR $script_name: Failed to get new ssl cert for chillbox domains ($chillbox_domain_list)." && exit 1)
 fi
 
-
+# TODO: The no_index_hostname will only work for a single chillbox server.
+no_index_hostname="$(basename "$(hostname)" "-0")"
 sites=$(find /etc/chillbox/sites -type f -name '*.site.json')
 for site_json in $sites; do
   slugname="$(basename "$site_json" .site.json)"
   if [ "$MANAGE_DNS_RECORDS" = "true" ]; then
     domain_list="$(jq -r '.domain_list[]' "$site_json")"
     if [ "$MANAGE_HOSTNAME_DNS_RECORDS" = "true" ]; then
-      hostname_domain_list="$(jq -r --arg jq_hostname_chillbox "${hostname_chillbox}." '.domain_list[] | $jq_hostname_chillbox + .' "$site_json")"
+      hostname_domain_list="$(jq -r --arg jq_hostname_chillbox "${no_index_hostname}." '.domain_list[] | $jq_hostname_chillbox + .' "$site_json")"
       domain_list="$domain_list $hostname_domain_list"
     fi
     get_cert "$slugname" "$domain_list" || continue

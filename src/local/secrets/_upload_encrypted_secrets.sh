@@ -24,6 +24,10 @@ mkdir -p "$secure_tmp_home_aws_dir"
 chown -R dev:dev "$secure_tmp_home_aws_dir"
 chmod -R 0700 "$secure_tmp_home_aws_dir"
 
+mkdir -p /var/lib/encrypted-secrets/
+chown -R dev:dev /var/lib/encrypted-secrets/
+chmod -R 0777 /var/lib/encrypted-secrets/
+
 encrypted_terraform_spaces=/var/lib/doterra/secrets/terraform_spaces.tfvars.json.asc
 decrypted_terraform_spaces="${secure_tmp_secrets_dir}/terraform_spaces.tfvars.json"
 if [ ! -f "${decrypted_terraform_spaces}" ]; then

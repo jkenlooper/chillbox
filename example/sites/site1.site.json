@@ -134,6 +134,10 @@
           "value": "false"
         },
         {
+          "name": "GUNICORN_CMD_ARGS",
+          "value": "--workers=1 --worker-class=sync --max-requests=50 --max-requests-jitter=10 --log-level=debug"
+        },
+        {
           "name": "FLASK_INSTANCE_PATH",
           "value": "/var/lib/$SLUGNAME/api"
         }

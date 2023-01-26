@@ -75,6 +75,7 @@ docker image rm "$sleeper_image" || printf ""
 export DOCKER_BUILDKIT=1
 < "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
+    --progress=plain \
     -t "$sleeper_image" \
     -
 
@@ -82,6 +83,7 @@ s3_wrapper_image="chillbox-s3-wrapper:latest"
 docker image rm "$s3_wrapper_image" || printf ""
 export DOCKER_BUILDKIT=1
 docker build \
+  --progress=plain \
   -t "$s3_wrapper_image" \
   -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
   "${project_dir}/src/local/secrets"
@@ -102,8 +104,9 @@ pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
 
 cleanup() {
-  rm -rf "$tmp_sites_dir"
-  rm -rf "$pubkey_dir"
+  echo "INFO $script_name: Clean up."
+  rm -rf "$tmp_sites_dir" > /dev/null 2>&1
+  rm -rf "$pubkey_dir" > /dev/null 2>&1
 }
 trap cleanup EXIT
 
@@ -135,7 +138,9 @@ for site_json in $site_json_files; do
   version="$(jq -r '.version' "$site_json")"
   no_metadata_version="$(printf "%s" "$version" | sed 's/+.*$//')"
 
-  services="$(jq -c '.services // [] | .[]' "$site_json")"
+  # Avoid getting unsafe values that could have spaces in them.
+  services="$(jq -c '.services // [] | .[] | { secrets_config, name, secrets_export_dockerfile }' "$site_json")"
+
   test -n "${services}" || continue
   for service_obj in $services; do
     test -n "${service_obj}" || continue
