@@ -76,13 +76,9 @@ chmod -R 0700 "$(dirname "$secure_tmp_ssh_dir")"
 
 plaintext_ansible_private_ssh_key_file="$secure_tmp_ssh_dir/ansible.pem"
 if [ ! -f "$plaintext_ansible_private_ssh_key_file" ]; then
-  clear
   echo "INFO $script_name: Decrypting file $ciphertext_ansible_private_ssh_key_file to $plaintext_ansible_private_ssh_key_file"
-  set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"$ciphertext_ansible_private_ssh_key_file\" \"$plaintext_ansible_private_ssh_key_file\""
-  set +x
-  clear
 fi
 
 
@@ -98,11 +94,9 @@ chown -R dev:dev "$(dirname "$secure_tmp_terraform_dir")"
 chmod -R 0700 "$(dirname "$secure_tmp_terraform_dir")"
 plaintext_terraform_010_infra_output_file="$secure_tmp_terraform_dir/terraform-010-infra-output.json"
 if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
-  echo "INFO $0: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
-  set -x
+  echo "INFO $script_name: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"$ciphertext_terraform_010_infra_output_file\" \"$plaintext_terraform_010_infra_output_file\""
-  set +x
 fi
 # Convert the terraform output json file to a simple key:value for ansible vars to use.
 previous_umask="$(umask)"
@@ -127,11 +121,9 @@ for ciphertext_ansible_host_vars_json in $(cat "$tmp_list_ciphertext_ansible_hos
   ansible_host_vars_json_filename="$(basename "$ciphertext_ansible_host_vars_json" .asc)"
   plaintext_ansible_host_vars_json="/run/tmp/ansible/terraform/$ansible_host_vars_json_filename"
   if [ ! -f "$plaintext_ansible_host_vars_json" ]; then
-    echo "INFO $0: Decrypting file $ciphertext_ansible_host_vars_json to $plaintext_ansible_host_vars_json"
-    set -x
+    echo "INFO $script_name: Decrypting file $ciphertext_ansible_host_vars_json to $plaintext_ansible_host_vars_json"
     _dev_tty.sh "
       _decrypt_file_as_dev_user.sh \"$ciphertext_ansible_host_vars_json\" \"$plaintext_ansible_host_vars_json\""
-    set +x
   fi
 done
 rm -f "$tmp_list_ciphertext_ansible_host_vars_json_files"

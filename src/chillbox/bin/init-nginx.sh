@@ -2,7 +2,9 @@
 
 set -o errexit
 
-echo "INFO $0: Running init nginx"
+script_name="$(basename "$0")"
+
+echo "INFO $script_name: Running init nginx"
 
 
 mkdir -p /srv/chillbox/

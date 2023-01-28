@@ -7,9 +7,9 @@ script_name="$(basename "$0")"
 secure_tmp_ansible="${secure_tmp_ansible:-}"
 
 # Sanity check that these were set.
-test -n "$GPG_KEY_NAME" || (echo "ERROR $0: GPG_KEY_NAME variable is empty" && exit 1)
+test -n "$GPG_KEY_NAME" || (echo "ERROR $script_name: GPG_KEY_NAME variable is empty" && exit 1)
 test -n "$secure_tmp_ansible" || (echo "ERROR: secure_tmp_ansible variable is empty." && exit 1)
-test -d "$secure_tmp_ansible" || (echo "ERROR $0: The path '$secure_tmp_ansible' is not a directory" && exit 1)
+test -d "$secure_tmp_ansible" || (echo "ERROR $script_name: The path '$secure_tmp_ansible' is not a directory" && exit 1)
 
 ciphertext_ansible_ssh_key=/var/lib/chillbox-gnupg/ansible.pem.asc
 public_ansible_ssh_key=/var/lib/chillbox-gnupg/ansible.pem.pub

@@ -2,6 +2,8 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 usage() {
   cat <<HERE
 Cleans the state data associated with chillbox instance and workspace.
@@ -27,9 +29,9 @@ done
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 
 export WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  printf '\n%s\n' "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
+  printf '\n%s\n' "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
 
@@ -40,7 +42,7 @@ chillbox_artifact_file_list="$(find "$chillbox_state_dir" -depth -mindepth 1 -ma
 if [ -z "$chillbox_artifact_file_list" ]; then
   printf '\n%s\n' "No chillbox artifact files found to delete in $chillbox_state_dir directory."
 else
-  printf '\n%s\n' "The $0 script will delete the chillbox artifact files in '$chillbox_state_dir' directory."
+  printf '\n%s\n' "The $script_name script will delete the chillbox artifact files in '$chillbox_state_dir' directory."
   printf '\n%s\n' "$chillbox_artifact_file_list"
   printf '\n%s\n' "Delete the chillbox artifact files in the $chillbox_state_dir directory? [y/n]"
   read -r confirm
@@ -55,7 +57,7 @@ state_file_list="$(find "$chillbox_state_instance_workspace_dir" -type f | sort)
 if [ -z "$state_file_list" ]; then
   printf '\n%s\n' "No cache files found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
 else
-  printf '\n%s\n' "The $0 script will delete the cache files in the directory '$chillbox_state_instance_workspace_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+  printf '\n%s\n' "The $script_name script will delete the cache files in the directory '$chillbox_state_instance_workspace_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
   printf '\n%s\n' "$state_file_list"
   printf '\n%s\n' "Delete the cache files in the $chillbox_state_instance_workspace_dir directory? [y/n]"
   read -r confirm
@@ -74,7 +76,7 @@ if [ -d "$encrypted_secrets_dir" ]; then
   if [ -z "$encrypted_secrets_file_list" ]; then
     printf '\n%s\n' "No encrypted secrets found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
   else
-    printf '\n%s\n' "The $0 script will delete the encrypted secrets in the directory '$encrypted_secrets_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+    printf '\n%s\n' "The $script_name script will delete the encrypted secrets in the directory '$encrypted_secrets_dir' for the chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
     printf '\n%s\n' "$encrypted_secrets_file_list"
     printf '\n%s\n' "These encrypted secrets can only be decrypted by the private key that was created on the chillbox server. They should have already been uploaded to the artifact bucket under the path: /chillbox/encrypted-secrets/"
     printf '\n%s\n' "Delete the encrypted secrets in the $encrypted_secrets_dir directory? [y/n]"
@@ -98,7 +100,7 @@ if [ -f "${env_config}" ]; then
   # shellcheck source=/dev/null
   . "${env_config}"
 else
-  echo "ERROR $0: No $env_config file found."
+  echo "ERROR $script_name: No $env_config file found."
   exit 1
 fi
 
@@ -110,7 +112,7 @@ export TERRAFORM_CHILLBOX_IMAGE="chillbox-terraform-020-chillbox:latest"
 export TERRAFORM_CHILLBOX_CONTAINER="chillbox-terraform-020-chillbox-$CHILLBOX_INSTANCE-$WORKSPACE"
 
 
-printf '\n%s\n' "The $0 script will delete the docker volumes in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE' that chillbox uses for the Terraform deployments."
+printf '\n%s\n' "The $script_name script will delete the docker volumes in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE' that chillbox uses for the Terraform deployments."
 printf '\n%s\n' "WARNING:
 Removing the Terraform tfstate volume should only be done if the deployed
 environment has already been destroyed or the terraform state files have already
@@ -125,7 +127,7 @@ volume_list="$(docker volume list \
   --filter "name=chillbox-gnupg-var-lib--$CHILLBOX_INSTANCE-$WORKSPACE" \
   --filter "name=chillbox-service-persistent-dir-var-lib-$CHILLBOX_INSTANCE-$WORKSPACE" \
   --quiet)"
-  test -n "$volume_list" || printf '\n%s\n' "WARNING $0: No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
+  test -n "$volume_list" || printf '\n%s\n' "WARNING $script_name: No docker volumes found to delete in chillbox instance '$CHILLBOX_INSTANCE' and workspace '$WORKSPACE'."
 printf '\n%s\n' "$volume_list"
 printf '\n%s\n' "Continue? [y/n]"
 read -r confirm

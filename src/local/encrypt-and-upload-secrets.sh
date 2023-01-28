@@ -71,34 +71,36 @@ test -f "${sites_manifest_file}" || (echo "ERROR $script_name: No sites manifest
 
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
-docker image rm "$sleeper_image" || printf ""
+docker image rm "$sleeper_image" > /dev/null 2>&1 || printf ""
 export DOCKER_BUILDKIT=1
+echo "INFO $script_name: Building docker image: $sleeper_image"
 < "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
-    --progress=plain \
+    --quiet \
     -t "$sleeper_image" \
     -
 
 s3_wrapper_image="chillbox-s3-wrapper:latest"
-docker image rm "$s3_wrapper_image" || printf ""
+docker image rm "$s3_wrapper_image" > /dev/null 2>&1 || printf ""
 export DOCKER_BUILDKIT=1
+echo "INFO $script_name: Building docker image: $s3_wrapper_image"
 docker build \
-  --progress=plain \
+  --quiet \
   -t "$s3_wrapper_image" \
   -f "${project_dir}/src/local/secrets/s3-wrapper.Dockerfile" \
   "${project_dir}/src/local/secrets"
 
 s3_download_pubkeys_image="chillbox-s3-download-pubkeys:latest"
 s3_download_pubkeys_container="chillbox-s3-download-pubkeys"
-docker rm "${s3_download_pubkeys_container}" || printf ""
-docker image rm "$s3_download_pubkeys_image" || printf ""
+docker rm "${s3_download_pubkeys_container}" > /dev/null 2>&1 || printf ""
+docker image rm "$s3_download_pubkeys_image" > /dev/null 2>&1 || printf ""
 export DOCKER_BUILDKIT=1
+echo "INFO $script_name: Building docker image: $s3_download_pubkeys_image"
 docker build \
+  --quiet \
   -t "$s3_download_pubkeys_image" \
   -f "${project_dir}/src/local/secrets/s3-download-pubkeys.Dockerfile" \
   "${project_dir}/src/local/secrets"
-# Echo out something after a docker build to clear/reset the stdout.
-clear && echo "INFO $script_name: finished docker build of $s3_download_pubkeys_image"
 
 pubkey_dir="$(mktemp -d)"
 tmp_sites_dir="$(mktemp -d)"
@@ -122,9 +124,8 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$pubkey_dir,dst=/var/lib/chillbox/public-keys" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_download_pubkeys_image" || echo "TODO $0: Ignored error on s3 download of chillbox public keys."
-# Echo out something after a docker run to clear/reset the stdout.
-clear && echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
+  "$s3_download_pubkeys_image" || echo "TODO $script_name: Ignored error on s3 download of chillbox public keys."
+echo "INFO $script_name: finished docker run of $s3_download_pubkeys_image"
 
 # Provide encrypt-file script for the container to use.
 cp "$project_dir/src/local/secrets/encrypt-file" "$pubkey_dir"
@@ -180,9 +181,10 @@ for site_json in $site_json_files; do
     service_persistent_dir="/var/lib/$slugname-$service_name"
     chillbox_pubkey_dir="/var/lib/chillbox/public-keys"
 
-    docker image rm "$service_image_name" || printf ""
-    export DOCKER_BUILDKIT=1
-    docker build \
+    docker image rm "$service_image_name" > /dev/null 2>&1 || printf ""
+    echo "INFO $script_name: Building docker image: $service_image_name"
+    DOCKER_BUILDKIT=1 docker build \
+      --quiet \
       --build-arg SECRETS_CONFIG="$secrets_config" \
       --build-arg CHILLBOX_PUBKEY_DIR="$chillbox_pubkey_dir" \
       --build-arg TMPFS_DIR="$tmpfs_dir" \
@@ -193,10 +195,8 @@ for site_json in $site_json_files; do
       -t "$service_image_name" \
       -f "$tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile" \
       "$tmp_service_dir/$slugname/$service_name/"
-    # Echo out something after a docker build to clear/reset the stdout.
-    clear && echo "INFO $script_name: finished docker build of $service_image_name"
 
-    clear && echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile"
+    echo "INFO $script_name: Running the container $tmp_container_name in interactive mode to encrypt and upload secrets. This container is using docker image $service_image_name and the Dockerfile $tmp_service_dir/$slugname/$service_name/$secrets_export_dockerfile"
     docker run \
       -i --tty \
       --rm \
@@ -220,8 +220,8 @@ for site_json in $site_json_files; do
         echo "docker exited with $exitcode exitcode. Ignoring"
       )
     docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted-secrets/." "$encrypted_secret_service_dir/" || echo "Ignore docker cp error."
-    docker stop --time 0 "$tmp_container_name-sleeper" || printf ""
-    docker rm "$tmp_container_name-sleeper" || printf ""
+    docker stop --time 0 "$tmp_container_name-sleeper" > /dev/null 2>&1 || printf ""
+    docker rm "$tmp_container_name-sleeper" > /dev/null 2>&1 || printf ""
 
   done
 
@@ -230,10 +230,11 @@ done
 
 s3_upload_encrypted_secrets_image="chillbox-s3-upload-encrypted-secrets:latest"
 s3_upload_encrypted_secrets_container="chillbox-s3-upload-encrypted-secrets-$CHILLBOX_INSTANCE-$WORKSPACE"
-docker rm "${s3_upload_encrypted_secrets_container}" || printf ""
-docker image rm "$s3_upload_encrypted_secrets_image" || printf ""
-export DOCKER_BUILDKIT=1
-docker build \
+docker rm "${s3_upload_encrypted_secrets_container}" > /dev/null 2>&1 || printf ""
+docker image rm "$s3_upload_encrypted_secrets_image" > /dev/null 2>&1 || printf ""
+echo "INFO $script_name: Building docker image: $s3_upload_encrypted_secrets_image"
+DOCKER_BUILDKIT=1 docker build \
+  --quiet \
   -t "$s3_upload_encrypted_secrets_image" \
   -f "${project_dir}/src/local/secrets/s3-upload-encrypted-secrets.Dockerfile" \
   "${project_dir}/src/local/secrets"
@@ -250,4 +251,4 @@ docker run \
   --mount "type=volume,src=chillbox-${infra_container}-var-lib--$CHILLBOX_INSTANCE-${WORKSPACE},dst=/var/lib/terraform-010-infra,readonly=true" \
   --mount "type=bind,src=$encrypted_secrets_dir,dst=/var/lib/encrypted-secrets" \
   --mount "type=bind,src=$chillbox_build_artifact_vars_file,dst=/var/lib/chillbox-build-artifacts-vars,readonly=true" \
-  "$s3_upload_encrypted_secrets_image" || (echo "TODO $0: Ignored error on s3 upload of encrypted secrets.")
+  "$s3_upload_encrypted_secrets_image" || (echo "TODO $script_name: Ignored error on s3 upload of encrypted secrets.")

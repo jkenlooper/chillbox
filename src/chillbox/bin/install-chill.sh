@@ -2,10 +2,12 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 # Prevent reinstalling chill by checking the version.
 current_chill_version="$(command -v chill > /dev/null 2>&1 && chill --version || printf "")"
 if [ -n "$current_chill_version" ]; then
-  echo "INFO $0: Skipping reinstall of chill version $current_chill_version"
+  echo "INFO $script_name: Skipping reinstall of chill version $current_chill_version"
   # Output the python version to verify tests.
   python --version
   # Output the chill version to verify tests.
@@ -13,7 +15,7 @@ if [ -n "$current_chill_version" ]; then
   exit
 fi
 
-echo "INFO $0: Installing chill dependencies"
+echo "INFO $script_name: Installing chill dependencies"
 apk add \
   -q --no-progress \
   build-base \
@@ -31,7 +33,7 @@ ln -s -f /usr/bin/python3 /usr/bin/python
 python --version
 # TODO Use a venv and not root when using pip install
 python -m pip install --upgrade --quiet pip
-echo "INFO $0: Installing chill"
+echo "INFO $script_name: Installing chill"
 
 python -m pip install --quiet --disable-pip-version-check \
   --no-index --find-links /var/lib/chillbox/python \

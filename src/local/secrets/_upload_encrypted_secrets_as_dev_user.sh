@@ -2,13 +2,15 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 decrypted_terraform_spaces="$1"
-test -n "$decrypted_terraform_spaces" || (echo "ERROR $0: First arg is not set." && exit 1)
-test -e "$decrypted_terraform_spaces" || (echo "ERROR $0: Missing $decrypted_terraform_spaces file." && exit 1)
+test -n "$decrypted_terraform_spaces" || (echo "ERROR $script_name: First arg is not set." && exit 1)
+test -e "$decrypted_terraform_spaces" || (echo "ERROR $script_name: Missing $decrypted_terraform_spaces file." && exit 1)
 
 plaintext_terraform_010_infra_output_file="$2"
-test -n "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $0: Second arg is not set." && exit 1)
-test -e "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $0: Missing $plaintext_terraform_010_infra_output_file file." && exit 1)
+test -n "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $script_name: Second arg is not set." && exit 1)
+test -e "$plaintext_terraform_010_infra_output_file" || (echo "ERROR $script_name: Missing $plaintext_terraform_010_infra_output_file file." && exit 1)
 
 endpoint_url=""
 artifact_bucket_name=""

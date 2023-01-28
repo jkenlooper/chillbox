@@ -2,9 +2,11 @@
 
 set -o errexit
 
-test -n "$WORKSPACE" || (echo "ERROR $0: WORKSPACE variable is empty" && exit 1)
-test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $0: CHILLBOX_INSTANCE variable is empty" && exit 1)
-test -n "$SITES_ARTIFACT" || (echo "ERROR $0: SITES_ARTIFACT variable is empty" && exit 1)
+script_name="$(basename "$0")"
+
+test -n "$WORKSPACE" || (echo "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
+test -n "$CHILLBOX_INSTANCE" || (echo "ERROR $script_name: CHILLBOX_INSTANCE variable is empty" && exit 1)
+test -n "$SITES_ARTIFACT" || (echo "ERROR $script_name: SITES_ARTIFACT variable is empty" && exit 1)
 
 chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 site_domains_file="$chillbox_state_home/site_domains.auto.tfvars.json"

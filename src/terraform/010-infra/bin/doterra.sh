@@ -70,30 +70,24 @@ encrypted_do_token=/var/lib/doterra/secrets/do_token.tfvars.json.asc
 decrypted_do_token="${secure_tmp_secrets_dir}/do_token.tfvars.json"
 if [ ! -f "${decrypted_do_token}" ]; then
   echo "INFO $script_name: Decrypting file ${encrypted_do_token} to ${decrypted_do_token}"
-  set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"${encrypted_do_token}\" \"${decrypted_do_token}\""
-  set +x
 fi
 
 encrypted_terraform_spaces=/var/lib/doterra/secrets/terraform_spaces.tfvars.json.asc
 decrypted_terraform_spaces="${secure_tmp_secrets_dir}/terraform_spaces.tfvars.json"
 if [ ! -f "${decrypted_terraform_spaces}" ]; then
   echo "INFO $script_name: Decrypting file ${encrypted_terraform_spaces} to ${decrypted_terraform_spaces}"
-  set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"${encrypted_terraform_spaces}\" \"${decrypted_terraform_spaces}\""
-  set +x
 fi
 
 encrypted_chillbox_spaces=/var/lib/doterra/secrets/chillbox_spaces.tfvars.json.asc
 decrypted_chillbox_spaces="${secure_tmp_secrets_dir}/chillbox_spaces.tfvars.json"
 if [ ! -f "${decrypted_chillbox_spaces}" ]; then
   echo "INFO $script_name: Decrypting file ${encrypted_chillbox_spaces} to ${decrypted_chillbox_spaces}"
-  set -x
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"${encrypted_chillbox_spaces}\" \"${decrypted_chillbox_spaces}\""
-  set +x
 fi
 
 # Set the SITES_ARTIFACT CHILLBOX_ARTIFACT SITES_MANIFEST vars
@@ -116,14 +110,12 @@ chown dev:dev /usr/local/src/chillbox-terraform/chillbox_sites.auto.tfvars.json
 # Need to update the encrypted tfstate with any potential changes that have
 # happened when the script exits.
 sync_encrypted_tfstate() {
-  set -x
   su dev -c "
     _doterra_state_pull_as_dev_user.sh \"$DECRYPTED_TFSTATE\""
 
   _dev_tty.sh "
     GPG_KEY_NAME=$GPG_KEY_NAME \
     _encrypt_file_as_dev_user.sh \"$ENCRYPTED_TFSTATE\" \"$DECRYPTED_TFSTATE\""
-  set +x
 }
 trap sync_encrypted_tfstate EXIT
 

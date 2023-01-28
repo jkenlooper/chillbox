@@ -15,7 +15,6 @@ secure_tmp_secrets_dir="${secure_tmp_secrets_dir:-}"
 # Sanity check that these were set.
 test -n "$GPG_KEY_NAME" || (echo "ERROR $script_name: GPG_KEY_NAME variable is empty" && exit 1)
 test -n "$secure_tmp_secrets_dir" || (echo "ERROR: secure_tmp_secrets_dir variable is empty." && exit 1)
-ls -al "$secure_tmp_secrets_dir"
 test -d "$secure_tmp_secrets_dir" || (echo "ERROR $script_name: The path '$secure_tmp_secrets_dir' is not a directory" && exit 1)
 
 ACME_SERVER="${ACME_SERVER:-''}"

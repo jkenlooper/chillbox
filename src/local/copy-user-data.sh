@@ -57,10 +57,12 @@ export INFRA_CONTAINER="chillbox-terraform-010-infra-$CHILLBOX_INSTANCE-$WORKSPA
 
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
-docker image rm "$sleeper_image" || printf ""
+docker image rm "$sleeper_image" > /dev/null 2>&1 || printf ""
 export DOCKER_BUILDKIT=1
+echo "INFO $script_name: Building docker image: $sleeper_image"
 < "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
+    --quiet \
     -t "$sleeper_image" \
     -
 
@@ -77,10 +79,10 @@ docker cp "$tmp_container_name:/var/lib/terraform-010-infra/bootstrap-chillbox-i
 # the docker volume.
 docker cp "$tmp_container_name:/var/lib/terraform-010-infra/output.json.asc" "$chillbox_state_home/output.json.asc"
 
-docker stop --time 0 "$tmp_container_name" || printf ""
-docker rm "$tmp_container_name" || printf ""
+docker stop --time 0 "$tmp_container_name" > /dev/null 2>&1 || printf ""
+docker rm "$tmp_container_name" > /dev/null 2>&1 || printf ""
 
-echo "Decrypting the $chillbox_state_home/output.json.asc file is not supported at this time."
+echo "TODO $script_name: Decrypting the $chillbox_state_home/output.json.asc file is not supported at this time."
 exit 1
 
 bootstrap_chillbox_pass="$(jq -r '.bootstrap_chillbox_pass.value' "$chillbox_state_home/output.json")"

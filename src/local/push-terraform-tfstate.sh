@@ -3,13 +3,14 @@
 set -o errexit
 
 project_dir="$(dirname "$(dirname "$(dirname "$(realpath "$0")")")")"
+script_name="$(basename "$0")"
 
 export CHILLBOX_INSTANCE="${CHILLBOX_INSTANCE:-default}"
 
 export WORKSPACE="${WORKSPACE:-development}"
-test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $0: WORKSPACE variable is empty" && exit 1)
+test -n "$WORKSPACE" || (printf '\n%s\n' "ERROR $script_name: WORKSPACE variable is empty" && exit 1)
 if [ "$WORKSPACE" != "development" ] && [ "$WORKSPACE" != "test" ] && [ "$WORKSPACE" != "acceptance" ] && [ "$WORKSPACE" != "production" ]; then
-  printf '\n%s\n' "ERROR $0: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
+  printf '\n%s\n' "ERROR $script_name: WORKSPACE variable is non-valid. Should be one of development, test, acceptance, production."
   exit 1
 fi
 
@@ -18,12 +19,12 @@ if [ -f "${env_config}" ]; then
   # shellcheck source=/dev/null
   . "${env_config}"
 else
-  echo "ERROR $0: No $env_config file found."
+  echo "ERROR $script_name: No $env_config file found."
   exit 1
 fi
 
 chillbox_build_artifact_vars_file="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE/build-artifacts-vars"
-test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $0: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
+test -e "$chillbox_build_artifact_vars_file" || (echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found. Should run the ./terra.sh script first to build artifacts." && exit 1)
 # SITES_ARTIFACT=""
 # SITES_MANIFEST=""
 # shellcheck source=/dev/null
@@ -76,7 +77,7 @@ if [ -s "$state_infra_json" ]; then
 
   printf '\n%s\n' "Pushed $state_infra_json"
 else
-  printf '\n%s\n' "WARNING $0: No $state_infra_json file or it is empty."
+  printf '\n%s\n' "WARNING $script_name: No $state_infra_json file or it is empty."
 fi
 
 
@@ -102,5 +103,5 @@ if [ -s "$state_chillbox_json" ]; then
     "$TERRAFORM_CHILLBOX_IMAGE" doterra-state-push.sh "/usr/local/src/chillbox-terraform/${TERRAFORM_CHILLBOX_CONTAINER}.json"
   printf '\n%s\n' "Pushed $state_chillbox_json"
 else
-  printf '\n%s\n' "WARNING $0: No $state_chillbox_json file or it is empty."
+  printf '\n%s\n' "WARNING $script_name: No $state_chillbox_json file or it is empty."
 fi

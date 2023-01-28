@@ -30,13 +30,14 @@ run_args=$*
 
 # Sleeper image needs no context.
 sleeper_image="chillbox-sleeper"
-docker image rm "$sleeper_image" || printf ""
+docker image rm "$sleeper_image" > /dev/null 2>&1 || printf ""
+echo "INFO $script_name: Building docker image: $sleeper_image"
 export DOCKER_BUILDKIT=1
 < "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
+    --quiet \
     -t "$sleeper_image" \
     -
-reset
 
 tmp_ansible_etc_hosts_snippet="$(mktemp)"
 docker run \
@@ -47,9 +48,9 @@ docker run \
     exitcode="$?"
     echo "docker exited with $exitcode exitcode. Ignoring"
   )
-docker cp "$ANSIBLE_CONTAINER-sleeper:/var/lib/terraform-020-chillbox/ansible-etc-hosts-snippet" "$tmp_ansible_etc_hosts_snippet" || echo "Ignore docker cp error."
-docker stop --time 0 "$ANSIBLE_CONTAINER-sleeper" || printf ""
-docker rm "$ANSIBLE_CONTAINER-sleeper" || printf ""
+docker cp "$ANSIBLE_CONTAINER-sleeper:/var/lib/terraform-020-chillbox/ansible-etc-hosts-snippet" "$tmp_ansible_etc_hosts_snippet" > /dev/null 2>&1 || printf ""
+docker stop --time 0 "$ANSIBLE_CONTAINER-sleeper" > /dev/null 2>&1 || printf ""
+docker rm "$ANSIBLE_CONTAINER-sleeper" > /dev/null 2>&1 || printf ""
 # shellcheck disable=SC2046
 set -- $(cat "$tmp_ansible_etc_hosts_snippet")
 rm -f "$tmp_ansible_etc_hosts_snippet"
@@ -81,4 +82,3 @@ docker run \
   read -r docker_continue_confirm
   test "$docker_continue_confirm" = "y" || exit $exitcode
 )
-

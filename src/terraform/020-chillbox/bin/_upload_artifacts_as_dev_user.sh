@@ -3,6 +3,8 @@
 set -o errexit
 set -o nounset
 
+script_name="$(basename "$0")"
+
 terraform_command="$1"
 decrypted_terraform_spaces="$2"
 plaintext_terraform_010_infra_output_file="$3"
@@ -12,10 +14,10 @@ chmod -R 0700 /run/tmp/secrets/logs
 export LOG_FILE="/run/tmp/secrets/logs/doterra-upload-artifacts.log"
 touch "$LOG_FILE"
 
-echo "INFO $0: jq version: $(jq --version)"
+echo "INFO $script_name: jq version: $(jq --version)"
 
 if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
-  echo "ERROR $0: Missing file: $plaintext_terraform_010_infra_output_file"
+  echo "ERROR $script_name: Missing file: $plaintext_terraform_010_infra_output_file"
   exit 1
 fi
 
@@ -77,6 +79,6 @@ if [ "$terraform_command" != "destroy" ] && [ "$SKIP_UPLOAD" != "y" ]; then
       immutable_bucket_name: $jq_immutable_bucket_name,
       artifact_bucket_name: $jq_artifact_bucket_name,
       endpoint_url: $jq_endpoint_url,
-    }' | ./upload-artifacts.sh || (echo "ERROR $0: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
+    }' | ./upload-artifacts.sh || (echo "ERROR $script_name: ./upload-artifacts.sh failed." && cat "${LOG_FILE}" && exit 1)
 fi
 cat "${LOG_FILE}"

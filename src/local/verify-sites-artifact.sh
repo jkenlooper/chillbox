@@ -24,7 +24,7 @@ if [ -f "${chillbox_build_artifact_vars_file}" ]; then
   # shellcheck source=/dev/null
   . "${chillbox_build_artifact_vars_file}"
 else
-  echo "ERROR $0: No $chillbox_build_artifact_vars_file file found."
+  echo "ERROR $script_name: No $chillbox_build_artifact_vars_file file found."
   exit 1
 fi
 
@@ -47,10 +47,11 @@ if [ -e "$verified_sites_artifact_file" ]; then
   exit 0
 fi
 
-docker rm "$verify_sites_container" || printf ""
-docker image rm "$verify_sites_image" || printf ""
-export DOCKER_BUILDKIT=1
-docker build \
+docker rm "$verify_sites_container" > /dev/null 2>&1 || printf ""
+docker image rm "$verify_sites_image" > /dev/null 2>&1 || printf ""
+echo "INFO $script_name: Building docker image: $verify_sites_image"
+DOCKER_BUILDKIT=1 docker build \
+  --quiet \
   -t "$verify_sites_image" \
   -f "${project_dir}/src/local/verify-sites/verify-sites.Dockerfile" \
   "${project_dir}/src/local/verify-sites"

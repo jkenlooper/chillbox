@@ -2,6 +2,8 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 # Default to being ran in the interactive mode. The 'make test' command will set
 # this to non-interactive to support CI.
 interactive=${INTERACTIVE:-"y"}
@@ -19,7 +21,7 @@ export CHILLBOX_BATS_IMAGE="${CHILLBOX_BATS_IMAGE:-chillbox-bats:latest}"
 # Need to verify that if an argument is passed in it is an actual path to a bats file.
 if [ -n "$1" ]; then
   bats_file_without_extension=$(basename "$1" .bats)
-  test -e "${tests_dir}/$bats_file_without_extension.bats" || (echo "ERROR $0: The path '${tests_dir}/$bats_file_without_extension.bats' does not exist." && exit 1)
+  test -e "${tests_dir}/$bats_file_without_extension.bats" || (echo "ERROR $script_name: The path '${tests_dir}/$bats_file_without_extension.bats' does not exist." && exit 1)
   test_target="tests/$bats_file_without_extension.bats"
 fi
 

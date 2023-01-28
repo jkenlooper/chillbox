@@ -8,7 +8,7 @@ script_name="$(basename "$0")"
 
 terraform_command=${1:-interactive}
 if [ "$terraform_command" != "interactive" ] && [ "$terraform_command" != "plan" ] && [ "$terraform_command" != "apply" ] && [ "$terraform_command" != "destroy" ]; then
-  echo "ERROR $0: This command ($terraform_command) is not supported in this script."
+  echo "ERROR $script_name: This command ($terraform_command) is not supported in this script."
   exit 1
 fi
 
@@ -43,7 +43,7 @@ elif [ "$WORKSPACE" = "production" ]; then
   environment="Production"
   project_environment="Production"
 else
-  echo "ERROR $0: Unhandled WORKSPACE value."
+  echo "ERROR $script_name: Unhandled WORKSPACE value."
   exit 1
 fi
 jq --null-input \
@@ -76,7 +76,7 @@ cleanup_run_tmp_secrets() {
   # TODO support systems other then Linux that can't use a tmpfs mount. Will
   # need to always run a volume rm command each time the container stops to
   # simulate how tmpfs works on Linux.
-  #docker volume rm "chillbox-terraform-run-tmp-secrets--$CHILLBOX_INSTANCE-${WORKSPACE}" || echo "ERROR $0: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--$CHILLBOX_INSTANCE-${WORKSPACE}'. Does it exist?"
+  #docker volume rm "chillbox-terraform-run-tmp-secrets--$CHILLBOX_INSTANCE-${WORKSPACE}" || echo "ERROR $script_name: Failed to remove docker volume 'chillbox-terraform-run-tmp-secrets--$CHILLBOX_INSTANCE-${WORKSPACE}'. Does it exist?"
 }
 trap cleanup_run_tmp_secrets EXIT
 
@@ -111,7 +111,7 @@ docker_run_infra_container() {
   if [ "$terraform_command" != "interactive" ]; then
     set -- doterra.sh "$terraform_command"
   else
-    printf "\n\n%b\n" "INFO $0: Using 'interactive' sub command.\nUse the 'doterra.sh [apply | plan | destroy]' command inside the container to perform 'terraform [apply | plan | destroy]' commands."
+    printf "\n\n%b\n" "INFO $script_name: Using 'interactive' sub command.\nUse the 'doterra.sh [apply | plan | destroy]' command inside the container to perform 'terraform [apply | plan | destroy]' commands."
     set -- sh
   fi
   docker run \
@@ -146,7 +146,6 @@ docker_run_infra_container() {
     )
 }
 docker_run_infra_container
-reset
 
 # Start the chillbox terraform
 
@@ -222,4 +221,3 @@ docker_run_chillbox_container() {
 
 }
 docker_run_chillbox_container
-reset

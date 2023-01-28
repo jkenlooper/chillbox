@@ -2,11 +2,13 @@
 
 set -o errexit
 
-echo "INFO $0: jq version: $(jq --version)"
+script_name="$(basename "$0")"
+
+echo "INFO $script_name: jq version: $(jq --version)"
 
 ciphertext_terraform_010_infra_output_file=/var/lib/terraform-010-infra/output.json.asc
 if [ ! -f "$ciphertext_terraform_010_infra_output_file" ]; then
-  echo "ERROR $0: Missing file: $ciphertext_terraform_010_infra_output_file"
+  echo "ERROR $script_name: Missing file: $ciphertext_terraform_010_infra_output_file"
   exit 1
 fi
 
@@ -31,20 +33,16 @@ chmod -R 0777 /var/lib/chillbox/public-keys/
 encrypted_terraform_spaces=/var/lib/doterra/secrets/terraform_spaces.tfvars.json.asc
 decrypted_terraform_spaces="${secure_tmp_secrets_dir}/terraform_spaces.tfvars.json"
 if [ ! -f "${decrypted_terraform_spaces}" ]; then
-  echo "INFO $0: Decrypting file ${encrypted_terraform_spaces} to ${decrypted_terraform_spaces}"
-  set -x
+  echo "INFO $script_name: Decrypting file ${encrypted_terraform_spaces} to ${decrypted_terraform_spaces}"
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"${encrypted_terraform_spaces}\" \"${decrypted_terraform_spaces}\""
-  set +x
 fi
 
 plaintext_terraform_010_infra_output_file="$secure_tmp_secrets_dir/terraform-010-infra-output.json"
 if [ ! -f "$plaintext_terraform_010_infra_output_file" ]; then
-  echo "INFO $0: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
-  set -x
+  echo "INFO $script_name: Decrypting file $ciphertext_terraform_010_infra_output_file to $plaintext_terraform_010_infra_output_file"
   _dev_tty.sh "
     _decrypt_file_as_dev_user.sh \"$ciphertext_terraform_010_infra_output_file\" \"$plaintext_terraform_010_infra_output_file\""
-  set +x
 fi
 
 su dev -c "_download_pubkeys_as_dev_user.sh \"$decrypted_terraform_spaces\" \"$plaintext_terraform_010_infra_output_file\""

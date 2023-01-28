@@ -38,11 +38,12 @@ encrypted_chillbox_spaces=/var/lib/doterra/secrets/chillbox_spaces.tfvars.json.a
 sleeper_image="chillbox-sleeper"
 docker image rm "$sleeper_image" > /dev/null 2>&1 || printf ""
 export DOCKER_BUILDKIT=1
+echo "INFO $script_name: Building docker image: $sleeper_image"
 < "$project_dir/src/local/secrets/sleeper.Dockerfile" \
   docker build \
-    --progress=plain \
+    --quiet \
     -t "$sleeper_image" \
-    - > /dev/null 2>&1
+    -
 
 for encrypted_file in \
   "$encrypted_do_token" \

@@ -2,9 +2,11 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 input_file="$1"
-test -n "$input_file" || (echo "ERROR $0: input file path is blank." && exit 1)
-test -s "$input_file" || (echo "ERROR $0: input file is missing or empty." && exit 1)
+test -n "$input_file" || (echo "ERROR $script_name: input file path is blank." && exit 1)
+test -s "$input_file" || (echo "ERROR $script_name: input file is missing or empty." && exit 1)
 
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"

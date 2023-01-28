@@ -2,8 +2,10 @@
 
 set -o errexit
 
+script_name="$(basename "$0")"
+
 output_file="$1"
-test -n "$output_file" || (echo "ERROR $0: output file path is blank." && exit 1)
+test -n "$output_file" || (echo "ERROR $script_name: output file path is blank." && exit 1)
 
 secure_tmp_secrets_dir=/run/tmp/secrets/doterra
 mkdir -p "$secure_tmp_secrets_dir"
@@ -27,11 +29,11 @@ chown -R dev:dev "$(dirname "$tmp_output_file")"
 chmod -R 0700 "$(dirname "$tmp_output_file")"
 
 if [ ! -e "$ENCRYPTED_TFSTATE" ]; then
-  echo "INFO $0: No encrypted tfstate file ($ENCRYPTED_TFSTATE) exists to pull."
+  echo "INFO $script_name: No encrypted tfstate file ($ENCRYPTED_TFSTATE) exists to pull."
   exit 0
 fi
 
-echo "INFO $0: Executing _init_tfstate_with_push.sh"
+echo "INFO $script_name: Executing _init_tfstate_with_push.sh"
 _init_tfstate_with_push.sh
 
 su dev -c "secure_tmp_secrets_dir=$secure_tmp_secrets_dir \

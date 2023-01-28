@@ -45,7 +45,9 @@ shift $((OPTIND - 1))
 mkdir -p "$project_dir/src/chillbox/dep"
 image_name="update-dep-$name_hash"
 docker image rm "$image_name" > /dev/null 2>&1 || printf ""
+echo "INFO $script_name: Building docker image: $image_name"
 DOCKER_BUILDKIT=1 docker build \
+  --quiet \
   -t "$image_name" \
   -f "$script_dir/update-dep.Dockerfile" \
   "$project_dir/src/chillbox"
