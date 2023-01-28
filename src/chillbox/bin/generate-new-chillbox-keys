@@ -10,8 +10,9 @@ usage() {
   cat <<HERE
 
 Generate a private and public key pair to encrypt and decrypt content that is
-less than 382 bytes.  This is a wrapper script around the openssl genpkey
--algorithm RSA, and openssl rsa -pubout commands.
+less than 382 bytes. These keys should only be used when performing envelope
+encryption since the encrypted symmetric key that was used to encrypt a file
+would be the first 512 bytes of that file.
 
 Usage:
   $script_name -h
@@ -52,16 +53,29 @@ if [ -e "$public_pem_file" ] || [ -e "$private_pem_file" ]; then
   exit 4
 fi
 
+# UPKEEP due: "2024-01-28" label: "Security review of creating asymmetric keys with RSA algorithm" interval: "+1 year"
 create_private_and_public_keys() {
+  # References:
+  # https://www.feistyduck.com/library/openssl-cookbook/online/openssl-command-line/key-generation.html
+  # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
+  # man openssl-genpkey https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html
+  # man openssl-pkey https://www.openssl.org/docs/man3.0/man1/openssl-pkey.html
+
   umask 0077
+
+  # Set the pkeyopt to be explicit about the defaults. Use rsa_keygen_bits:4096
+  # for encrypting up to 382 bytes when using a rsa_oaep_md:sha512 hash.
   openssl genpkey \
     -out "$private_pem_file" \
     -outform "PEM" \
     -algorithm RSA \
     -pkeyopt "rsa_keygen_bits:4096" \
+    -pkeyopt "rsa_keygen_pubexp:65537" \
     -pkeyopt "rsa_keygen_primes:2"
 
-  openssl rsa \
+  # The opensssl-pkey uses the more secure PKCS#8 format instead of the older
+  # traditional format that openssl-rsa did.
+  openssl pkey \
     -pubout \
     -inform "PEM" \
     -outform "PEM" \

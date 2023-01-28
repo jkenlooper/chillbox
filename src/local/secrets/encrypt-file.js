@@ -3,6 +3,13 @@ import { parse } from "https://deno.land/std@0.158.0/flags/mod.ts?s=parse";
 import { info } from "https://deno.land/std@0.158.0/log/mod.ts?s=info";
 
 const usageMessage = `
+
+
+##########################################
+WARNING: No longer maintained! Do not use.
+##########################################
+
+
 Encrypt a small (less than 382 bytes) file using a provided public key file in PEM format.
 
 Usage:

@@ -5,6 +5,13 @@ import { info } from "std/log";
 import { secureKeysDataDir } from "./data-dir.js";
 
 const usageMessage = `
+
+
+##########################################
+WARNING: No longer maintained! Do not use.
+##########################################
+
+
 Decrypt a file using a provided private key file in PEM format.
 
 Usage:

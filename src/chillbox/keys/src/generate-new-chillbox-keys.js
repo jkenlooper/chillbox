@@ -1,6 +1,18 @@
 import { crypto } from "std/crypto";
+import { info } from "https://deno.land/std@0.158.0/log/mod.ts?s=info";
 
 import { secureKeysDataDir } from "./data-dir.js";
+
+const usageMessage = `
+
+
+##########################################
+WARNING: No longer maintained! Do not use.
+##########################################
+
+
+`;
+info(usageMessage);
 
 const { generateKey, exportKey } = crypto.subtle;
 const chillboxKeysDataDir = await secureKeysDataDir(Deno.args[0]);
