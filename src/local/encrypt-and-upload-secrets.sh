@@ -36,6 +36,8 @@ fi
 chillbox_data_home="${XDG_DATA_HOME:-"$HOME/.local/share"}/chillbox/$CHILLBOX_INSTANCE/$WORKSPACE"
 
 encrypted_secrets_dir="${ENCRYPTED_SECRETS_DIR:-${chillbox_data_home}/encrypted-secrets}"
+#uru="$(whoami)"
+#chown -R "$uru":"$uru" "$encrypted_secrets_dir"
 
 # TODO what variables does this script need?
 # Allow setting defaults from an env file
@@ -219,7 +221,10 @@ for site_json in $site_json_files; do
         exitcode="$?"
         echo "docker exited with $exitcode exitcode. Ignoring"
       )
+
+    # TODO How to do chown on the host?
     docker cp "$tmp_container_name-sleeper:$service_persistent_dir/encrypted-secrets/." "$encrypted_secret_service_dir/" || echo "Ignore docker cp error."
+
     docker stop --time 0 "$tmp_container_name-sleeper" > /dev/null 2>&1 || printf ""
     docker rm "$tmp_container_name-sleeper" > /dev/null 2>&1 || printf ""
 
