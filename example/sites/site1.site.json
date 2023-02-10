@@ -11,6 +11,10 @@
   ],
   "env": [
     {
+      "name": "REDIS_URL_DEFAULT_USER",
+      "value": "unix:///run/site1/redis.sock?db=0"
+    },
+    {
       "name": "CHILL_STATIC_TRY_FILES_LAST_PARAM",
       "value": "=404"
     },
@@ -91,6 +95,10 @@
   "crontab": [
     "13 5 * * 6 echo 'do something'"
   ],
+  "redis": {
+    "maxmemory": "2mb",
+    "maxmemory-policy": "allkeys-lfu"
+  },
   "services": [
     {
       "name": "immutable-example",

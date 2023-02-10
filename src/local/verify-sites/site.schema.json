@@ -104,6 +104,22 @@
         "type": "string"
       }
     },
+    "redis": {
+      "type": "object",
+      "title": "Redis Configuration",
+      "properties": {
+        "maxmemory": {
+            "type": "string",
+            "title": "The maxmemory schema",
+            "description": ""
+        },
+        "maxmemory-policy": {
+            "type": "string",
+            "title": "The maxmemory-policy schema",
+            "description": ""
+        }
+      }
+    },
     "services": {
       "type": "array",
       "title": "The services schema",
