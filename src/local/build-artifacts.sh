@@ -82,6 +82,9 @@ echo "sites_artifact=$sites_artifact" >> "$log_file"
 sites_artifact_file="$chillbox_state_home/$sites_artifact"
 mkdir -p "$chillbox_state_home"
 
+"$project_dir/src/local/redis/update-redis-conf-patch.sh"
+cp "$project_dir/src/local/redis/chillbox.redis.conf" "$project_dir/src/chillbox/redis/redis.conf"
+
 # Create the chillbox artifact file
 if [ ! -f "$chillbox_dist_file" ]; then
   tar c -z -f "$chillbox_dist_file" \
@@ -93,6 +96,7 @@ if [ ! -f "$chillbox_dist_file" ]; then
     bin \
     dep \
     keys \
+    redis \
     VERSION
 else
   echo "No changes to existing chillbox artifact: $chillbox_artifact" >> "$log_file"

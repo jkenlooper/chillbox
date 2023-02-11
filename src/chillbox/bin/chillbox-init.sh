@@ -366,10 +366,16 @@ tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/bin --strip-components 1 b
 mkdir -p /var/lib/chillbox/python
 tar x -z -f "$tmp_chillbox_artifact" -C /var/lib/chillbox/python --strip-components 1 dep
 
+# redis/ -> /etc/chillbox/redis/
+mkdir -p /etc/chillbox/redis/
+tar x -z -f "$tmp_chillbox_artifact" -C /etc/chillbox/redis/ --strip-components 1 redis
+
 ## RUN_INSTALL_SCRIPTS
 /etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-certbot.sh
+/etc/chillbox/bin/install-redis.sh
+
 
 ## Compile deno scripts and install in the /etc/chillbox/bin directory.
 # The deno scripts have been replaced with shell scripts that wrap around the

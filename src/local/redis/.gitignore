@@ -1,0 +1,5 @@
+# Only the patch file is tracked in source control. Run the
+# update-redis-conf-patch.sh script first to create the chillbox.redis.conf
+# file if it doesn't already exist.
+/chillbox.redis.conf
+/redis.conf

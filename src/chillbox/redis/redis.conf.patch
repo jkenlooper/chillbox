@@ -1,5 +1,5 @@
---- /home/jake/projects/chillbox/src/local/redis/redis.conf	2023-02-10 07:54:30.074922521 -0700
-+++ /home/jake/projects/chillbox/src/local/redis/chillbox.redis.conf	2023-02-10 07:51:34.098352521 -0700
+--- redis.conf
++++ chillbox.redis.conf
 @@ -135,7 +135,7 @@
  
  # Accept connections on the specified port, default is 6379 (IANA #815344).

@@ -13,8 +13,13 @@ echo "INFO $script_name: Updating redis.conf.patch file."
 # https://download.redis.io/releases/
 wget -O "$script_dir/redis.conf" "https://raw.githubusercontent.com/redis/redis/7.0/redis.conf"
 
+# Avoid needing to store the whole config file by recreating it.
+test -e "$script_dir/chillbox.redis.conf" \
+  || patch -i "$project_dir/src/chillbox/redis/redis.conf.patch" -o "$script_dir/chillbox.redis.conf" "$script_dir/redis.conf"
+
+# Prevent manual changes by keeping it read only.
 chmod u+w "$project_dir/src/chillbox/redis/redis.conf.patch"
-diff -w -u "$script_dir/redis.conf" "$script_dir/chillbox.redis.conf" > "$project_dir/src/chillbox/redis/redis.conf.patch" || printf ""
+diff -w -u --label redis.conf --label chillbox.redis.conf "$script_dir/redis.conf" "$script_dir/chillbox.redis.conf" > "$project_dir/src/chillbox/redis/redis.conf.patch" || printf ""
 chmod a-w "$project_dir/src/chillbox/redis/redis.conf.patch"
 
 echo "INFO $script_name: Verifying that patch file can be applied."
