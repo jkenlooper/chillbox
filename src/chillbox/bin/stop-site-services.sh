@@ -60,4 +60,10 @@ find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service.json' \
     fi
 done
 
+has_redis="$(jq -r -e 'has("redis")' "/etc/chillbox/sites/$SLUGNAME.site.json" || printf "false")"
+if [ "$has_redis" = "true" ]; then
+  rc-service "${SLUGNAME}-redis" stop || printf "Ignoring"
+  rc-update delete "${SLUGNAME}-redis" default || printf "Ignoring"
+fi
+
 # TODO Set nginx server for this $SLUGNAME to maintenance

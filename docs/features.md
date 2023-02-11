@@ -23,6 +23,8 @@ This is a list of notable features that have currently been implemented.
     [pip install --no-index ...](https://github.com/jkenlooper/chillbox/blob/main/src/chillbox/bin/site-init-service-object.sh#L123)
     command is used when installing Python services on the chillbox server for
     better security.
+- Each site can use and configure a secure [Redis] instance that is only
+    available on a unix socket. Only the site's services can access it. 
 - Website services run on [Alpine Linux] and don't use [systemd]
   - [OpenRC] and [s6] is used instead of [systemd] to align with the goal of using less software. Also see [A word about systemd](https://skarnet.org/software/systemd.html) from the author of [s6].
 - Shell scripts are [POSIX] compliant
@@ -135,3 +137,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [Shellcheck]: https://github.com/koalaman/shellcheck
 [JSON Schema]: https://json-schema.org/
 [custom Alpine Linux image]: https://github.com/jkenlooper/alpine-droplet
+[Redis]: https://redis.io/

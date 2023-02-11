@@ -103,6 +103,7 @@ eval "$(echo "$service_obj" | jq -r '.environment // [] | .[] | "export " + .nam
 
 cd "$slugdir/${service_name}"
 # This should support any WSGI or ASGI python applications.
+# TODO change 'python' to 'gunicorn'
 if [ "${service_lang_template}" = "python" ]; then
 
   mkdir -p "/var/lib/${SLUGNAME}/${service_name}"

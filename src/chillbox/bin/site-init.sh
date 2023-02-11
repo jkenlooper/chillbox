@@ -121,19 +121,7 @@ for site_json in $sites; do
 
   "$bin_dir/site-init-nginx-service.sh" "${tmp_artifact}" "${slugdir}"
 
-  # Redis instance for a site is optional
-  has_redis="$(jq -r -e 'has("redis")' "/etc/chillbox/sites/$SLUGNAME.site.json" || printf "false")"
-  if [ "$has_redis" = "true" ]; then
-    mkdir -p "/var/lib/redis/$SLUGNAME"
-    chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/redis/$SLUGNAME"
-    mkdir -p "/etc/chillbox/redis/$SLUGNAME/"
-    tar x -z -C "/etc/chillbox/redis/$SLUGNAME/" -f "$tmp_artifact" "$SLUGNAME/redis"
-    chown -R "$SLUGNAME":"$SLUGNAME" "/etc/chillbox/redis/$SLUGNAME/"
-
-    # TODO Set up as a service run
-    set -- "$(jq -r '.redis | to_entries | .[] | "--\(.key) " + "\(.value)"' "/etc/chillbox/sites/$SLUGNAME.site.json")"
-    redis-server /etc/chillbox/redis/redis.conf $@ --port 0 --bind "127.0.0.1" --protected-mode "yes" --dir "/var/lib/redis/$SLUGNAME" --aclfile "/etc/chillbox/redis/$SLUGNAME/users.acl" --unixsocket "/run/redis-$SLUGNAME.sock"
-  fi
+  "$bin_dir/site-init-redis.sh" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}"
 
   # init services
   jq -c '.services // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \

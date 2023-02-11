@@ -3,7 +3,6 @@
 set -o errexit
 
 script_name="$(basename "$0")"
-script_dir="$(dirname "$0")"
 
 apk add \
   coreutils \
@@ -26,7 +25,7 @@ wget -O "$tmp_tar" -q "https://download.redis.io/releases/redis-$redis_version.t
 sha512sum "$tmp_tar"
 echo "$redis_checksum  $tmp_tar" | sha512sum -c \
   || ( \
-    echo "Cleaning up in case errexit is not set." \
+    echo "INFO $script_name: Cleaning up in case errexit is not set." \
     && rm -f "$tmp_tar" \
     && exit 1 \
     )
