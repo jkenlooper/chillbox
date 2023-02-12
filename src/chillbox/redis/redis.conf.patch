@@ -47,6 +47,15 @@
  
  # IMPORTANT NOTE: starting with Redis 6 "requirepass" is just a compatibility
  # layer on top of the new ACL system. The option effect will be just setting
+@@ -1089,7 +1089,7 @@
+ # connections, one incoming and another outgoing. It is important to size the
+ # limit accordingly in case of very large clusters.
+ #
+-# maxclients 10000
++maxclients 100
+ 
+ ############################## MEMORY MANAGEMENT ################################
+ 
 @@ -1116,7 +1116,7 @@
  # limit for maxmemory so that there is some free RAM on the system for replica
  # output buffers (but this is not needed if the policy is 'noeviction').

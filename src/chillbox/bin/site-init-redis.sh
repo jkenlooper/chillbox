@@ -30,15 +30,17 @@ fi
 
 mkdir -p "/var/lib/redis/$SLUGNAME"
 chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/redis/$SLUGNAME"
+chmod 0770 "/var/lib/redis/$SLUGNAME"
 mkdir -p "/etc/chillbox/redis/$SLUGNAME/"
 # The users.acl file should be extracted from the tar file.
-tar x -z -C "/etc/chillbox/redis/$SLUGNAME/" -f "$tmp_artifact" "$SLUGNAME/redis"
+tar x -z -C "/etc/chillbox/redis/$SLUGNAME/" -f "$tmp_artifact" --strip-components=2 "$SLUGNAME/redis"
 # Generate a random password that can be manually used by the dev user.
 dev_redis_pass="$(openssl rand 1111 | base64 -w 0 | tr -d '[:punct:]')"
 # The 'dev' user is meant to only be used when troubleshooting or investigating.
 cat <<APPEND_DEV_USER >> "/etc/chillbox/redis/$SLUGNAME/users.acl"
 user dev on >$dev_redis_pass allchannels allkeys +@all
 APPEND_DEV_USER
+cp /etc/chillbox/redis/redis.conf "/etc/chillbox/redis/$SLUGNAME/"
 chown -R "$SLUGNAME":"$SLUGNAME" "/etc/chillbox/redis/$SLUGNAME/"
 chmod -R 0700 "/etc/chillbox/redis/$SLUGNAME/"
 
@@ -60,6 +62,8 @@ chmod +x "/etc/init.d/${SLUGNAME}-redis"
 # Need all the redis conf options to be on a single line.
 site_redis_options="$(jq -r '.redis | to_entries | .[] | "--\(.key) " + "\(.value)"' "/etc/chillbox/sites/$SLUGNAME.site.json" | xargs)"
 
+mkdir -p /run/redis
+chmod 0777 /run/redis
 mkdir -p "/etc/services.d/${SLUGNAME}-redis"
 # The site_redis_options come before the rest of the chillbox specific options
 # to override them. For example, the redis instance is only available on a unix
@@ -68,14 +72,14 @@ cat <<PURR > "/etc/services.d/${SLUGNAME}-redis/run"
 #!/usr/bin/execlineb -P
 s6-setuidgid $SLUGNAME
 fdmove -c 2 1
-redis-server /etc/chillbox/redis/redis.conf \
+redis-server "/etc/chillbox/redis/$SLUGNAME/redis.conf" \
   $site_redis_options \
   --port 0 \
   --bind "127.0.0.1" \
   --protected-mode "yes" \
   --dir "/var/lib/redis/$SLUGNAME" \
   --aclfile "/etc/chillbox/redis/$SLUGNAME/users.acl" \
-  --unixsocket "/run/redis-$SLUGNAME.sock"
+  --unixsocket "/run/redis/$SLUGNAME.sock"
 PURR
 chmod +x "/etc/services.d/${SLUGNAME}-redis/run"
 
