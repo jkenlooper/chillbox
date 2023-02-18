@@ -15,6 +15,8 @@
 !/dist/.gitkeep
 !/dist/README.md
 
+/.build-*
+
 # The build/MANIFEST file is generated, but commit it anyway to be more aware
 # when files are added or removed.
 #/build/MANIFEST

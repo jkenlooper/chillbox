@@ -7,10 +7,8 @@ SHELL := bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 
-manifest_files := $(shell ./build/list-manifest-files.sh)
-
 # The version string includes the build metadata
-VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell cat $(manifest_files) | md5sum - | cut -d' ' -f1)
+VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell ./build/list-manifest-files.sh | xargs -n1 md5sum | md5sum - | cut -d' ' -f1)
 
 objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
 
@@ -47,7 +45,10 @@ dist/chillbox-cli-$(VERSION).tar.gz: build/dist.sh build/MANIFEST
 .PHONY: manifest
 manifest: build/MANIFEST ## Create just build/MANIFEST file
 
-build/MANIFEST: build/create-manifest.sh $(manifest_files)
+.build-$(VERSION):
+	@touch $@
+
+build/MANIFEST: build/create-manifest.sh .build-$(VERSION)
 	./$<
 
 .PHONY: test
