@@ -1,4 +1,5 @@
 TODO: Use litestream to automatically backup sqlite databases that the services use.
+TODO: Automatically upload any redis snapshots to s3.
 
 TODO: Errors should be sent to stderr.
 ```
