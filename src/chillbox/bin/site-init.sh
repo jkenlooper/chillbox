@@ -123,6 +123,19 @@ for site_json in $sites; do
 
   "$bin_dir/site-init-redis.sh" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}"
 
+  # init workers
+  jq -c '.workers // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \
+    | while read -r worker_obj; do
+        test -n "${worker_obj}" || continue
+
+        # TODO cd is needed?
+        cd "$current_working_dir"
+
+        # TODO create a tmp json file of $worker_obj and pass that instead.
+        "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init worker object ${worker_obj}"
+
+      done
+
   # init services
   jq -c '.services // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \
     | while read -r service_obj; do
