@@ -102,20 +102,20 @@ if [ "${worker_lang_template}" = "python-worker" ]; then
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
   python -m venv .venv
-  # Support gunicorn with option to use gevent.
-  # TODO Support uvicorn for ASGI python apps.
   "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    'gunicorn[gevent,setproctitle]'
+    -r /etc/chillbox/pip-requirements.txt"
   # The requirements.txt file should include find-links that are relative to the
   # worker_name directory. Ideally, this is where the deps/ directory is
   # used.
   "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
+    --no-build-isolation \
     -r "$slugdir/$worker_name/requirements.txt"
   "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
+    --no-build-isolation \
     "$slugdir/$worker_name"
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"

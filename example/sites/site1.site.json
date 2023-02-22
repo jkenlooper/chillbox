@@ -99,6 +99,25 @@
     "maxmemory": "2mb",
     "maxmemory-policy": "allkeys-lfu"
   },
+  "workers": [
+    {
+      "name": "worker",
+      "lang": "python-worker",
+      "handler": "worker",
+      "secrets_config": "worker.secrets.cfg",
+      "secrets_export_dockerfile": "secrets.Dockerfile",
+      "niceness": 0,
+      "count": 1,
+      "run-cmd": "site1_worker_run",
+      "manifest": "MANIFEST",
+      "environment": [
+        {
+          "name": "VIRTUAL_ENV_BIN",
+          "value": "/usr/local/src/$SLUGNAME/worker/.venv/bin"
+        }
+      ]
+    }
+  ],
   "services": [
     {
       "name": "immutable-example",
