@@ -1,0 +1,7 @@
+# UPKEEP due: "2023-03-23" label: "pip-tools" interval: "+3 months"
+# https://pypi.org/project/pip-tools/
+pip-tools==6.12.1
+
+# UPKEEP due: "2023-03-23" label: "Python auditing tool pip-audit" interval: "+3 months"
+# https://pypi.org/project/pip-audit/
+pip-audit==2.4.10

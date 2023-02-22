@@ -32,40 +32,45 @@ PYTHON_VIRTUALENV
 ENV VIRTUAL_ENV=/home/dev/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-COPY --chown=dev:dev ./pip-requirements.txt /home/dev/app/pip-requirements.txt
-COPY --chown=dev:dev ./dep /home/dev/app/dep
-RUN <<PIP_INSTALL
-# Install pip and wheel
-set -o errexit
-python -m pip download --disable-pip-version-check \
-  --exists-action i \
-  --destination-directory ./dep \
-  -r /home/dev/app/pip-requirements.txt
-python -m pip install \
-  --no-index --find-links /home/dev/app/dep \
-  -r /home/dev/app/pip-requirements.txt
-PIP_INSTALL
-
 # The pip-tools and pip-audit are not needed on the chillbox server, they only
 # need to be part of this container.
+COPY --chown=dev:dev ./pip-tools-requirements.txt /home/dev/app/pip-tools-requirements.txt
+RUN <<PIP_TOOLS_DOWNLOAD
+# Download pip tools and pip-audt
+set -o errexit
+mkdir -p pip-tools-dep
+python -m pip download --disable-pip-version-check \
+  --exists-action i \
+  --destination-directory ./pip-tools-dep \
+  -r /home/dev/app/pip-tools-requirements.txt
+PIP_TOOLS_DOWNLOAD
 
-# UPKEEP due: "2023-03-23" label: "pip-tools" interval: "+3 months"
-# https://pypi.org/project/pip-tools/
-ARG PIP_TOOLS_VERSION=6.12.1
+COPY --chown=dev:dev ./pip-requirements.txt /home/dev/app/pip-requirements.txt
+RUN <<PIP_INSTALL
+# Install pip requirements
+set -o errexit
+mkdir -p pip-dep
+python -m pip download --disable-pip-version-check \
+  --exists-action i \
+  --destination-directory ./pip-dep \
+  -r /home/dev/app/pip-requirements.txt
+su dev -c "python -m pip install \
+  --no-build-isolation \
+  --no-index \
+  --find-links /home/dev/app/pip-dep \
+  -r /home/dev/app/pip-requirements.txt"
+PIP_INSTALL
+
 RUN <<PIP_TOOLS_INSTALL
-# Install pip-tools
+# Install pip-tools and pip-audit
 set -o errexit
-su dev -c "python -m pip install 'pip-tools==$PIP_TOOLS_VERSION'"
+su dev -c "python -m pip install \
+  --no-build-isolation \
+  --no-index \
+  --find-links /home/dev/app/pip-dep \
+  --find-links /home/dev/app/pip-tools-dep \
+  -r /home/dev/app/pip-tools-requirements.txt"
 PIP_TOOLS_INSTALL
-
-# UPKEEP due: "2023-03-23" label: "Python auditing tool pip-audit" interval: "+3 months"
-# https://pypi.org/project/pip-audit/
-ARG PIP_AUDIT_VERSION=2.4.10
-RUN <<INSTALL_PIP_AUDIT
-# Install pip-audit
-set -o errexit
-su dev -c "python -m pip install 'pip-audit==$PIP_AUDIT_VERSION'"
-INSTALL_PIP_AUDIT
 
 RUN <<SETUP
 set -o errexit
@@ -82,11 +87,13 @@ chmod +x /home/dev/sleep.sh
 SETUP
 
 COPY --chown=dev:dev ./requirements.txt /home/dev/app/requirements.txt
+COPY --chown=dev:dev ./dep /home/dev/app/dep
 RUN <<PIP_DOWNLOAD_REQ
 # Download python packages described in requirements.txt
 set -o errexit
 
 su dev -c 'mkdir -p /home/dev/app/dep'
+cp pip-dep/* /home/dev/app/dep/
 # Change to the app directory so the find-links can be relative.
 cd /home/dev/app
 su dev -c 'python -m pip download --disable-pip-version-check \
@@ -110,6 +117,8 @@ pip-compile --generate-hashes \
     ../requirements.txt
 UPDATE_REQUIREMENTS
 
+# Invalidate this layer each day so the pip-audit results are fresh.
+COPY --chown=dev:dev ./.pip-audit-last-run.txt /home/dev/app/.pip-audit-last-run.txt
 RUN <<AUDIT
 # Audit packages for known vulnerabilities
 set -o errexit

@@ -13,7 +13,7 @@ hatchling==1.13.0
 
 # UPKEEP due: "2023-05-15" label: "Python setuptools" interval: "+3 months"
 # https://pypi.org/project/setuptools/
-setuptools==67.3.2
+setuptools==67.4.0
 
 # UPKEEP due: "2023-05-15" label: "Python Cython" interval: "+3 months"
 # https://pypi.org/project/Cython/
