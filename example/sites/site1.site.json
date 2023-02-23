@@ -11,8 +11,12 @@
   ],
   "env": [
     {
+      "name": "REDIS_HOST",
+      "value": "not-applicable"
+    },
+    {
       "name": "REDIS_URL_DEFAULT_USER",
-      "value": "unix:///run/site1/redis.sock?db=0"
+      "value": "unix:///run/redis/$SLUGNAME.sock?db=0"
     },
     {
       "name": "CHILL_STATIC_TRY_FILES_LAST_PARAM",
