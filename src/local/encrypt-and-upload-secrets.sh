@@ -142,16 +142,16 @@ for site_json in $site_json_files; do
   no_metadata_version="$(printf "%s" "$version" | sed 's/+.*$//')"
 
   # Avoid getting unsafe values that could have spaces in them.
-  services="$(jq -c '.services // [] | .[] | { secrets_config, name, secrets_export_dockerfile }' "$site_json")"
+  services_and_workers="$(jq -c '.services // [], .workers // [] | .[] | { secrets_config, name, secrets_export_dockerfile }' "$site_json")"
 
-  test -n "${services}" || continue
-  for service_obj in $services; do
+  test -n "${services_and_workers}" || continue
+  for service_obj in $services_and_workers; do
     test -n "${service_obj}" || continue
     secrets_config="$(echo "$service_obj" | jq -r '.secrets_config // ""')"
     test -n "$secrets_config" || continue
     service_name="$(echo "$service_obj" | jq -r '.name')"
     secrets_export_dockerfile="$(echo "$service_obj" | jq -r '.secrets_export_dockerfile // ""')"
-    test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value set in services, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
+    test -n "$secrets_export_dockerfile" || (echo "ERROR: No secrets_export_dockerfile value, yet secrets_config is defined. $slugname - $service_obj" && exit 1)
 
     encrypted_secret_service_dir="$encrypted_secrets_dir/$slugname/$service_name"
     mkdir -p "$encrypted_secret_service_dir"

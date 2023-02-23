@@ -20,7 +20,43 @@ echo "INFO $script_name: Using slugdir '${slugdir}'"
 # Set the working directory so the tar command creates the desired structure.
 cd "$(dirname "${slugdir}")"
 
-echo "INFO $script_name: Stopping site services for: ${SLUGNAME}"
+echo "INFO $script_name: Stopping site services and workers for: ${SLUGNAME}"
+
+# Stop all workers in the $SLUGNAME directory and make backups
+find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.worker.json' \
+  | while read -r existing_worker; do
+    echo "INFO $script_name: Stopping existing worker: $existing_worker"
+    test -f "${existing_worker}" || (echo "ERROR $script_name: Failed to read file '${existing_worker}'" && exit 1)
+    worker_name=""
+    worker_lang_template=""
+    worker_secrets_config=""
+    eval "$(jq -r '@sh "
+    worker_name=\(.name)
+    worker_lang_template=\(.lang)
+    worker_secrets_config=\(.secrets_config)
+    "' "$existing_worker")"
+    echo "$worker_lang_template"
+    rc-service "${SLUGNAME}-${worker_name}" stop || printf "Ignoring"
+    rc-update delete "${SLUGNAME}-${worker_name}" default || printf "Ignoring"
+    rm -f "/etc/init.d/${SLUGNAME}-${worker_name}" || printf "Ignoring"
+    rm -rf "/etc/services.d/${SLUGNAME}-${worker_name}" || printf "Ignoring"
+
+    rm -rf "$slugdir/${worker_name}.bak.tar.gz"
+    rm -rf "$slugdir/${worker_name}.worker.json.bak"
+    mv "$slugdir/${worker_name}.worker.json" "$slugdir/${worker_name}.worker.json.bak"
+    test -e "$slugdir/${worker_name}" \
+      && tar c -f "$slugdir/${worker_name}.bak.tar.gz" "$SLUGNAME/${worker_name}" \
+      || echo "INFO $script_name: No existing $slugdir/${worker_name} directory to backup"
+
+    # Stopping the worker will require removing any secrets config file as
+    # well. A new one should be downloaded from s3 and decrypted to start the
+    # worker back up.
+    if [ -e "/run/tmp/chillbox_secrets/$SLUGNAME/$worker_name/$worker_secrets_config" ]; then
+      echo "INFO $script_name: Shredding /run/tmp/chillbox_secrets/$SLUGNAME/$worker_name/$worker_secrets_config file"
+      shred -fu "/run/tmp/chillbox_secrets/$SLUGNAME/$worker_name/$worker_secrets_config" \
+        || rm -f "/run/tmp/chillbox_secrets/$SLUGNAME/$worker_name/$worker_secrets_config"
+    fi
+done
 
 # Stop all services in the $SLUGNAME directory and make backups
 find "$SLUGNAME" -depth -mindepth 1 -maxdepth 1 -type f -name '*.service.json' \

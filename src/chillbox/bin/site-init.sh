@@ -150,13 +150,13 @@ for site_json in $sites; do
       done
   rm -f "$tmp_artifact"
 
-  # TODO Show errors if any service failed to start and output which services
-  # have not started. Each service should not be dependant on other services
-  # also being up, so no rollback of the deployment should happen. It is normal
-  # for services that have a defined secrets config file to not fully start at
-  # this point.
+  # TODO Show errors if any service or worker failed to start. Each service or
+  # worker should not be dependent on other services or workers also being up,
+  # so no rollback of the deployment should happen. It is normal for services or
+  # workers that have a defined secrets config file to not fully start at this
+  # point.
 
-  echo "INFO $script_name: Finished setting up services for $site_json"
+  echo "INFO $script_name: Finished setting up services and workers for $site_json"
 
   # Set crontab
   tmpcrontab=$(mktemp)
