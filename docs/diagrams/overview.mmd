@@ -1,0 +1,61 @@
+flowchart
+    subgraph outside[URLs or absolute file paths]
+        sites_artifact[Sites tar.gz file]
+        site_artifact[Chillbox site tar.gz file]
+        sites_artifact-. references 1 or many .->site_artifact
+    end
+
+    subgraph local_dev[Local Development Environment]
+        chillbox_script[chillbox.sh]
+        terraform{{"Terraform"}}
+        ansible{{"Ansible"}}
+        scripts_local{{"Scripts"}}
+        chillbox_script -. Downloads .-> sites_artifact
+        chillbox_script --> terraform
+        chillbox_script --> ansible
+    end
+
+    subgraph remote[Cloud Hosting Environment]
+        subgraph s3[S3 Object Storage]
+            public[(Public bucket)]
+            private[(Private bucket)]
+        end
+        subgraph networking[Networking]
+            dns
+            firewalls
+            vpc
+        end
+        subgraph compute[Alpine Linux Server]
+          direction TB
+            subgraph site["Chillbox site (1 or many)"]
+                nginx
+                chill["Chill service (0 or many)"]
+                redis[("Redis (0 or 1)")]
+                python_s["Python service (0 or many)"]
+                python_w["Python worker (0 or many)"]
+                site_crontab[\"crontab entries (0 or many)"\]
+
+                nginx -. proxies to .-> public
+                nginx -. proxies to .-> python_s
+                nginx -. proxies to .-> chill
+
+                python_s -- unix socket --> redis
+                python_w -- unix socket --> redis
+            end
+            subgraph cbprocesses["Other processes"]
+              direction TB
+                certbot[/"certbot auto renews SSL certs"/]
+                cb_scripts[/"Chillbox scripts"/]
+            end
+        end
+        networking -. Secures and routes requests to .-> compute
+        cb_scripts -. Download artifacts .-> private
+        cb_scripts -. Upload immutable static site files .-> public
+        cb_scripts -. Updates .-> site
+        cb_scripts -. Initializes .-> site
+
+    end
+
+    terraform -. Provisions .-> remote
+    ansible -. Maintains .-> compute
+    scripts_local -. Uploads Artifacts .-> private
