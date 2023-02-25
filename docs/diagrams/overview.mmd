@@ -1,24 +1,67 @@
-flowchart
-    subgraph outside[URLs or absolute file paths]
-        sites_artifact[Sites tar.gz file]
-        site_artifact[Chillbox site tar.gz file]
-        sites_artifact-. references 1 or many .->site_artifact
-    end
+---
+title: Chillbox Overview
+---
 
-    subgraph local_dev[Local Development Environment]
-        chillbox_script[chillbox.sh]
-        terraform{{"Terraform"}}
-        ansible{{"Ansible"}}
-        scripts_local{{"Scripts"}}
-        chillbox_script -. Downloads .-> sites_artifact
-        chillbox_script --> terraform
-        chillbox_script --> ansible
+%%{
+  init: {
+    'theme':'default',
+    'themeVariables': {
+    }
+  }
+}%%
+
+flowchart LR
+
+  %% SITES_ARTIFACT_URL is all uppercase to match how it is used in Chillbox.
+  %% The site_release_url is kept lowercase on purpose since it is not used as an
+  %% environment variable.
+  SITES_ARTIFACT_URL[/"Sites Artifact URL\n\n A tar.gz file with\n 1 or many sites/*.site.json\n configuration files"/]
+  site_release_url[/"Site Release URL\n\n A tar.gz file with\n all files needed for\n building a site"/]
+
+
+  chillbox_script(["chillbox.sh\n\n Provides sub-commands to\n create and manage multiple\n chillbox instances\n with separate environments"])
+  terraform_container[["Terraform"]]
+  ansible_container[["Ansible"]]
+  build_artifacts_script[["build-artifact.sh"]]
+  encrypt_and_upload_secrets_script[["encrypt-and-upload-secrets.sh"]]
+  local_configuration[\"Configuration\n\n$HOME/.config/chillbox/"\]
+  local_data[\"Data\n\n$HOME/.local/share/chillbox/"\]
+  local_state[\"State\n\n$HOME/.local/state/chillbox/"\]
+  local_docker_volumes[\"Docker\n Volumes"\]
+
+  public_s3_bucket[("chillbox-immutable\n Public S3 Bucket\n\n Stores static resource files\n like compiled Javascript, CSS,\n images and other media.")]
+  private_s3_bucket[("chillbox-artifact\n Private S3 Bucket\n\n Stores artifact files,\n encrypted secrets,\n and other non-public files\n used by sites")]
+
+  subgraph outside[URLs or absolute file paths]
+    SITES_ARTIFACT_URL
+    site_release_url
+    SITES_ARTIFACT_URL-. references 1 or many .->site_release_url
+  end
+
+  subgraph local_dev_env[Local Development Environment]
+    local_configuration --- chillbox_script
+    local_configuration --- terraform_container
+    local_data --- chillbox_script
+    local_state --- chillbox_script
+    chillbox_script -. Downloads .-> SITES_ARTIFACT_URL
+    subgraph local_docker["Docker Containers"]
+      local_docker_volumes
+      build_artifacts_script
+      encrypt_and_upload_secrets_script
+      terraform_container
+      ansible_container
     end
+      chillbox_script --> |runs| build_artifacts_script
+      chillbox_script --> |runs| encrypt_and_upload_secrets_script
+      chillbox_script --> |starts| terraform_container
+      chillbox_script --> |starts| ansible_container
+  end
 
     subgraph remote[Cloud Hosting Environment]
+      encrypt_and_upload_secrets_script -.-> |Uploads encrypted secrets| private_s3_bucket
         subgraph s3[S3 Object Storage]
-            public[(Public bucket)]
-            private[(Private bucket)]
+            public_s3_bucket
+            private_s3_bucket
         end
         subgraph networking[Networking]
             dns
@@ -33,9 +76,9 @@ flowchart
                 redis[("Redis (0 or 1)")]
                 python_s["Python service (0 or many)"]
                 python_w["Python worker (0 or many)"]
-                site_crontab[\"crontab entries (0 or many)"\]
+                site_crontab{{"crontab entries\n (0 or many)"}}
 
-                nginx -. proxies to .-> public
+                nginx -. proxies to .-> public_s3_bucket
                 nginx -. proxies to .-> python_s
                 nginx -. proxies to .-> chill
 
@@ -44,18 +87,20 @@ flowchart
             end
             subgraph cbprocesses["Other processes"]
               direction TB
-                certbot[/"certbot auto renews SSL certs"/]
-                cb_scripts[/"Chillbox scripts"/]
+                certbot[["certbot\n\n Auto renews SSL certs"]]
+                cb_scripts[["Chillbox scripts"]]
+                chillbox_crontab{{"crontab"}}
+              chillbox_crontab --- certbot
             end
         end
         networking -. Secures and routes requests to .-> compute
-        cb_scripts -. Download artifacts .-> private
-        cb_scripts -. Upload immutable static site files .-> public
+        cb_scripts -. Download artifacts .-> private_s3_bucket
+        cb_scripts -. Upload immutable static site files .-> public_s3_bucket
         cb_scripts -. Updates .-> site
         cb_scripts -. Initializes .-> site
 
     end
 
-    terraform -. Provisions .-> remote
-    ansible -. Maintains .-> compute
-    scripts_local -. Uploads Artifacts .-> private
+    terraform_container -. Provisions .-> remote
+    terraform_container -. Uploads Artifacts .-> private_s3_bucket
+    ansible_container -. Maintains and provides ssh access to .-> compute
