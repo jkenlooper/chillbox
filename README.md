@@ -25,11 +25,7 @@ support other cloud hosting providers like [Linode], and [Vultr].
 Please see the [Feature Roadmap](./docs/features.md) for a list of implemented and upcoming
 features.
 
-`TODO` _Show chillbox overview graphic_
-<!-- A bit out of scope, but the diagram generated from using XState could be
-shown here. See the experimental branch that is being used to further test this
-idea: experiment/statechart -->
-
+[Chillbox Overview Flowchart](./docs/diagrams/overview.mmd)
 
 ### Why?
 
