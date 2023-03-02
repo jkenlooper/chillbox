@@ -21,6 +21,7 @@ setup_file() {
   export IMMUTABLE_BUCKET_NAME="example-immutable-bucket-name"
   export SITES_ARTIFACT="mock-sites-example.sites.tar.gz"
   export CHILLBOX_SERVER_PORT="7777"
+  export CHILLBOX_SUBNET="127.0.0.1"
 
 }
 

@@ -104,7 +104,7 @@ if [ -f "/etc/nginx/conf.d/$chillbox_nginx_conf" ]; then
 fi
 
 # shellcheck disable=SC2016
-envsubst '$CHILLBOX_SERVER_NAME $CHILLBOX_SERVER_PORT' < "$template_path" > "/etc/nginx/conf.d/$chillbox_nginx_conf"
+envsubst '$CHILLBOX_SERVER_NAME $CHILLBOX_SERVER_PORT $CHILLBOX_SUBNET' < "$template_path" > "/etc/nginx/conf.d/$chillbox_nginx_conf"
 
 if [ -n "$(grep "$var_curly_regex" "/etc/nginx/conf.d/$chillbox_nginx_conf" || printf "")" ]; then
   echo "ERROR $script_name: Not all env variables were replaced from $template_path" >&2

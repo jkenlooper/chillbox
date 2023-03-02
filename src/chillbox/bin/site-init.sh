@@ -26,6 +26,10 @@ export CHILLBOX_SERVER_PORT="${CHILLBOX_SERVER_PORT}"
 test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $script_name: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
 echo "INFO $script_name: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
 
+export CHILLBOX_SUBNET="${CHILLBOX_SUBNET}"
+test -n "${CHILLBOX_SUBNET}" || (echo "ERROR $script_name: CHILLBOX_SUBNET variable is empty" && exit 1)
+echo "INFO $script_name: Using CHILLBOX_SUBNET '${CHILLBOX_SUBNET}'"
+
 echo "INFO $script_name: Running site init"
 
 

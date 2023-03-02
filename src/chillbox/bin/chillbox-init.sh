@@ -285,6 +285,7 @@ export ENABLE_CERTBOT="${enable_certbot}"
 export S3_ENDPOINT_URL="${s3_endpoint_url}"
 export SERVER_NAME="sitejsonplaceholder-server_name"
 export SERVER_PORT=80
+export CHILLBOX_SUBNET=127.0.0.1
 export SLUGNAME="sitejsonplaceholder-slugname"
 export TECH_EMAIL="${tech_email}"
 export VERSION="sitejsonplaceholder-version"
