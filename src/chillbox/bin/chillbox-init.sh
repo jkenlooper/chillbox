@@ -157,6 +157,9 @@ apk add shadow
 apk add gnupg gnupg-dirmngr
 apk add openssl
 
+# Include common tools for deployment and management
+apk add rsync
+
 # Add other tools that are helpful when troubleshooting.
 apk add mandoc man-pages docs
 apk add vim

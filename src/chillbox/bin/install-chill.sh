@@ -27,8 +27,6 @@ apk add \
   python3-dev \
   sqlite
 
-ln -s -f /usr/bin/python3 /usr/bin/python
-
 # Output the python version to verify tests.
 python --version
 # TODO Use a venv and not root when using pip install

@@ -11,6 +11,10 @@
   ],
   "env": [
     {
+      "name": "NGINX_HOST",
+      "value": "localhost"
+    },
+    {
       "name": "REDIS_HOST",
       "value": "not-applicable"
     },
@@ -97,7 +101,7 @@
     }
   ],
   "crontab": [
-    "13 5 * * 6 echo 'do something'"
+    "*/5 * * * * wget -qS --header 'Host: $SERVER_NAME:$SERVER_PORT' --post-data '' --no-check-certificate -O - http://$NGINX_HOST:$SERVER_PORT/api/internal/start-job-with-worker/example/"
   ],
   "redis": {
     "maxmemory": "2mb",
@@ -112,7 +116,7 @@
       "secrets_export_dockerfile": "secrets.Dockerfile",
       "niceness": 0,
       "count": 1,
-      "run-cmd": "site1_worker_run",
+      "run-cmd": "arq main.WorkerSettings",
       "manifest": "MANIFEST",
       "environment": [
         {
@@ -145,13 +149,9 @@
       "workers": 2,
       "max_requests": 50,
       "max_requests_jitter": 11,
-      "log_level": "debug",
+      "log_level": "info",
       "manifest": "MANIFEST",
       "environment": [
-        {
-          "name": "HOST",
-          "value": "$API_HOST"
-        },
         {
           "name": "PORT",
           "value": "$API_PORT"
@@ -163,10 +163,6 @@
         {
           "name": "FLASK_DEBUG",
           "value": "false"
-        },
-        {
-          "name": "GUNICORN_CMD_ARGS",
-          "value": "--workers=1 --worker-class=sync --max-requests=50 --max-requests-jitter=10 --log-level=debug"
         },
         {
           "name": "FLASK_INSTANCE_PATH",

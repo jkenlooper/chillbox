@@ -84,7 +84,7 @@ tempted to implement.
 - Support other language handlers for services
   - [Rust]
   - [Deno]
-- Start long running worker processes defined by the site. Support using [RQ] or a custom
+- Start long running worker processes defined by the site. Support using [RQ], [ARQ], or a custom
     run command. Allow running multiple copies of them.
 - Batching large jobs by spinning up temporary resources
 - Support for running OpenFaaS functions with [faasd](https://docs.openfaas.com/deployment/faasd/)
@@ -141,3 +141,4 @@ requirements is probably [kubernetes](https://kubernetes.io/),
 [custom Alpine Linux image]: https://github.com/jkenlooper/alpine-droplet
 [Redis]: https://redis.io/
 [RQ]: https://python-rq.org/
+[ARQ]: https://github.com/samuelcolvin/arq

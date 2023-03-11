@@ -109,22 +109,31 @@ if [ "${service_lang_template}" = "python" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${service_name}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
-  python -m venv .venv
+  su "$SLUGNAME" -c "python -m venv $slugdir/$service_name/.venv"
   # Support gunicorn with option to use gevent.
   # TODO Support uvicorn for ASGI python apps.
-  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    'gunicorn[gevent,setproctitle]'
+    'gunicorn[gevent,setproctitle]'"
   # The requirements.txt file should include find-links that are relative to the
   # service_name directory. Ideally, this is where the deps/ directory is
   # used.
-  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
     --no-index \
-    -r "$slugdir/$service_name/requirements.txt"
-  "$slugdir/$service_name/.venv/bin/pip" install --disable-pip-version-check --compile \
+    -r $slugdir/$service_name/requirements.txt"
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
     --no-index \
-    "$slugdir/$service_name"
+    $slugdir/$service_name"
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 
@@ -228,18 +237,27 @@ PURR
 
 elif [ "${service_lang_template}" = "chill" ]; then
 
+  su "$SLUGNAME" -c "python -m venv $slugdir/$service_name/.venv"
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
+    --no-index \
+    --find-links /var/lib/chillbox/python \
+    chill"
+
   # init chill
   # No support for managing tables that are outside of chill for this service.
   # That would be outside of the chillbox contract when using the chill service.
   # Any data that the chill service relies on should be part of the
   # chill-data.yaml that was included when the site artifact was created.
-  su -p -s /bin/sh "$SLUGNAME" -c 'chill dropdb'
-  su -p -s /bin/sh "$SLUGNAME" -c 'chill initdb'
-  su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name '"'chill-*.yaml'"' -exec chill load --yaml {} \;'
+  su -p -s /bin/sh "$SLUGNAME" -c "$slugdir/${service_name}/.venv/bin/chill dropdb"
+  su -p -s /bin/sh "$SLUGNAME" -c "$slugdir/${service_name}/.venv/bin/chill initdb"
+  su -p -s /bin/sh "$SLUGNAME" -c 'find . -depth -maxdepth 1 -name '"'chill-*.yaml'"" -exec $slugdir/${service_name}/.venv/bin/chill load --yaml {} \;"
 
   if [ "${freeze}" = "true" ]; then
     echo "INFO $script_name: freeze - $SLUGNAME $service_name $service_name"
-    su -p -s /bin/sh "$SLUGNAME" -c 'chill freeze'
+    su -p -s /bin/sh "$SLUGNAME" -c "$slugdir/${service_name}/.venv/bin/chill freeze"
   else
     echo "INFO $script_name: dynamic - $SLUGNAME $service_name $service_name"
 
@@ -273,7 +291,7 @@ echo "$service_obj" | jq -r '.environment // [] | .[] | "s6-env " + .name + "=" 
       | "$bin_dir/envsubst-site-env.sh" -c "/etc/chillbox/sites/$SLUGNAME.site.json"
     cat <<PURR
 fdmove -c 2 1
-chill serve
+$slugdir/${service_name}/.venv/bin/chill serve
 } s6-log n3 s1000000 T /var/log/${SLUGNAME}-${service_name}
 PURR
     } > "/etc/services.d/${SLUGNAME}-${service_name}/run"

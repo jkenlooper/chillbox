@@ -16,7 +16,7 @@ support other cloud hosting providers like [Linode], and [Vultr].
 - Minimize attack surface by using _less_ software
 - **Faultless deployments** from a single local machine
 - Server maintenance shouldn't be hard
-- Document the _why_ more than the _how_
+- Well written documentation
 
 ## Overview
 
