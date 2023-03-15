@@ -65,7 +65,6 @@ else
     "$image_name"
 fi
 
-docker cp "$container_name:/home/dev/app/dep/." "$project_dir/src/chillbox/dep/"
-docker cp "$container_name:/home/dev/app/pip-dep/." "$project_dir/src/chillbox/dep/"
+docker cp --quiet "$container_name:/home/dev/app/dep/." "$project_dir/src/chillbox/dep/"
 docker stop --time 0 "$container_name" > /dev/null 2>&1 || printf ""
 docker rm "$container_name" > /dev/null 2>&1 || printf ""

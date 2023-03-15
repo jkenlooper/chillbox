@@ -67,9 +67,11 @@ echo "$spatialindex_sha512sum  $spatialindex_tmp_dir/$spatialindex_tar" | sha512
     && exit 1 \
     )
 tar x -o -f "$spatialindex_tmp_dir/$spatialindex_tar" -C "$spatialindex_tmp_dir" --strip-components 1
-cmake "$spatialindex_tmp_dir"
-make -C "$spatialindex_tmp_dir"
-make -C "$spatialindex_tmp_dir" install
+(cd "$spatialindex_tmp_dir"
+  cmake "$spatialindex_tmp_dir"
+  make -C "$spatialindex_tmp_dir"
+  make -C "$spatialindex_tmp_dir" install
+)
 rm -rf "$spatialindex_tmp_dir"
 
 # Chill uses sqlite

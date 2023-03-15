@@ -19,8 +19,6 @@ apk add \
   shadow \
   python3
 
-ln -s -f /usr/bin/python3 /usr/bin/python
-
 useradd -m -U -p "$dev_user_passphrase_hashed" dev
 useradd -m -U -p "$hashed_password_for_ansibledev" ansibledev
 usermod -a -G ansibledev dev
@@ -30,6 +28,10 @@ usermod -a -G ansibledev dev
 groupadd --system chillconf
 usermod -a -G chillconf dev
 usermod -a -G chillconf ansibledev
+
+
+# TODO Don't inline the encrypted bootstrap script. Update the playbook task to
+# upload it first and then decrypt it.
 
 # The work directory is most likely /root
 work_dir="$(dirname "$0")"

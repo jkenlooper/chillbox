@@ -2,3 +2,13 @@
 /*
 
 # No docker build should use the top level as the build context.
+
+# Except these specific files and directories
+!/src/local/verify-sites/requirements.txt
+!/src/local/verify-sites/site.schema.json
+!/src/local/verify-sites/check-json.py
+!/src/local/verify-sites/verify-sites-artifact.sh
+
+!/src/chillbox/pip-requirements.txt
+!/src/chillbox/pip-tools-requirements.txt
+!/src/chillbox/dep/*

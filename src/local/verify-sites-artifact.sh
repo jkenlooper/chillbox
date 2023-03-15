@@ -54,7 +54,7 @@ DOCKER_BUILDKIT=1 docker build \
   --quiet \
   -t "$verify_sites_image" \
   -f "${project_dir}/src/local/verify-sites/verify-sites.Dockerfile" \
-  "${project_dir}/src/local/verify-sites"
+  "${project_dir}"
 
 docker run \
   -i --tty \

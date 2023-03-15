@@ -6,8 +6,8 @@
 #
 --find-links .
 
-acme==2.3.0 \
-    --hash=sha256:85633a3b0788f4bc3a3265045e3e320addf1003d1276470e77a9f9da96506c08
+acme==2.4.0 \
+    --hash=sha256:658bc0a408ded9cb785088acbfd2f564bd7627e19251ec6e53a87a9f13ee19a4
     # via certbot
 babel==2.11.0 \
     --hash=sha256:1ad3eca1c885218f6dce2ab67291178944f810a10a9b5f3cb8382a5a232b64fe
@@ -23,8 +23,8 @@ certifi==2022.12.7 \
 cffi==1.15.1 \
     --hash=sha256:59c0b02d0a6c384d453fece7566d1c7e6b7bae4fc5874ef2ef46d56776d61c9e
     # via cryptography
-charset-normalizer==3.0.1 \
-    --hash=sha256:c512accbd6ff0270939b9ac214b84fb5ada5f0409c44298361b2f5e13f9aed9e
+charset-normalizer==3.1.0 \
+    --hash=sha256:22908891a380d50738e1f978667536f6c6b526a2064156203d418f4856d6e86a
     # via requests
 chill==0.10.0a1 \
     --hash=sha256:e11cbc0de8cc6fea5c1b21ab104b9f1ab8d4c8b1e4f282cca976b2f9b8ff1cd8
@@ -40,8 +40,8 @@ configargparse==1.5.3 \
 configobj==5.0.8 \
     --hash=sha256:a7a8c6ab7daade85c3f329931a807c8aee750a2494363934f8ea84d8a54c87ea
     # via certbot
-cryptography==39.0.1 \
-    --hash=sha256:0f8da300b5c8af9f98111ffd512910bc792b4c77392a9523624680f7956a99d4
+cryptography==39.0.2 \
+    --hash=sha256:d7d84a512a59f4412ca8549b01f94be4161c94efc598bf09d027d67826beddc0
     # via
     #   acme
     #   certbot
@@ -142,8 +142,8 @@ requests==2.28.2 \
 setproctitle==1.3.2 \
     --hash=sha256:7f2719a398e1a2c01c2a63bf30377a34d0b6ef61946ab9cf4d550733af8f1ef1
     # via gunicorn
-setuptools==67.4.0 \
-    --hash=sha256:f106dee1b506dee5102cc3f3e9e68137bbad6d47b616be7991714b0c62204251
+setuptools==67.6.0 \
+    --hash=sha256:b78aaa36f6b90a074c1fa651168723acbf45d14cb1196b6f02c0fd07f17623b2
     # via
     #   acme
     #   certbot
@@ -152,8 +152,8 @@ setuptools==67.4.0 \
 six==1.16.0 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via configobj
-urllib3==1.26.14 \
-    --hash=sha256:75edcdc2f7d85b137124a6c3c9fc3933cdeaa12ecb9a6a959f22797a0feca7e1
+urllib3==1.26.15 \
+    --hash=sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42
     # via requests
 werkzeug==2.2.3 \
     --hash=sha256:56433961bc1f12533306c624f3be5e744389ac61d722175d543e1751285da612

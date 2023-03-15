@@ -1,7 +1,7 @@
 
 # UPKEEP due: "2023-05-15" label: "Python pip" interval: "+3 months"
 # https://pypi.org/project/pip/
-pip==23.0
+pip==23.0.1
 
 # UPKEEP due: "2023-05-15" label: "Python wheel" interval: "+3 months"
 # https://pypi.org/project/wheel/

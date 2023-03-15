@@ -16,6 +16,7 @@ find . \
   \! -path './.git/*' \
   \! -path './.github/*' \
   \! -name '.gitkeep' \
+  \! -path './src/chillbox/.pip-audit-last-run.txt' \
   \( \
     -path './src/*' \
     -o -path './README.md' \
