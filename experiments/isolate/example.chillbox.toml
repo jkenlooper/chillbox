@@ -1,0 +1,94 @@
+instance = "example"
+gpg-key = "example"
+sqlite-ciphertext-file = "./example.chillbox.sqlite.dump.gpg"
+archive-ciphertext-file = "./example.tar.gz.aes"
+
+### User ###
+# Removing a user here does not automatically remove them from the servers.
+# A remote task would need to do that.
+
+[[user]]
+name = "alice"
+public-ssh-key = "public-ssh-key-that-is-manually-added-here"
+
+[[user]]
+name = "bob"
+public-ssh-key = "public-ssh-key-that-is-manually-added-here"
+
+### Environment ###
+
+[env]
+ENVIRONMENT = "development"
+
+
+### Secrets ###
+
+[[secret]]
+id = "example_secret"
+name = "SECRET_KEY"
+prompt = "Enter secret key"
+expires = 2023-03-16
+owner = "alice"
+# Secret can be shared by two users
+[[secret.remote]]
+append-dest = "/usr/lib/share/weboftomorrow/secret.cfg"
+user = "weboftomorrow"
+[[secret.remote]]
+append-dest = "/usr/lib/share/site1/secret.cfg"
+user = "site1"
+
+### Files ###
+
+# Copies these files from the host machine to the archive.
+[[local-file]]
+name = "example-built-tar-file"
+src = "/path/to/example-built-tar-file/on-host"
+dest = "/path/to/example-built-tar-file/to-store-in-archive"
+
+
+[[remote-file]]
+name = "stream-nginx-conf"
+template = "/path/to/template.nginx.conf.jinja2"
+dest = "/etc/nginx/conf.d/example-stream.nginx.conf"
+[remote-file.context]
+domains = ["abc.example.com"]
+
+[[remote-file]]
+name = "bootstrap-stream-nginx-server.sh"
+src = "/path/to/bootstrap-stream-nginx-server.sh"
+dest = "/path/to/bootstrap-stream-nginx-server.sh"
+
+[[remote-file]]
+name = "chillbox-nginx-conf"
+template = "/path/to/template.nginx.conf.jinja2"
+dest = "/etc/nginx/conf.d/chillbox.nginx.conf"
+[remote-file.context]
+domains = ["abc.chillbox.example.com"]
+
+[[remote-file]]
+name = "bootstrap-chillbox-server.sh"
+src = "/path/to/bootstrap-chillbox-server.sh"
+dest = "/path/to/bootstrap-chillbox-server.sh"
+
+
+### Servers ###
+# Changing login-users and no-home-users updates the user-data file. The pre-run
+# task for remote will only add that user and update ssh key.  A remote task
+# must be used in order to remove users on a server.
+
+[[server]]
+ip = "122.33.44.55"
+name = "example-stream-server"
+# For this example, 'bob' would not have access to this server.
+login-users = [ "alice:dev" ]
+no-home-users = [ "dev" ]
+secrets = [ "example_secret" ]
+remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]
+
+[[server]]
+ip = "122.3.4.5"
+name = "example-web-server-for-bob"
+login-users = [ "alice:dev", "bob:dev" ]
+no-home-users = [ "dev", "weboftomorrow", "site1" ]
+secrets = [ "example_secret" ]
+remote-files = [ "chillbox-nginx-conf", "bootstrap-chillbox-server.sh" ]
