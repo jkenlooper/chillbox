@@ -6,22 +6,14 @@ except ModuleNotFoundError:
 from invoke import task
 
 from chillbox.errors import ChillboxInvalidConfigError
+from chillbox.tasks.local_checks import check_required_commands
 
 required_keys = set(
-    ["instance", "gpg-key", "sqlite-ciphertext-file", "archive-ciphertext-file"]
+    ["instance", "gpg-key", "archive-directory"]
 )
 
-required_commands = set([
-    "openssl",
-    "python",
-    "gpg",
-])
 
-optional_commands = set([
-    "terraform",
-])
-
-@task
+@task(pre=[check_required_commands])
 def validate_chillbox_config(c):
     with open("example.chillbox.toml", "rb") as f:
         data = tomllib.load(f)
@@ -38,6 +30,3 @@ def validate_chillbox_config(c):
     c.run(f"""echo \"The {f.name} file is valid.\"""")
 
 
-@task(pre=[validate_chillbox_config])
-def build(c):
-    c.run("echof 'hi'")

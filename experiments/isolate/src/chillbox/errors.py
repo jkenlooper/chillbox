@@ -7,3 +7,6 @@ class ChillboxExit(invoke.exceptions.Exit):
 class ChillboxInvalidConfigError(ChillboxExit):
     "Invalid configuration"
 
+class ChillboxDependencyError(ChillboxExit):
+    ""
+

@@ -48,7 +48,7 @@ dev = [
 ]
 
 [project.scripts]
-chillbox = "chillbox.main:program.run"
+chillbox = "chillbox.main:main"
 
 
 [tool.hatch.version]

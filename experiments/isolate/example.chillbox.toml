@@ -1,7 +1,6 @@
 instance = "example"
 gpg-key = "example"
-sqlite-ciphertext-file = "./example.chillbox.sqlite.dump.gpg"
-archive-ciphertext-file = "./example.tar.gz.aes"
+archive-directory = ".chillbox"
 
 ### User ###
 # Removing a user here does not automatically remove them from the servers.
@@ -22,6 +21,15 @@ ENVIRONMENT = "development"
 
 
 ### Secrets ###
+# The secret is encrypted to each server's public key before being uploaded to
+# append-dest. The append-dest file will have two other sibling files:
+# - .sha512 For storing a hash of the secrets before encryption.
+# - .aes For storing the encrypted data key (first 512 bytes) and the encrypted
+#   file.
+# The append-dest file is only unencrypted at the location with the server's
+# private key.
+# It is recommended to mount a tmpfs file system at the directory that secrets
+# are placed in to be more secure.
 
 [[secret]]
 id = "example_secret"

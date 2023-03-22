@@ -2,7 +2,6 @@
 
 import os
 from pprint import pprint
-from functools import reduce
 
 try:
     import tomllib
@@ -18,11 +17,13 @@ from chillbox.errors import ChillboxInvalidConfigError
 class ChillboxProgram(Program):
 
     def run(self):
+        print('run')
         run = super().run()
         return run
 
 
     def core_args(self):
+        print('core_args')
         core_args = super().core_args()
         extra_args = [
             Argument(names=('foo', 'u'), help="Foo the bars"),
@@ -30,30 +31,16 @@ class ChillboxProgram(Program):
         ]
         return core_args + extra_args
 
+    def parse_cleanup(self):
+        print('parse_cleanup')
+        parse_cleanup = super().parse_cleanup()
+
 program = ChillboxProgram(namespace=Collection.from_module(tasks), version=__version__)
 
 
-
-def chillbox_task(func):
-    def wrap_task(*args, **kwargs):
-        ""
-        try:
-            return func(*args, **kwargs)
-        except ChillboxError as err:
-            os.sys.exit(err)
-    return wrap_task
-
-
 def main():
-    print('main')
+    program.run()
 
 
-# parse toml
-# validate toml for required
-# check for gpg key
-#
 if __name__ == "__main__":
-    try:
-        program.run()
-    except ChillboxError as err:
-        os.sys.exit(err)
+    main()
