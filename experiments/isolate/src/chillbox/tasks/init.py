@@ -2,12 +2,11 @@ from shutil import which
 
 from invoke import task
 
-from chillbox.tasks.validate import validate_chillbox_config
+from chillbox.tasks.validate import validate_and_load_chillbox_config
 
 
-@task(pre=[validate_chillbox_config])
+@task(pre=[validate_and_load_chillbox_config])
 def init(c, owner=None):
-
     # An owner needs to be set so this instance of the chillbox archive
     # directory will only create items that this user would need to manage.
     if owner is None:
@@ -20,3 +19,4 @@ def init(c, owner=None):
 
     c.run("echo 'TODO: Check for archive directory'")
     c.run("echo 'TODO: Init archive directory with owner'")
+    print(c.chillbox_config)

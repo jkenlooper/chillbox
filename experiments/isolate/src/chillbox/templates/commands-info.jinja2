@@ -1,0 +1,10 @@
+{% for cmd in results %}
+{{ commands_info[cmd]["full-name"] }}
+    command: {{ cmd }}
+    Website: {{ commands_info[cmd]["website"] }}
+    Download: {{ commands_info[cmd]["download"] }}
+    Description:
+        {{ commands_info[cmd]["description"] | trim | wordwrap(width=72, wrapstring="\n        ") }}
+    Chillbox use cases:
+      - {{ commands_info[cmd]["use-case"] }}
+{% endfor -%}

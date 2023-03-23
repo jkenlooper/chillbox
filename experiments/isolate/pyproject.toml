@@ -28,7 +28,8 @@ classifiers = [
 ]
 dependencies = [
   "invoke>=2",
-  "tomli >= 1.1.0 ; python_version < '3.11'"
+  "tomli >= 1.1.0 ; python_version < '3.11'",
+  "Jinja2 >= 3.1",
 ]
 
 [project.urls]

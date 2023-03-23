@@ -1,0 +1,60 @@
+# Provide more details about the different commands used by chillbox.
+#
+
+[gpg]
+required = true
+"full-name" = "GnuPG"
+"website" = "https://www.gnupg.org/"
+"download" = "https://www.gnupg.org/download/index.html"
+"use-case" = "To encrypt and decrypt the chillbox asymmetric keys that are generated."
+"description" = """
+GnuPG is a complete and free implementation of the OpenPGP standard as defined \
+by RFC4880 (also known as PGP). GnuPG allows you to encrypt and sign your data \
+and communications; it features a versatile key management system, along with \
+access modules for all kinds of public key directories.  \
+"""
+
+[openssl]
+required = true
+full-name = "OpenSSL"
+website = "https://www.openssl.org/"
+download = "https://www.openssl.org/source/"
+use-case = "To create asymmetric and symmetric keys used for encrypting and decrypting sensitive data like secrets."
+description = """
+OpenSSL software - a robust, commercial-grade, full-featured toolkit for \
+general-purpose cryptography and secure communication. \
+"""
+
+[python]
+required = true
+full-name = "Python 3"
+website = "https://www.python.org/"
+download = "https://www.python.org/downloads/"
+use-case = "To better support cross platform use of running the chillbox scripts."
+description = """
+Python is a programming language that lets you work quickly and integrate \
+systems more effectively. \
+"""
+
+### Optional Commands
+
+[terraform]
+required = false
+full-name = "Terraform"
+website = "https://developer.hashicorp.com/terraform/intro"
+download = "https://developer.hashicorp.com/terraform/downloads"
+use-case = "Automate provisioning of resources for different cloud hosts like DigitalOcean, Vultr, and AWS if you want to burn lots of money."
+description = """
+Terraform is an infrastructure as code tool that lets you build, change, and \
+version cloud and on-prem resources safely and efficiently. \
+"""
+
+[whoami]
+required = false
+full-name = "whoami"
+website = "https://www.man7.org/linux/man-pages/man1/whoami.1.html"
+download = ""
+use-case = "Determine who the current user is when running the local chillbox scripts."
+description = """
+Print the user name associated with the current effective user ID.
+"""

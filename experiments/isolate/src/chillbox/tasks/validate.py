@@ -8,15 +8,18 @@ from invoke import task
 from chillbox.errors import ChillboxInvalidConfigError
 from chillbox.tasks.local_checks import check_required_commands
 
-required_keys = set(
-    ["instance", "gpg-key", "archive-directory"]
-)
+required_keys = set(["instance", "gpg-key", "archive-directory"])
 
 
 @task(pre=[check_required_commands])
-def validate_chillbox_config(c):
+def validate_and_load_chillbox_config(c):
     with open("example.chillbox.toml", "rb") as f:
-        data = tomllib.load(f)
+        try:
+            data = tomllib.load(f)
+        except tomllib.TOMLDecodeError as err:
+            raise ChillboxInvalidConfigError(
+                f"INVALID: Failed to parse the {f.name} file.\n  {err}"
+            )
         # pprint(data)
 
     top_level_keys = set(data.keys())
@@ -29,4 +32,4 @@ def validate_chillbox_config(c):
         )
     c.run(f"""echo \"The {f.name} file is valid.\"""")
 
-
+    c.chillbox_config = data
