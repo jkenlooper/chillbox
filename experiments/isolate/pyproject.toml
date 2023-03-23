@@ -5,29 +5,25 @@ build-backend = "hatchling.build"
 [project]
 name = "chillbox"
 dynamic = ['version']
-description = "chillbox description TODO"
+description = "Deployment scripts for websites that use Chill and custom Python services. Work in Progress "
 readme = "README.md"
-license.text = "LGPLv3+"
+license.text = "AGPLv3+"
 requires-python = ">=3.8, <4"
 authors = [
     { name = "Jake Hickenlooper", email = "jake@weboftomorrow.com" },
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 1 - Planning",
     "Environment :: Console",
-    "Environment :: Web Environment",
-    "Framework :: Flask",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Natural Language :: English",
     "Operating System :: POSIX",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Internet :: WWW/HTTP :: Site Management",
-    "Topic :: Internet :: WWW/HTTP :: WSGI",
     "Topic :: Software Development :: Build Tools",
 ]
 dependencies = [
@@ -36,7 +32,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jkenlooper/chill"
+Homepage = "https://github.com/jkenlooper/chillbox"
 
 [project.optional-dependencies]
 
