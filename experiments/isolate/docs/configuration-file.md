@@ -1,3 +1,26 @@
+# Chillbox Configuration File
+
+In TOML format to allow comments.
+
+Required top level keys:
+
+- "instance"
+- "gpg-key"
+- "archive-directory"
+
+Optional:
+
+- "env"
+- list of "user"
+- list of "secret"
+- list of "local-file"
+- list of "remote-file"
+- list of "server"
+
+
+## Example
+
+```toml
 instance = "example"
 gpg-key = "example"
 archive-directory = ".chillbox"
@@ -100,3 +123,4 @@ login-users = [ "alice:dev", "bob:dev" ]
 no-home-users = [ "dev", "weboftomorrow", "site1" ]
 secrets = [ "example_secret" ]
 remote-files = [ "chillbox-nginx-conf", "bootstrap-chillbox-server.sh" ]
+```

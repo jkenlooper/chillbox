@@ -5,9 +5,17 @@ class ChillboxExit(invoke.exceptions.Exit):
     "Base class for chillbox errors that require exiting."
 
 
+class ChillboxMissingFileError(ChillboxExit):
+    "Missing required file"
+
+
 class ChillboxInvalidConfigError(ChillboxExit):
     "Invalid configuration"
 
 
 class ChillboxDependencyError(ChillboxExit):
+    """"""
+
+
+class ChillboxGPGError(ChillboxExit):
     """"""
