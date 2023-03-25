@@ -6,10 +6,8 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from invoke import task, Collection
-
 from chillbox.errors import ChillboxInvalidConfigError, ChillboxMissingFileError
-from chillbox.tasks.local_checks import check_required_commands
+from chillbox.local_checks import check_required_commands
 from chillbox.utils import logger
 
 required_keys = set(["instance", "gpg-key", "archive-directory"])
@@ -18,20 +16,19 @@ required_keys = set(["instance", "gpg-key", "archive-directory"])
 chillbox_config_more_info = "Please see documentation at docs/configuration-file.md"
 
 
-@task(pre=[check_required_commands])
-def validate_and_load_chillbox_config(c):
+def validate_and_load_chillbox_config(chillbox_config_file):
     "Load the parsed TOML data to the context so it can be used by other tasks."
+    check_required_commands()
 
-    chillbox_config = c.config["chillbox-config"]
-    logger.debug(f"Using chillbox config file: {chillbox_config}")
+    logger.debug(f"Using chillbox config file: {chillbox_config_file}")
 
-    if not Path(chillbox_config).exists():
-        abs_path_chillbox_config = Path(chillbox_config).resolve()
+    if not Path(chillbox_config_file).exists():
+        abs_path_chillbox_config = Path(chillbox_config_file).resolve()
         raise ChillboxMissingFileError(
             f"ERROR: No chillbox configuration file at: {abs_path_chillbox_config}\n    {chillbox_config_more_info}"
         )
 
-    with open(chillbox_config, "rb") as f:
+    with open(chillbox_config_file, "rb") as f:
         try:
             data = tomllib.load(f)
         except tomllib.TOMLDecodeError as err:
@@ -50,4 +47,5 @@ def validate_and_load_chillbox_config(c):
         )
     logger.info(f"Valid configuration file: {f.name}")
 
-    c.chillbox_config = data
+    #c.chillbox_config = data
+    return data

@@ -4,3 +4,4 @@ __pycache__
 
 # TODO: temporary while developing.
 /chillbox.toml
+/.chillbox
