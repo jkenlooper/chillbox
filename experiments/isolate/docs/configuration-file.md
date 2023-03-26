@@ -73,8 +73,14 @@ user = "site1"
 # Copies these files from the host machine to the archive.
 [[local-file]]
 name = "example-built-tar-file"
-src = "/path/to/example-built-tar-file/on-host"
-dest = "/path/to/example-built-tar-file/to-store-in-archive"
+src = "path/to/example-built-tar-file/on-host"
+dest = "path/to/example-built-tar-file/to-store-in-archive"
+
+[[local-file]]
+name = "terraform-output-example"
+src = "path-to/file-that-might/not-exist-yet.json"
+optional = true
+dest = "example/terraform-stuff/output.json"
 
 
 [[remote-file]]
