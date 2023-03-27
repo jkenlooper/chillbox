@@ -47,5 +47,5 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         )
     logger.info(f"Valid configuration file: {f.name}")
 
-    #c.chillbox_config = data
+    # c.chillbox_config = data
     return data

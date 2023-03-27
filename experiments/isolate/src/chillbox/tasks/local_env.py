@@ -2,6 +2,7 @@ from invoke import task
 
 from chillbox.tasks.local_archive import init
 
+
 @task(pre=[init])
 def output_env(c):
     """
@@ -21,11 +22,18 @@ def output_env(c):
     # outside scripts.
     # CHILLBOX_ARCHIVE_DIRECTORY="{c.archive_directory_path}"
 
+    # CHILLBOX_PRIVATE_SSH_KEY="?"
+
     # It *could* be useful to export the chillbox instance name?
 
     # TODO Include other env vars and secrets here.
-    print(f"""
+    print(
+        f"""
 CHILLBOX_INSTANCE="{c.chillbox_config['instance']}"
 
+# use via: ssh -F $CHILLBOX_SSH_CONFIG
+CHILLBOX_SSH_CONFIG="chillbox-ssh_config"
+
 TEST="test of string 1"
-""")
+"""
+    )
