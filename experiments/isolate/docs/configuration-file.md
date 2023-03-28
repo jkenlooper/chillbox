@@ -29,6 +29,10 @@ archive-directory = ".chillbox"
 # Removing a user here does not automatically remove them from the servers.
 # A remote task would need to do that.
 
+# Use the public GitHub API if the user has an account on GitHub. Copy and paste
+# the response from chillbox sub-command (replace USERNAME):
+# chillbox fetch-github-public-ssh-key --user=USERNAME
+
 [[user]]
 name = "alice"
 public-ssh-key = "public-ssh-key-that-is-manually-added-here"

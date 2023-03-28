@@ -23,3 +23,6 @@ class ChillboxGPGError(ChillboxExit):
 
 class ChillboxArchiveDirectoryError(ChillboxExit):
     "Archive directory error"
+
+class ChillboxHTTPError(ChillboxExit):
+    """"""
