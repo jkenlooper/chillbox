@@ -154,6 +154,7 @@ apk add sed attr grep coreutils jq entr
 # expire.
 apk add shadow
 
+# TODO: Why is gnupg needed on the chillbox server?
 apk add gnupg gnupg-dirmngr
 apk add openssl
 

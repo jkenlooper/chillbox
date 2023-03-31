@@ -1,0 +1,195 @@
+#!/usr/bin/env sh
+
+set -o errexit
+
+
+install_packages() {
+  # TODO Only install packages that are needed for the user-data script.
+  apk update
+  apk upgrade
+  apk add \
+    -q --no-progress \
+    attr \
+    coreutils \
+    doas \
+    docs \
+    entr \
+    grep \
+    jq \
+    man-pages \
+    mandoc \
+    nftables \
+    openssh-server-pam \
+    openssl \
+    python3 \
+    rsync \
+    s6 \
+    s6-portable-utils \
+    sed \
+    shadow \
+    vim
+  }
+
+
+init_users() {
+  # Only the owner is added initially in the user-data script?
+  #  This is because only a single list of public ssh keys are provided to the
+  #  cloud host api. These get set to /root/.ssh/authorized_keys which the
+  #  user-data script will copy over to the owner's .ssh/authorized_keys.
+  #  Having other users being set up initially would include all their public
+  #  ssh keys as well for every user being created. The other login users could
+  #  be added later in a remote run task.
+
+  # Should a 'dev' user be added as a no-home user?
+  # Configure doas to not allow root privileges on a lot of stuff including not
+  # allowing any user to be root?
+  # Set the owner of the private key to be root, use a service that watches for
+  # file events in order to decrypt files. This way no user has access to the
+  # private key and the private key stays in a tmpfs mount which will be lost if
+  # the server reboots.
+useradd -m -U -p '{{ tf_dev_user_passphrase_hashed }}' dev
+
+# Include the dev users to the chillconf group so login users can
+# modify the /etc/chillbox/chillbox.config file.
+groupadd --system chillconf
+usermod -a -G chillconf dev
+
+# Set password as expired to force user to reset when logging in
+passwd --expire dev
+
+# A box that has been provisioned via the cloud provider should already have
+# public keys added. This handles a locally provisioned box.
+if [ ! -e /root/.ssh/authorized_keys ]; then
+  mkdir -p /root/.ssh
+  printf '%b' "$developer_public_ssh_keys" > /root/.ssh/authorized_keys
+  chown -R root:root /root/.ssh
+  chmod -R 700 /root/.ssh
+  chmod -R 644 /root/.ssh/authorized_keys
+fi
+
+# The dev user will also use the same keys as root.
+mkdir -p /home/dev/.ssh
+cp /root/.ssh/authorized_keys /home/dev/.ssh/
+chown -R dev:dev /home/dev/.ssh
+chmod -R 700 /home/dev/.ssh
+chmod -R 644 /home/dev/.ssh/authorized_keys
+
+# Use doas instead of sudo since sudo seems bloated.
+apk add doas
+
+mkdir -p /etc/doas.d
+cat <<DOAS_CONFIG > /etc/doas.d/chillbox.doas.conf
+permit persist dev as root
+permit persist ansibledev as root
+DOAS_CONFIG
+chmod 0600 /etc/doas.d/chillbox.doas.conf
+doas -C /etc/doas.d/chillbox.doas.conf && echo "doas config ok"
+
+# Configure sshd to only allow users with authorized_keys to ssh in. The root
+# user is blocked from logging in. PAM needs to be added and enabled for it to
+# work with the AuthorizedKeysFile and publickey method.
+apk add openssh-server-pam
+
+cat <<SSHD_CONFIG > /etc/ssh/sshd_config
+AuthenticationMethods publickey,keyboard-interactive
+AuthorizedKeysFile .ssh/authorized_keys
+ChallengeResponseAuthentication yes
+KbdInteractiveAuthentication no
+PasswordAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+UsePAM yes
+SSHD_CONFIG
+
+sshd -t
+rc-service sshd restart
+}
+
+# TODO Don't inline the encrypted bootstrap script. Update the playbook task to
+# upload it first and then decrypt it.
+
+# The work directory is most likely /root
+work_dir="$(dirname "$0")"
+
+# TODO Or maybe doing an initial encrypted bootstrap script isn't such a bad
+# idea? Does require access to S3 object storage, however.
+cat <<'HERE' > "$work_dir/bootstrap-chillbox-init-credentials.sh.encrypted"
+{{ tf_bootstrap_chillbox_init_credentials_encrypted }}
+HERE
+
+# TODO set up to use nftables
+apk add \
+    -q --no-progress \
+    nftables
+# Load the nftables script that was defined for this server.
+# Or use #!/usr/sbin/nft -f
+cat <<'HERE' > "$work_dir/chillbox.nft"
+#!/usr/bin/env -S nft -f
+HERE
+
+####
+#### Only take some bits from chillbox-init.sh
+####
+
+apk add sed attr grep coreutils jq entr
+
+
+# Include common tools for deployment and management
+apk add rsync
+
+# Add other tools that are helpful when troubleshooting.
+apk add mandoc man-pages docs
+apk add vim
+
+
+## Support s6 init scripts.
+# Only if not using container s6-overlay and using openrc instead.
+apk add s6 s6-portable-utils
+rc-update add s6-svscan boot
+
+
+
+key_name="$(hostname -s | xargs)"
+public_pem_file="/home/dev/.local/share/chillbox/keys/$key_name.public.pem"
+private_pem_file="/home/dev/.local/share/chillbox/keys/$key_name.private.pem"
+su dev -c "mkdir -p /home/dev/.local/share/chillbox/keys"
+#su dev -c "$bin_dir/generate-new-chillbox-keys -n '$key_name' -d /home/dev/.local/share/chillbox/keys"
+
+# UPKEEP due: "2024-01-28" label: "Security review of creating asymmetric keys with RSA algorithm" interval: "+1 year"
+create_asymmetric_keys() {
+  # References:
+  # https://www.feistyduck.com/library/openssl-cookbook/online/openssl-command-line/key-generation.html
+  # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
+  # man openssl-genpkey https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html
+  # man openssl-pkey https://www.openssl.org/docs/man3.0/man1/openssl-pkey.html
+
+  umask 0077
+
+  # Set the pkeyopt to be explicit about the defaults. Use rsa_keygen_bits:4096
+  # for encrypting up to 382 bytes when using a rsa_oaep_md:sha512 hash.
+  openssl genpkey \
+    -out "$private_pem_file" \
+    -outform "PEM" \
+    -algorithm RSA \
+    -pkeyopt "rsa_keygen_bits:4096" \
+    -pkeyopt "rsa_keygen_pubexp:65537" \
+    -pkeyopt "rsa_keygen_primes:2"
+
+  # The opensssl-pkey uses the more secure PKCS#8 format instead of the older
+  # traditional format that openssl-rsa did.
+  openssl pkey \
+    -pubout \
+    -inform "PEM" \
+    -outform "PEM" \
+    -in "$private_pem_file" \
+    -out "$public_pem_file"
+
+  # Only allow reading it after it is written to prevent chance of overwriting the
+  # generated key files. Double tap here in case umask wasn't set.
+  chmod 0400 "$private_pem_file"
+  chmod 0400 "$public_pem_file"
+}
+
+install_packages
+init_users
+create_asymmetric_keys
