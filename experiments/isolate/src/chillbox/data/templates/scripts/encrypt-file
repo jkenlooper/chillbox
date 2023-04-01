@@ -1,6 +1,4 @@
-#!/usr/bin/env sh
-
-set -o errexit
+#!/usr/bin/env -S sh -o errexit
 
 script_name="$(basename "$0")"
 
@@ -31,31 +29,38 @@ Args:
 HERE
 }
 
-
+#{#-
 # UPKEEP due: "2024-01-28" label: "Security review of envelope encryption" interval: "+1 year"
+#}
 encrypt_file() {
+#{#-
   # Reference:
   # man openssl-rand https://www.openssl.org/docs/man3.0/man1/openssl-rand.html
   # man openssl-enc https://www.openssl.org/docs/man3.0/man1/openssl-enc.html
   # man openssl-pkeyutl https://www.openssl.org/docs/man3.0/man1/openssl-pkeyutl.html
   # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
+  #}
 
   umask 0077
 
   input_plaintext_file="$1"
 
   symmetric_key="$(mktemp)"
+#{#-
   # Generate a symmetric key file that is less than 382 bytes. After base64
   # encoding to a single line; the file is 380 bytes.
+  #}
   openssl rand 284 | base64 -w 0 > "$symmetric_key"
   symmetric_key_filesize="$(stat -c '%s' "$symmetric_key")"
   test -n "$symmetric_key_filesize" || (echo "ERROR $script_name: Failed to get size of generated symmetric key file." && exit 1)
   test "$symmetric_key_filesize" -le "382" || (echo "ERROR $script_name: The generated symmetric key file byte length is over the 382 byte limit allowed for the public key." && exit 1)
 
+#{#-
   # Encrypt file with symmetric key
   # Note that this 310000 iterations or above are the recommended by OWASP best
   # practices for the algorithm PBKDF2-HMAC-SHA256. When decrypting this it has
   # to use the same number of iterations.
+  #}
   ciphertext_file="$(mktemp)"
   openssl enc \
     -aes-256-cbc \
@@ -68,7 +73,9 @@ encrypt_file() {
     -in "$input_plaintext_file" \
     -out "$ciphertext_file"
 
+#{#-
   # Use the public key to encrypt the symmetric key
+  #}
   ciphertext_symmetric_key="$(mktemp)"
   openssl pkeyutl \
     -encrypt \
@@ -82,13 +89,17 @@ encrypt_file() {
 
   shred -fuz "$symmetric_key"
 
+#{#-
   # Ensure the $ciphertext_symmetric_key file is 512 bytes.
+  #}
   ciphertext_symmetric_key_filesize="$(stat -c '%s' "$ciphertext_symmetric_key")"
   test -n "$ciphertext_symmetric_key_filesize" || (echo "ERROR $script_name: Failed to get size of encrypted symmetric key file." && exit 1)
   test "$ciphertext_symmetric_key_filesize" -eq "512" || (echo "ERROR $script_name: The encrypted symmetric key file needs to be exactly 512 bytes." && exit 1)
 
+#{#-
   # Concatenate the encrypted symmetric key (which is 512 bytes) with the
   # encrypted file to the $output_ciphertext_file.
+  #}
   cat "$ciphertext_symmetric_key" "$ciphertext_file" > "$output_ciphertext_file"
 
   rm -f "$ciphertext_symmetric_key"

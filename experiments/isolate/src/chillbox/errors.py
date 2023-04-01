@@ -26,3 +26,6 @@ class ChillboxArchiveDirectoryError(ChillboxExit):
 
 class ChillboxHTTPError(ChillboxExit):
     """"""
+
+class ChillboxServerUserDataError(ChillboxExit):
+    """"""

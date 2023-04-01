@@ -134,25 +134,16 @@ template = "chillbox/user-data.sh.jinja"
 # AWS EC2 limit is 16K
 # DigitalOcean limit is 64K
 # Vultr limit is unknown
-# Limit generated file size to this many bytes (16K).
+# Set an optional limit on the generated file size to this many bytes (16K).
 file-size-limit = 16384
 [server.user-data.context]
-# chillbox variable will be provided.
-# chillbox.public_ssh_keys = ["public ssh key"]
-# chillbox.hostname = ""
-# chillbox.login_users = []
-# chillbox.no_home_users = []
-
-# Mostly for certbot. Might not do certbot in user-data
-  tech_email="${tf_tech_email}"
-  chillbox_server_name="${tf_chillbox_server_name}"
-  manage_hostname_dns_records="${tf_manage_hostname_dns_records}"
-  manage_dns_records="${tf_manage_dns_records}"
-  environment="${tf_environment}"
-  acme_server="${tf_acme_server}"
-  enable_certbot="${tf_enable_certbot}"
-
 something = "example"
+user = "alice"
+user_pw_hash = ""
+public-ssh-key = [
+  "public-ssh-key-that-is-manually-added-here"
+]
+nft_script = "example.nft"
 
 
 remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]

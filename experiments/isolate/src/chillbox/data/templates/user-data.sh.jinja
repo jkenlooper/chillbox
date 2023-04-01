@@ -1,6 +1,4 @@
-#!/usr/bin/env sh
-
-set -o errexit
+#!/usr/bin/env -S sh -o errexit
 
 work_dir="$(dirname "$0")"
 
@@ -8,14 +6,12 @@ cat <<'TEST' > test.txt
 1) {% include 'chillbox/test-include.txt' %}
 2) {% include 'archive/test-include.txt' ignore missing %}
 3) {% include 'test-include.txt' ignore missing %}
-3) {% include 'chillbox/notpe/test-include.txt' %}
 context:
   public_ssh_keys = {{ public_ssh_keys }}
   something = {{ something }}
 TEST
 
 install_packages() {
-  # TODO Only install packages that are needed for the user-data script.
   apk update
   apk upgrade
   apk add \
@@ -23,28 +19,19 @@ install_packages() {
     attr \
     coreutils \
     doas \
-    docs \
-    entr \
-    grep \
-    jq \
-    man-pages \
-    mandoc \
     nftables \
     openssh-server-pam \
     openssl \
-    python3 \
-    rsync \
     s6 \
     s6-portable-utils \
-    sed \
-    shadow \
-    vim
+    shadow
 
   rc-update add s6-svscan boot
 }
 
 
 init_user() {
+  #{#-
   # Only the owner is added initially in the user-data script.
   #  This is because only a single list of public ssh keys are provided to the
   #  cloud host api. These get set to /root/.ssh/authorized_keys which the
@@ -53,44 +40,45 @@ init_user() {
   #  ssh keys as well for every user being created. The other login users could
   #  be added later in a remote run task.
 
-  # Should a 'dev' user be added as a no-home user?
   # Configure doas to not allow root privileges on a lot of stuff including not
   # allowing any user to be root?
   # Set the owner of the private key to be root, use a service that watches for
   # file events in order to decrypt files. This way no user has access to the
   # private key and the private key stays in a tmpfs mount which will be lost if
   # the server reboots.
-useradd -m -U -p '{{ tf_dev_user_passphrase_hashed }}' dev
+  #}
+useradd -m -U -p '{{ user_pw_hash }}' '{{ user }}'
 
-# Include the dev user to the chillconf group so login users can
+#{#-
+# Include the user to the chillconf group so login users can
 # modify the /etc/chillbox/chillbox.config file.
+#}
 groupadd --system chillconf
-usermod -a -G chillconf dev
+usermod -a -G chillconf '{{ user }}'
 
+#{#-
 # Set password as expired to force user to reset when logging in
-passwd --expire dev
+#}
+passwd --expire '{{ user }}'
 
-mkdir -p /home/dev/.ssh
-printf '%b' "{{ public_ssh_keys | join('\n') }}" > /home/dev/.ssh/authorized_keys
-chown -R dev:dev /home/dev/.ssh
-chmod -R 700 /home/dev/.ssh
-chmod -R 644 /home/dev/.ssh/authorized_keys
-
-# Use doas instead of sudo since sudo seems bloated.
-apk add doas
+mkdir -p '/home/{{ user }}/.ssh'
+printf '%b' "{{ public_ssh_keys | join('\n') }}" > '/home/{{ user }}/.ssh/authorized_keys'
+chown -R '{{ user }}:{{ user }}' '/home/{{ user }}/.ssh'
+chmod -R 700 '/home/{{ user }}/.ssh'
+chmod -R 644 '/home/{{ user }}/.ssh/authorized_keys'
 
 mkdir -p /etc/doas.d
 cat <<DOAS_CONFIG > /etc/doas.d/chillbox.doas.conf
-permit persist dev as root
-permit persist ansibledev as root
+permit persist {{ user }} as root
 DOAS_CONFIG
 chmod 0600 /etc/doas.d/chillbox.doas.conf
 doas -C /etc/doas.d/chillbox.doas.conf && echo "doas config ok"
 
+#{#-
 # Configure sshd to only allow users with authorized_keys to ssh in. The root
 # user is blocked from logging in. PAM needs to be added and enabled for it to
 # work with the AuthorizedKeysFile and publickey method.
-apk add openssh-server-pam
+#}
 
 cat <<SSHD_CONFIG > /etc/ssh/sshd_config
 AuthenticationMethods publickey,keyboard-interactive
@@ -109,56 +97,34 @@ rc-service sshd restart
 
 
 nftables_setup() {
-# Load the nftables script that was defined for this server.
-# Or use #!/usr/sbin/nft -f
+#{#- Include the nftables script that was defined for this server.  #}
 cat <<'HERE' > "$work_dir/chillbox.nft"
-#!/usr/bin/env -S nft -f
-# TODO set up to use nftables
+{% include [nft_script, 'archive/chillbox.nft', 'chillbox/chillbox.nft'] %}
 HERE
+chmod u+x "$work_dir/chillbox.nft"
+"$work_dir/chillbox.nft"
 }
 
+create_scripts() {
+cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/decrypt-file"
+{% include [scripts_decrypt_file, 'archive/scripts/decrypt-file', 'chillbox/scripts/decrypt-file'] %}
+DECRYPT_FILE_HERE
+chmod +x "/usr/local/bin/decrypt-file"
 
-create_asymmetric_key() {
-  # UPKEEP due: "2024-01-28" label: "Security review of creating asymmetric key with RSA algorithm" interval: "+1 year"
-  # References:
-  # https://www.feistyduck.com/library/openssl-cookbook/online/openssl-command-line/key-generation.html
-  # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
-  # man openssl-genpkey https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html
-  # man openssl-pkey https://www.openssl.org/docs/man3.0/man1/openssl-pkey.html
+cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/encrypt-file"
+{% include [scripts_encrypt_file, 'archive/scripts/encrypt-file', 'chillbox/scripts/encrypt-file'] %}
+DECRYPT_FILE_HERE
+chmod +x "/usr/local/bin/encrypt-file"
 
-  key_name="$(hostname -s | xargs)"
-  public_pem_file="/home/dev/.local/share/chillbox/key/$key_name.public.pem"
-  private_pem_file="/home/dev/.local/share/chillbox/key/$key_name.private.pem"
-  su dev -c "mkdir -p /home/dev/.local/share/chillbox/key"
-
-  umask 0077
-
-  # Set the pkeyopt to be explicit about the defaults. Use rsa_keygen_bits:4096
-  # for encrypting up to 382 bytes when using a rsa_oaep_md:sha512 hash.
-  openssl genpkey \
-    -out "$private_pem_file" \
-    -outform "PEM" \
-    -algorithm RSA \
-    -pkeyopt "rsa_keygen_bits:4096" \
-    -pkeyopt "rsa_keygen_pubexp:65537" \
-    -pkeyopt "rsa_keygen_primes:2"
-
-  # The opensssl-pkey uses the more secure PKCS#8 format instead of the older
-  # traditional format that openssl-rsa did.
-  openssl pkey \
-    -pubout \
-    -inform "PEM" \
-    -outform "PEM" \
-    -in "$private_pem_file" \
-    -out "$public_pem_file"
-
-  # Only allow reading it after it is written to prevent chance of overwriting the
-  # generated key files. Double tap here in case umask wasn't set.
-  chmod 0400 "$private_pem_file"
-  chmod 0400 "$public_pem_file"
+cat <<'CREATE_ASYMMETRIC_KEY_HERE' > "/usr/local/bin/create-asymmetric-key"
+{% include [scripts_create_asymmetric_key, 'archive/scripts/create-asymmetric-key', 'chillbox/scripts/create-asymmetric-key'] %}
+CREATE_ASYMMETRIC_KEY_HERE
+chmod +x "/usr/local/bin/create-asymmetric-key"
 }
 
 install_packages
 nftables_setup
 init_user
-create_asymmetric_key
+create_scripts
+
+/usr/local/bin/create-asymmetric-key

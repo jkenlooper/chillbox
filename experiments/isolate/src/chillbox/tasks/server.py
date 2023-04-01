@@ -6,7 +6,7 @@ from jinja2.exceptions import TemplateNotFound
 
 from chillbox.validate import validate_and_load_chillbox_config
 from chillbox.utils import logger
-from chillbox.errors import ChillboxMissingFileError
+from chillbox.errors import ChillboxMissingFileError, ChillboxServerUserDataError
 
 
 def generate_user_data_script(c):
@@ -63,11 +63,20 @@ def generate_user_data_script(c):
             logger.debug(err)
             raise_for_missing_template(str(err))
         try:
-            user_data_script = template.render(server_user_data_context)
+            user_data_text = template.render(server_user_data_context)
         except TemplateNotFound as err:
             logger.debug(err)
             raise_for_missing_template(str(err))
-        logger.debug(user_data_script)
+        logger.debug(user_data_text)
+
+        user_data_script_file = archive_directory.joinpath("server", server["name"], "user-data")
+        user_data_script_file.parent.mkdir(parents=True, exist_ok=True)
+        user_data_file_size_limit = server_user_data.get("file-size-limit")
+        if user_data_file_size_limit and len(user_data_text) >= user_data_file_size_limit:
+            logger.info(user_data_text)
+            raise ChillboxServerUserDataError(f"ERROR: The rendered server ({server['name']}) user-data is over the file size limit. Limit is {user_data_file_size_limit} and user-data bytes is {len(user_data_text)}.")
+
+        user_data_script_file.write_text(user_data_text)
 
 @task
 def server_init(c):

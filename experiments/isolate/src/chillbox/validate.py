@@ -45,6 +45,20 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         raise ChillboxInvalidConfigError(
             f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required:\n  {lines}\n    {chillbox_config_more_info}"
         )
+
+    for server in data.get("server", []):
+        missing_keys = ["name"]
+        lines = "\n  ".join(sorted(missing_keys))
+        if not server.get("name"):
+            raise ChillboxInvalidConfigError(
+                f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for items in server:\n  {lines}\n  The server object with error is:\n    {pformat(server)}"
+            )
+        user_data = server.get("user-data")
+        if user_data and not user_data.get("template"):
+            raise ChillboxInvalidConfigError(
+                f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for items in server.user-data:\n  template\n  The server object with error is:\n    {pformat(server)}"
+            )
+
     logger.info(f"Valid configuration file: {f.name}")
 
     # c.chillbox_config = data

@@ -1,0 +1,4 @@
+#!/usr/bin/env -S nft -f
+
+# TODO set up to use nftables
+# https://wiki.nftables.org/wiki-nftables/index.php/Scripting

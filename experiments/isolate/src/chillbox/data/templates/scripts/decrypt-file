@@ -1,7 +1,4 @@
-#!/usr/bin/env sh
-
-set -o errexit
-set -o nounset
+#!/usr/bin/env -S sh -o errexit -o nounset
 
 script_name="$(basename "$0")"
 
@@ -29,23 +26,31 @@ Args:
 HERE
 }
 
+#{#-
 # UPKEEP due: "2024-01-28" label: "Security review of envelope encryption" interval: "+1 year"
+#}
 decrypt_file() {
+#{#-
   # Reference:
   # man openssl-pkeyutl https://www.openssl.org/docs/man3.0/man1/openssl-pkeyutl.html
   # man openssl-enc https://www.openssl.org/docs/man3.0/man1/openssl-enc.html
+  #}
 
   umask 0077
 
+#{#-
   # Split the input_ciphertext_file to get the encrypted symmetric_key and the
   # ciphertext_file that was encrypted with it. The encrypted symmetric key will
   # be the first 512 bytes.
+  #}
   symmetric_key_ciphertext="$(mktemp)"
   ciphertext_file="$(mktemp)"
   dd if="$input_ciphertext_file" ibs=512 count=1 of="$symmetric_key_ciphertext" 2> /dev/null
   dd if="$input_ciphertext_file" ibs=512 skip=1 of="$ciphertext_file" 2> /dev/null
 
+#{#-
   # Use the private_pem_file to decrypt the symmetric_key_ciphertext.
+#}
   symmetric_key="$(mktemp)"
   openssl pkeyutl \
     -decrypt \
@@ -56,10 +61,12 @@ decrypt_file() {
     -in "$symmetric_key_ciphertext" \
     -out "$symmetric_key"
 
+#{#-
   # Decrypt the ciphertext_file with symmetric key
   # Note that this 310000 iterations or above are the recommended by OWASP best
   # practices for the algorithm PBKDF2-HMAC-SHA256. It has to match the exact
   # number of iterations that was used when it was encrypted.
+  #}
   openssl enc \
     -aes-256-cbc \
     -d \
