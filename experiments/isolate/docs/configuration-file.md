@@ -128,7 +128,7 @@ login-users = [ "alice:dev" ]
 no-home-users = [ "dev" ]
 secrets = [ "example_secret" ]
 [server.user-data]
-template = "/chillbox/templates/user-data.sh.jinja"
+template = "chillbox/user-data.sh.jinja"
 # A user-data script may have limits to the file size depending on the cloud
 # host.
 # AWS EC2 limit is 16K
