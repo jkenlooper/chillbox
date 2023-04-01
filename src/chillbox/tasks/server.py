@@ -23,6 +23,7 @@ def generate_user_data_script(c):
     chillbox_data_loader = PackageLoader("chillbox.data")
     loader = ChoiceLoader([
         PrefixLoader({
+            "scripts": PackageLoader("chillbox.data", package_path="scripts"),
             "chillbox": PackageLoader("chillbox.data"),
             "archive": FileSystemLoader(archive_templates.resolve()),
         }),
@@ -37,6 +38,7 @@ def generate_user_data_script(c):
         err_msg = "\n".join([
             f"ERROR: The template ({missing_template}) is not an available template in the list: \n    - {available_templates}",
             f"  Templates with prefix 'archive/' are loaded from:\n    {archive_templates.resolve()}",
+            f"  Templates with prefix 'scripts/' are loaded from:\n    {chillbox_data_loader._template_root}",
             f"  Templates with prefix 'chillbox/' are loaded from:\n    {chillbox_data_loader._template_root}",
             "  Templates with no prefix will load archive/ templates before chillbox/ templates."
         ])

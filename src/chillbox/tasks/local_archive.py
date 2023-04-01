@@ -52,7 +52,7 @@ def generate_gpg_key_or_use_existing(c):
 def create_and_encrypt_new_asymmetric_key(c, directory, name):
     """"""
     gen_new_asymmetric_keys_script = pkg_resources.path(
-        chillbox.data.scripts, "generate-new-chillbox-keys"
+        chillbox.data.scripts, "create-asymmetric-key"
     )
     result = c.run(
         f"{gen_new_asymmetric_keys_script} -n {name} -d {directory}", hide=True
