@@ -4,6 +4,8 @@ from shutil import which, rmtree, copy2
 from pathlib import Path
 import importlib.resources as pkg_resources
 from pprint import pformat
+from tempfile import mkstemp
+from datetime import date
 
 from invoke import task
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -155,36 +157,41 @@ def encrypt_secrets_to_archive(c):
 
     encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
 
-    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
+    archive_directory = Path(c.chillbox_config["archive-directory"])
 
-    local_chillbox_asymmetric_key_dir = (
-        Path(archive_directory_path).joinpath("local-chillbox-asymmetric").resolve()
-    )
-    public_asymmetric_key_path = (
-        Path(local_chillbox_asymmetric_key_dir)
-        .joinpath(f"{instance}.public.pem")
-        .resolve()
-    )
+    public_asymmetric_key = archive_directory.joinpath("local-chillbox-asymmetric", f"{instance}.public.pem")
 
+    today = date.today()
+    owner = getpass.getuser()
     for secret in secret_list:
-        continue
         logger.debug(f"{secret=}")
-        secret_file_path = Path(archive_directory_path).joinpath(
+        if secret.get("owner") != owner:
+            logger.info(f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}.")
+            continue
+        secret_file_path = archive_directory.joinpath(
             "secrets", secret["id"] + ".aes"
         )
+        expires_date = secret.get("expires")
         if secret_file_path.exists():
-            # TODO Check expire date on secret
-            continue
+            if not expires_date:
+                logger.info(f"The secret '{secret.get('id')}' exists and has no expiration date.")
+                continue
+            elif today < expires_date:
+                logger.info(f"The secret '{secret.get('id')}' exists and has not expired.")
+                continue
+            else:
+                logger.info(f"The secret '{secret.get('id')}' exists, but it has expired.")
 
         secret_in_cleartext = getpass.getpass(prompt=f"{secret.get('prompt')}\n")
-        # TODO create a secure temp file with the secret
-        tmp_secret_file = "TODO"
-
+        tmp_secret_file = mkstemp(text=True)[1]
+        with open(tmp_secret_file, "w") as f:
+            f.write(secret_in_cleartext)
         secret_file_path.parent.mkdir(parents=True, exist_ok=True)
         result = c.run(
-            f"{encrypt_file_script} -k {public_asymmetric_key_path} -o {secret_file_path.resolve()} {tmp_secret_file}",
+            f"{encrypt_file_script} -k {public_asymmetric_key.resolve()} -o {secret_file_path.resolve()} {tmp_secret_file}",
             hide=True,
         )
+        Path(tmp_secret_file).unlink()
 
 
 @task

@@ -80,9 +80,13 @@ def generate_user_data_script(c):
 
         user_data_script_file.write_text(user_data_text)
 
+def render_remote_files(c):
+    ""
+
 @task
 def server_init(c):
     "Initialize files that will be needed for the chillbox servers."
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
     generate_user_data_script(c)
+    render_remote_files(c)
