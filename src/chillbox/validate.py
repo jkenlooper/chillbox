@@ -1,5 +1,7 @@
 from pathlib import Path
 from pprint import pformat
+import getpass
+from datetime import date
 
 try:
     import tomllib
@@ -58,6 +60,16 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             raise ChillboxInvalidConfigError(
                 f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for items in server.user-data:\n  template\n  The server object with error is:\n    {pformat(server)}"
             )
+
+    today = date.today()
+    owner = getpass.getuser()
+    for secret in data.get("secret", []):
+        if secret.get("owner") != owner:
+            continue
+        expires_date = secret.get("expires")
+        if today > expires_date:
+            logger.warning(f"The secret '{secret.get('id')}' exists, but it has expired.")
+
 
     logger.info(f"Valid configuration file: {f.name}")
 

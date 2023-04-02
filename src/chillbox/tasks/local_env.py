@@ -1,16 +1,24 @@
+import tempfile
+import json
+from pathlib import Path
+
 from invoke import task
 
 from chillbox.tasks.local_archive import init
+from chillbox.utils import logger, get_state_file_data, save_state_file_data, remove_temp_files
 
 
 @task(pre=[init])
-def output_env(c):
+def output_env(c, include_secrets=False):
     """
-    Output local environment variables and secrets.
+    Output environment variables and secrets to a temporary file.
 
-    The format of the output is VARIABLE_NAME='value' per line.
+    The format of the output is VARIABLE_NAME='value' per line. Only the secrets
+    that the current owner has will be included if the --include-secrets flag is
+    used.
+
     Example use case:
-        set -a; eval '$(chillbox output-env)'; set +a
+        set -a; . '$(chillbox output-env)'; set +a
         ./run-some-other-script.sh
 
     Don't need to use 'export' in front of these if the 'set -a' is used. This
@@ -18,22 +26,57 @@ def output_env(c):
     file. That temp file could be used as an env file for docker.
     """
 
-    # The chillbox archive directory should probably *not* be accessed by
-    # outside scripts.
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    state_file_data = get_state_file_data(archive_directory)
+    temp_output_env_file = state_file_data.get("output_env_temp")
+
+    # Always delete any older ones first
+    remove_temp_files(paths=[temp_output_env_file])
+
+    temp_output_env = Path(tempfile.mkstemp(suffix=".chillbox.env")[1])
+    state_file_data["output_env_temp"] = str(temp_output_env.resolve())
+    logger.debug(f"{temp_output_env=}")
+
+    save_state_file_data(archive_directory, state_file_data)
+
     # CHILLBOX_ARCHIVE_DIRECTORY="{c.archive_directory_path}"
 
-    # CHILLBOX_PRIVATE_SSH_KEY="?"
+    export_env_vars = {
+        "CHILLBOX_INSTANCE": c.chillbox_config['instance'],
 
-    # It *could* be useful to export the chillbox instance name?
+        # The chillbox archive directory should probably *not* be accessed by
+        # outside scripts. Including it for now in case it is useful.
+        "CHILLBOX_ARCHIVE_DIRECTORY": archive_directory.resolve(),
+    }
 
-    # TODO Include other env vars and secrets here.
-    print(
-        f"""
-CHILLBOX_INSTANCE="{c.chillbox_config['instance']}"
+    export_env_vars.update(c.env)
 
-# use via: ssh -F $CHILLBOX_SSH_CONFIG
-CHILLBOX_SSH_CONFIG="chillbox-ssh_config"
+    if include_secrets:
+        export_env_vars.update(c.secrets)
 
-TEST="test of string 1"
-"""
-    )
+    env_var_list = list(map(lambda x: f"{x[0]}='{x[1]}'", export_env_vars.items()))
+    env_var_list.sort()
+    temp_output_env.write_text("\n".join(env_var_list))
+
+    # Only the file path is sent to stdout.
+    print(temp_output_env.resolve())
+
+
+@task(pre=[init])
+def output_env_clean(c):
+    """
+    Remove the temporary output env file if it exists.
+
+    The temporary output environment file may have secrets in plaintext.
+    Removing this file when it is no longer needed is a good practice.
+    """
+
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    state_file_data = get_state_file_data(archive_directory)
+    temp_output_env_file = state_file_data.get("output_env_temp")
+
+    remove_temp_files(paths=[temp_output_env_file])
+
+    del state_file_data["output_env_temp"]
+
+    save_state_file_data(archive_directory, state_file_data)

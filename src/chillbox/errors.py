@@ -29,3 +29,9 @@ class ChillboxHTTPError(ChillboxExit):
 
 class ChillboxServerUserDataError(ChillboxExit):
     """"""
+
+class ChillboxExpiredSecretError(ChillboxExit):
+    """"""
+
+class ChillboxInvalidStateFileError(ChillboxExit):
+    """"""

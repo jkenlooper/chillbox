@@ -11,9 +11,6 @@ from chillbox.errors import ChillboxMissingFileError, ChillboxServerUserDataErro
 
 def generate_user_data_script(c):
     ""
-    #import importlib.resources as pkg_resources
-    #with open(pkg_resources.path(chillbox.data, "commands-info.toml"), "rb") as f:
-
     server_list = c.chillbox_config.get("server", [])
     logger.debug(server_list)
     archive_directory = Path(c.chillbox_config["archive-directory"])

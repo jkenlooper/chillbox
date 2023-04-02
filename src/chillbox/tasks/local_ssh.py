@@ -6,15 +6,8 @@ from invoke import task
 import httpx
 
 from chillbox.tasks.local_archive import init
-from chillbox.utils import logger, get_state_file_data, save_state_file_data
+from chillbox.utils import logger, get_state_file_data, save_state_file_data, remove_temp_files
 from chillbox.errors import ChillboxHTTPError
-
-
-def remove_temp_ssh_files(ssh_config, identity_file):
-    if ssh_config and Path(ssh_config).exists():
-        Path(ssh_config).unlink()
-    if identity_file and Path(identity_file).exists():
-        Path(identity_file).unlink()
 
 
 @task(pre=[init])
@@ -44,7 +37,7 @@ def ssh_unlock(c):
     identity_file = state_file_data.get("identity_file_temp")
 
     # Always delete any older ones first
-    remove_temp_ssh_files(ssh_config, identity_file)
+    remove_temp_files(paths=[ssh_config, identity_file])
 
     ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
     state_file_data["ssh_config_temp"] = ssh_config
@@ -80,7 +73,7 @@ def ssh_lock(c):
     identity_file = state_file_data.get("identity_file_temp")
 
     # Always delete any older ones first
-    remove_temp_ssh_files(ssh_config, identity_file)
+    remove_temp_files(paths=[ssh_config, identity_file])
 
     del state_file_data["ssh_config_temp"]
     del state_file_data["identity_file_temp"]
