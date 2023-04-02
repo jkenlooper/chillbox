@@ -1,7 +1,14 @@
 from pathlib import Path
 
 from invoke import task
-from jinja2 import Environment, PrefixLoader, ChoiceLoader, PackageLoader, FileSystemLoader, select_autoescape
+from jinja2 import (
+    Environment,
+    PrefixLoader,
+    ChoiceLoader,
+    PackageLoader,
+    FileSystemLoader,
+    select_autoescape,
+)
 from jinja2.exceptions import TemplateNotFound
 
 from chillbox.validate import validate_and_load_chillbox_config
@@ -10,7 +17,7 @@ from chillbox.errors import ChillboxMissingFileError, ChillboxServerUserDataErro
 
 
 def generate_user_data_script(c):
-    ""
+    """"""
     server_list = c.chillbox_config.get("server", [])
     logger.debug(server_list)
     archive_directory = Path(c.chillbox_config["archive-directory"])
@@ -18,27 +25,33 @@ def generate_user_data_script(c):
     archive_templates.mkdir(parents=True, exist_ok=True)
 
     chillbox_data_loader = PackageLoader("chillbox.data")
-    loader = ChoiceLoader([
-        PrefixLoader({
-            "scripts": PackageLoader("chillbox.data", package_path="scripts"),
-            "chillbox": PackageLoader("chillbox.data"),
-            "archive": FileSystemLoader(archive_templates.resolve()),
-        }),
-        FileSystemLoader(archive_templates.resolve()),
-        chillbox_data_loader
-    ])
+    loader = ChoiceLoader(
+        [
+            PrefixLoader(
+                {
+                    "scripts": PackageLoader("chillbox.data", package_path="scripts"),
+                    "chillbox": PackageLoader("chillbox.data"),
+                    "archive": FileSystemLoader(archive_templates.resolve()),
+                }
+            ),
+            FileSystemLoader(archive_templates.resolve()),
+            chillbox_data_loader,
+        ]
+    )
     env = Environment(loader=loader, autoescape=select_autoescape())
     logger.debug(loader.list_templates())
 
     def raise_for_missing_template(missing_template):
         available_templates = "\n    - ".join(loader.list_templates())
-        err_msg = "\n".join([
-            f"ERROR: The template ({missing_template}) is not an available template in the list: \n    - {available_templates}",
-            f"  Templates with prefix 'archive/' are loaded from:\n    {archive_templates.resolve()}",
-            f"  Templates with prefix 'scripts/' are loaded from:\n    {chillbox_data_loader._template_root}",
-            f"  Templates with prefix 'chillbox/' are loaded from:\n    {chillbox_data_loader._template_root}",
-            "  Templates with no prefix will load archive/ templates before chillbox/ templates."
-        ])
+        err_msg = "\n".join(
+            [
+                f"ERROR: The template ({missing_template}) is not an available template in the list: \n    - {available_templates}",
+                f"  Templates with prefix 'archive/' are loaded from:\n    {archive_templates.resolve()}",
+                f"  Templates with prefix 'scripts/' are loaded from:\n    {chillbox_data_loader._template_root}",
+                f"  Templates with prefix 'chillbox/' are loaded from:\n    {chillbox_data_loader._template_root}",
+                "  Templates with no prefix will load archive/ templates before chillbox/ templates.",
+            ]
+        )
         raise ChillboxMissingFileError(err_msg)
 
     for server in server_list:
@@ -68,17 +81,26 @@ def generate_user_data_script(c):
             raise_for_missing_template(str(err))
         logger.debug(user_data_text)
 
-        user_data_script_file = archive_directory.joinpath("server", server["name"], "user-data")
+        user_data_script_file = archive_directory.joinpath(
+            "server", server["name"], "user-data"
+        )
         user_data_script_file.parent.mkdir(parents=True, exist_ok=True)
         user_data_file_size_limit = server_user_data.get("file-size-limit")
-        if user_data_file_size_limit and len(user_data_text) >= user_data_file_size_limit:
+        if (
+            user_data_file_size_limit
+            and len(user_data_text) >= user_data_file_size_limit
+        ):
             logger.info(user_data_text)
-            raise ChillboxServerUserDataError(f"ERROR: The rendered server ({server['name']}) user-data is over the file size limit. Limit is {user_data_file_size_limit} and user-data bytes is {len(user_data_text)}.")
+            raise ChillboxServerUserDataError(
+                f"ERROR: The rendered server ({server['name']}) user-data is over the file size limit. Limit is {user_data_file_size_limit} and user-data bytes is {len(user_data_text)}."
+            )
 
         user_data_script_file.write_text(user_data_text)
 
+
 def render_remote_files(c):
-    ""
+    """"""
+
 
 @task
 def server_init(c):

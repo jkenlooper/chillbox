@@ -11,7 +11,11 @@ from invoke import task
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from chillbox.validate import validate_and_load_chillbox_config
-from chillbox.errors import ChillboxArchiveDirectoryError, ChillboxGPGError, ChillboxExpiredSecretError
+from chillbox.errors import (
+    ChillboxArchiveDirectoryError,
+    ChillboxGPGError,
+    ChillboxExpiredSecretError,
+)
 from chillbox.utils import logger, remove_temp_files
 import chillbox.data.scripts
 
@@ -77,7 +81,10 @@ def decrypt_file_with_gpg(c, ciphertext_gpg_file):
     """"""
     secure_temp_file = mkstemp(text=True)[1]
     # Use --yes to overwrite the tempfile
-    result = c.run(f"gpg --yes --output {secure_temp_file} --decrypt {ciphertext_gpg_file}", hide=True)
+    result = c.run(
+        f"gpg --yes --output {secure_temp_file} --decrypt {ciphertext_gpg_file}",
+        hide=True,
+    )
     return secure_temp_file
 
 
@@ -160,28 +167,36 @@ def encrypt_secrets_to_archive(c):
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
 
-    public_asymmetric_key = archive_directory.joinpath("local-chillbox-asymmetric", f"{instance}.public.pem")
+    public_asymmetric_key = archive_directory.joinpath(
+        "local-chillbox-asymmetric", f"{instance}.public.pem"
+    )
 
     today = date.today()
     owner = getpass.getuser()
     for secret in secret_list:
         logger.debug(f"{secret=}")
         if secret.get("owner") != owner:
-            logger.info(f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}.")
+            logger.info(
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}."
+            )
             continue
-        secret_file_path = archive_directory.joinpath(
-            "secrets", secret["id"] + ".aes"
-        )
+        secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
         expires_date = secret.get("expires")
         if secret_file_path.exists():
             if not expires_date:
-                logger.info(f"The secret '{secret.get('id')}' exists and has no expiration date.")
+                logger.info(
+                    f"The secret '{secret.get('id')}' exists and has no expiration date."
+                )
                 continue
             elif today < expires_date:
-                logger.info(f"The secret '{secret.get('id')}' exists and has not expired.")
+                logger.info(
+                    f"The secret '{secret.get('id')}' exists and has not expired."
+                )
                 continue
             else:
-                raise ChillboxExpiredSecretError(f"The secret '{secret.get('id')}' exists, but it has expired.")
+                raise ChillboxExpiredSecretError(
+                    f"The secret '{secret.get('id')}' exists, but it has expired."
+                )
 
         secret_in_cleartext = getpass.getpass(prompt=f"{secret.get('prompt')}\n")
         tmp_secret_file = mkstemp(text=True)[1]
@@ -194,6 +209,7 @@ def encrypt_secrets_to_archive(c):
         )
         Path(tmp_secret_file).unlink()
 
+
 def load_env_vars(c):
     """
     Sets a c.env dict with these that can be used on c.run('cmd', env=c.env) calls.
@@ -201,6 +217,7 @@ def load_env_vars(c):
     # TODO: Ensure that values in the 'env' are all strings? Convert them to
     # strings if they are not?
     c.env = c.chillbox_config.get("env", {})
+
 
 def load_secrets(c):
     """
@@ -215,11 +232,11 @@ def load_secrets(c):
     for secret in secret_list:
         logger.debug(f"{secret=}")
         if secret.get("owner") != owner:
-            logger.info(f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}.")
+            logger.info(
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}."
+            )
             continue
-        secret_file_path = archive_directory.joinpath(
-            "secrets", secret["id"] + ".aes"
-        )
+        secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
         result = c.run(
             f"{decrypt_file_script} -k {c.local_chillbox_asymmetric_key_private} -i {secret_file_path.resolve()} -",
             hide=True,
@@ -233,6 +250,7 @@ def load_secrets(c):
     # loaded.
     temp_private_key = Path(c.local_chillbox_asymmetric_key_private)
     remove_temp_files(paths=[temp_private_key])
+
 
 @task
 def init(c):

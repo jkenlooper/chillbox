@@ -24,14 +24,18 @@ class ChillboxGPGError(ChillboxExit):
 class ChillboxArchiveDirectoryError(ChillboxExit):
     "Archive directory error"
 
+
 class ChillboxHTTPError(ChillboxExit):
     """"""
+
 
 class ChillboxServerUserDataError(ChillboxExit):
     """"""
 
+
 class ChillboxExpiredSecretError(ChillboxExit):
     """"""
+
 
 class ChillboxInvalidStateFileError(ChillboxExit):
     """"""

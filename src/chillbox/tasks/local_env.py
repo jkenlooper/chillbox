@@ -5,7 +5,12 @@ from pathlib import Path
 from invoke import task
 
 from chillbox.tasks.local_archive import init
-from chillbox.utils import logger, get_state_file_data, save_state_file_data, remove_temp_files
+from chillbox.utils import (
+    logger,
+    get_state_file_data,
+    save_state_file_data,
+    remove_temp_files,
+)
 
 
 @task(pre=[init])
@@ -42,8 +47,7 @@ def output_env(c, include_secrets=False):
     # CHILLBOX_ARCHIVE_DIRECTORY="{c.archive_directory_path}"
 
     export_env_vars = {
-        "CHILLBOX_INSTANCE": c.chillbox_config['instance'],
-
+        "CHILLBOX_INSTANCE": c.chillbox_config["instance"],
         # The chillbox archive directory should probably *not* be accessed by
         # outside scripts. Including it for now in case it is useful.
         "CHILLBOX_ARCHIVE_DIRECTORY": archive_directory.resolve(),

@@ -6,7 +6,12 @@ from invoke import task
 import httpx
 
 from chillbox.tasks.local_archive import init
-from chillbox.utils import logger, get_state_file_data, save_state_file_data, remove_temp_files
+from chillbox.utils import (
+    logger,
+    get_state_file_data,
+    save_state_file_data,
+    remove_temp_files,
+)
 from chillbox.errors import ChillboxHTTPError
 
 
@@ -103,17 +108,17 @@ def fetch_github_public_ssh_key(c, user):
 
     github_api_list_public_keys_for_user = f"https://api.github.com/users/{user}/keys"
     try:
-        r = httpx.get(github_api_list_public_keys_for_user,
-                      follow_redirects=True,
-                      headers={
-          "Accept": "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28"
-        })
+        r = httpx.get(
+            github_api_list_public_keys_for_user,
+            follow_redirects=True,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
         r.raise_for_status()
     except httpx.HTTPError as err:
-        raise ChillboxHTTPError(
-            f"ERROR: Request failed. {err}"
-        )
+        raise ChillboxHTTPError(f"ERROR: Request failed. {err}")
     logger.debug(r)
     logger.debug(r.url)
     logger.debug(r.reason_phrase)

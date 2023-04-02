@@ -20,7 +20,9 @@ def get_state_file_data(archive_directory):
             try:
                 state_file_data = json.load(f)
             except json.decoder.JSONDecodeError as err:
-                raise ChillboxInvalidStateFileError(f"ERROR: Failed to parse json file ({f.name}).\n  {err}")
+                raise ChillboxInvalidStateFileError(
+                    f"ERROR: Failed to parse json file ({f.name}).\n  {err}"
+                )
 
     else:
         state_file_data = {}
