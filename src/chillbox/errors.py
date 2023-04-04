@@ -39,3 +39,7 @@ class ChillboxExpiredSecretError(ChillboxExit):
 
 class ChillboxInvalidStateFileError(ChillboxExit):
     """"""
+
+
+class ChillboxTemplateError(ChillboxExit):
+    """"""

@@ -100,6 +100,8 @@ def generate_user_data_script(c):
 
 def render_remote_files(c):
     """"""
+    # TODO render files for each server
+    print(c.renderer.render("test.html", {}))
 
 
 @task

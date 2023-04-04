@@ -18,6 +18,7 @@ from chillbox.errors import (
 )
 from chillbox.utils import logger, remove_temp_files
 import chillbox.data.scripts
+from chillbox.template import Renderer
 
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
 
@@ -118,6 +119,12 @@ def init_local_chillbox_asymmetric_key(c):
         c, gpg_encrypted_asymmetric_key_path
     )
     logger.info("Set the local chillbox asymmetric key")
+
+
+def init_template_renderer(c):
+    """"""
+    template_list = c.chillbox_config.get("template", [])
+    c.renderer = Renderer(template_list, c.working_directory)
 
 
 def copy_local_files_to_archive(c):
@@ -257,6 +264,9 @@ def init(c):
     "Initialize local archive directory as the current user"
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
+    # The working directory is always the directory containing the chillbox
+    # config toml file.
+    c.working_directory = Path(c.config["chillbox-config"]).resolve().parent
 
     # An owner needs to be set so this instance of the chillbox archive
     # directory will only create items that this user would need to manage.
@@ -290,6 +300,9 @@ def init(c):
     encrypt_secrets_to_archive(c)
     load_env_vars(c)
     load_secrets(c)
+    init_template_renderer(c)
+
+    print(c.renderer.render("test.html", {}))
 
 
 @task
