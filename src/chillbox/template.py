@@ -68,7 +68,9 @@ class Renderer:
             lambda x: get_file_system_loader(x["src"], self.working_directory),
             filter(lambda x: not x.get("prefix"), template_list),
         )
-        template_loaders = [PrefixLoader(prefix_loader)]
+        # Set prefix delimiter to ':' to avoid confusion with relative paths.
+        # Defines the 'chillbox-scripts:', 'chillbox:' and any user defined prefixes.
+        template_loaders = [PrefixLoader(prefix_loader, delimiter=":")]
         template_loaders.extend(fs_templates)
         template_loaders.append(chillbox_data_loader)
 

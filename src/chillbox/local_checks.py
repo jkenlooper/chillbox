@@ -42,7 +42,7 @@ def check_required_commands():
     if results:
         with open(pkg_resources.path(chillbox.data, "commands-info.toml"), "rb") as f:
             commands_info = tomllib.load(f)
-        template = env.get_template("commands-info.jinja2")
+        template = env.get_template("commands-info.jinja")
         info = template.render(**locals())
         lines = "\n  ".join(results)
         raise ChillboxDependencyError(
@@ -64,7 +64,7 @@ def check_optional_commands():
     if results:
         with open(pkg_resources.path(chillbox.data, "commands-info.toml"), "rb") as f:
             commands_info = tomllib.load(f)
-        template = env.get_template("commands-info.jinja2")
+        template = env.get_template("commands-info.jinja")
         info = template.render(**locals())
         lines = "\n  ".join(results)
         raise ChillboxDependencyError(

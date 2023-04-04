@@ -10,7 +10,7 @@ from datetime import date
 from invoke import task
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from chillbox.validate import validate_and_load_chillbox_config
+from chillbox.validate import validate_and_load_chillbox_config, src_path_is_template
 from chillbox.errors import (
     ChillboxArchiveDirectoryError,
     ChillboxGPGError,
@@ -121,48 +121,6 @@ def init_local_chillbox_asymmetric_key(c):
     logger.info("Set the local chillbox asymmetric key")
 
 
-def init_template_renderer(c):
-    """"""
-    template_list = c.chillbox_config.get("template", [])
-    c.renderer = Renderer(template_list, c.working_directory)
-
-
-def copy_local_files_to_archive(c):
-    "Copy local files to the chillbox archive directory"
-    local_file_list = c.chillbox_config.get("local-file", [])
-    logger.debug(local_file_list)
-    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
-
-    errors = []
-    for f in local_file_list:
-        file_errors = []
-        src_path = Path(f["src"])
-        if not src_path.exists():
-            if f.get("optional"):
-                logger.info(
-                    f"No src file at: {src_path.resolve()}, skipping since it is optional."
-                )
-                continue
-            file_errors.append(f"The src path does not exist: {src_path.resolve()}")
-        if Path(f["dest"]).is_absolute():
-            file_errors.append(
-                f"The dest path should not be an absolute path: {f['dest']}"
-            )
-        if file_errors:
-            errors.append({"file": f, "msg": file_errors})
-            continue
-
-        dest_path = Path(archive_directory_path).joinpath(f["dest"])
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-        copy2(src_path.resolve(), dest_path.resolve())
-
-    if errors:
-        template = env.get_template("local-copy-files-errors.jinja2")
-        file_errors_message = template.render(**locals())
-        raise ChillboxArchiveDirectoryError(
-            f"ERROR: Failed to copy all local files to chillbox directory.\n{file_errors_message}"
-        )
-
 
 def encrypt_secrets_to_archive(c):
     """"""
@@ -259,6 +217,50 @@ def load_secrets(c):
     remove_temp_files(paths=[temp_private_key])
 
 
+def init_template_renderer(c):
+    """"""
+    template_list = c.chillbox_config.get("template", [])
+    c.renderer = Renderer(template_list, c.working_directory)
+
+
+def process_path_to_archive(c):
+    "Process local files and directories to the chillbox archive directory"
+    local_path_list = c.chillbox_config.get("path", [])
+    logger.debug(local_path_list)
+    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
+    template_list = c.chillbox_config.get("template", [])
+
+    errors = []
+    for path in local_path_list:
+        # TODO: Need to check if path is a directory
+        file_errors = []
+        # TODO: Encrypt the file before writing to dest_path
+        dest_path = Path(archive_directory_path).joinpath("path", path["id"])
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        if path.get("render") and src_path_is_template(path["src"], template_list, c.working_directory):
+            dest_path.write_text(c.renderer.render(path["src"], path.get("context", {})))
+        else:
+            src_path = Path(path["src"])
+            if not src_path.exists():
+                file_errors.append(f"The src path does not exist: {src_path.resolve()}")
+            if not Path(path["dest"]).is_absolute():
+                file_errors.append(
+                    f"The dest path should be an absolute path: {path['dest']}"
+                )
+            if file_errors:
+                errors.append({"path": path, "msg": file_errors})
+                continue
+
+            copy2(src_path.resolve(), dest_path.resolve())
+
+    if errors:
+        template = env.get_template("local-process-path-errors.jinja")
+        file_errors_message = template.render(**locals())
+        raise ChillboxArchiveDirectoryError(
+            f"ERROR: Failed to copy all local files to chillbox directory.\n{file_errors_message}"
+        )
+
+
 @task
 def init(c):
     "Initialize local archive directory as the current user"
@@ -296,13 +298,12 @@ def init(c):
 
     generate_gpg_key_or_use_existing(c)
     init_local_chillbox_asymmetric_key(c)
-    copy_local_files_to_archive(c)
     encrypt_secrets_to_archive(c)
     load_env_vars(c)
     load_secrets(c)
     init_template_renderer(c)
+    process_path_to_archive(c)
 
-    print(c.renderer.render("test.html", {}))
 
 
 @task

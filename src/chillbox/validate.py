@@ -8,20 +8,64 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from chillbox.errors import ChillboxInvalidConfigError, ChillboxMissingFileError
+from jinja2.exceptions import TemplateNotFound
+
+from chillbox.errors import ChillboxInvalidConfigError, ChillboxMissingFileError, ChillboxTemplateError
 from chillbox.local_checks import check_required_commands
 from chillbox.utils import logger
 
 required_keys = set(["instance", "gpg-key", "archive-directory"])
+required_keys_path = set(["id", "src", "dest"])
 
 # TODO: Reference the docs/configuration-file.md file that is hosted at a URL instead?
 chillbox_config_more_info = "Please see documentation at docs/configuration-file.md"
+
+def src_path_is_template(src, template_list, working_directory):
+    "Return True if src path is a template"
+
+    def is_prefix_path(src):
+        prefix_split = src.split(sep=":", maxsplit=1)
+        if len(prefix_split) > 1:
+            if prefix_split[0].find("/") == -1:
+                return True
+
+    if src.startswith(("/", "./")):
+        return False
+    if is_prefix_path(src):
+        return True
+
+    for template in template_list:
+        if template.get("prefix"):
+            # Skip if prefix since those have already been checked.
+            continue
+        template_src = template.get("src")
+        if not template_src:
+            # The template object is invalid, but not concerned about that here.
+            continue
+        try:
+            fs_loader = get_file_system_loader(template_src, working_directory)
+        except ChillboxTemplateError as err:
+            # Ignore this error here as this is only concerning itself with the
+            # path src value.
+            continue
+        try:
+            fs_loader.get_source(environment=None, template=src)
+        except TemplateNotFound:
+            # Ignore so other templates can be checked.
+            continue
+
+        # fs_loader was able to load the template file so it must be an actual
+        # template.
+        return True
+
+    return False
 
 
 def validate_and_load_chillbox_config(chillbox_config_file):
     "Load the parsed TOML data to the context so it can be used by other tasks."
     check_required_commands()
 
+    working_directory = Path(chillbox_config_file).resolve().parent
     logger.debug(f"Using chillbox config file: {chillbox_config_file}")
 
     if not Path(chillbox_config_file).exists():
@@ -43,10 +87,36 @@ def validate_and_load_chillbox_config(chillbox_config_file):
     if not required_keys.issubset(top_level_keys):
         missing_keys = required_keys.copy()
         missing_keys.difference_update(top_level_keys)
-        lines = "\n  ".join(sorted(missing_keys))
+        lines = "\n  - ".join(sorted(missing_keys))
         raise ChillboxInvalidConfigError(
-            f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required:\n  {lines}\n    {chillbox_config_more_info}"
+            f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required:\n  - {lines}\n    {chillbox_config_more_info}"
         )
+
+    for path in data.get("path", []):
+        path_keys = set(path.keys())
+        if not required_keys_path.issubset(path_keys):
+            logger.warning(f"The path object is invalid: {path}")
+            missing_keys = required_keys_path.copy()
+            missing_keys.difference_update(path_keys)
+            lines = "\n  - ".join(sorted(missing_keys))
+            raise ChillboxInvalidConfigError(
+                f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for path:\n  - {lines}\n    {chillbox_config_more_info}"
+            )
+
+        # Check if src is a template else check if src exists
+        if path.get("render") and src_path_is_template(path["src"], data.get("template", []), working_directory):
+            logger.debug(f"src path ({path['src']}) is a template file")
+        else:
+            src_path = working_directory.joinpath(path["src"]).resolve()
+            logger.debug(src_path)
+            logger.debug(working_directory)
+            if not src_path.is_relative_to(working_directory):
+                raise ChillboxInvalidConfigError(
+                    f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that is outside the working directory: {working_directory.resolve()}"
+                )
+
+        if path.get("context") and not path.get("render"):
+            logger.warning(f"The path with id of '{path['id']}' has 'context' value defined, but will not be used since 'render' value is not true.")
 
     for server in data.get("server", []):
         missing_keys = ["name"]
