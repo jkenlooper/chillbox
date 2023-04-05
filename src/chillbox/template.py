@@ -10,25 +10,13 @@ from jinja2 import (
 )
 from jinja2.exceptions import TemplateNotFound
 
-from chillbox.utils import logger
+from chillbox.utils import logger, get_file_system_loader
 from chillbox.errors import (
     ChillboxTemplateError,
     ChillboxMissingFileError,
     ChillboxServerUserDataError,
 )
 
-
-def get_file_system_loader(src, working_directory):
-    src_path = working_directory.joinpath(src).resolve()
-    if not src_path.is_relative_to(working_directory):
-        raise ChillboxTemplateError(
-            f"ERROR: The template src path ({src_path}) is outside the working directory: {working_directory.resolve()}"
-        )
-    if not src_path.is_dir():
-        raise ChillboxTemplateError(
-            f"ERROR: The template src path is not a directory: {src_path.resolve()}"
-        )
-    return FileSystemLoader(src_path)
 
 
 class Renderer:

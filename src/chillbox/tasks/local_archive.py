@@ -227,31 +227,43 @@ def process_path_to_archive(c):
     "Process local files and directories to the chillbox archive directory"
     local_path_list = c.chillbox_config.get("path", [])
     logger.debug(local_path_list)
-    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
+    instance = c.chillbox_config["instance"]
+    archive_directory = Path(c.chillbox_config["archive-directory"])
     template_list = c.chillbox_config.get("template", [])
+    encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
+    public_asymmetric_key = archive_directory.joinpath(
+        "local-chillbox-asymmetric", f"{instance}.public.pem"
+    )
 
     errors = []
     for path in local_path_list:
         # TODO: Need to check if path is a directory
         file_errors = []
-        # TODO: Encrypt the file before writing to dest_path
-        dest_path = Path(archive_directory_path).joinpath("path", path["id"])
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-        if path.get("render") and src_path_is_template(path["src"], template_list, c.working_directory):
-            dest_path.write_text(c.renderer.render(path["src"], path.get("context", {})))
-        else:
-            src_path = Path(path["src"])
-            if not src_path.exists():
-                file_errors.append(f"The src path does not exist: {src_path.resolve()}")
-            if not Path(path["dest"]).is_absolute():
-                file_errors.append(
-                    f"The dest path should be an absolute path: {path['dest']}"
-                )
-            if file_errors:
-                errors.append({"path": path, "msg": file_errors})
-                continue
+        secure_temp_file = Path(mkstemp(text=True)[1])
+        id_path = archive_directory.joinpath("path", path["id"])
+        id_path.parent.mkdir(parents=True, exist_ok=True)
 
-            copy2(src_path.resolve(), dest_path.resolve())
+        if path.get("render") and src_path_is_template(path["src"], template_list, c.working_directory):
+            context = {}
+            context.update(c.env)
+            context.update(c.secrets)
+            context.update(path.get("context", {}))
+            secure_temp_file.write_text(c.renderer.render(path["src"], context))
+            logger.debug(secure_temp_file.read_text())
+        else:
+            if path.get("render"):
+                logger.warning(f"The path with id '{path['id']}' has 'render' set but path is not being processed as a template")
+            if path.get("context"):
+                logger.warning(f"The path with id '{path['id']}' has 'context' set but path is not being processed as a template.")
+            src_path = Path(path["src"])
+            logger.debug(src_path.read_text())
+            copy2(src_path.resolve(), secure_temp_file)
+
+        result = c.run(
+            f"{encrypt_file_script} -k {public_asymmetric_key.resolve()} -o {id_path.resolve()} {secure_temp_file}",
+            hide=True,
+        )
+        Path(secure_temp_file).unlink()
 
     if errors:
         template = env.get_template("local-process-path-errors.jinja")

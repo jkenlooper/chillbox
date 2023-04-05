@@ -12,7 +12,7 @@ from jinja2.exceptions import TemplateNotFound
 
 from chillbox.errors import ChillboxInvalidConfigError, ChillboxMissingFileError, ChillboxTemplateError
 from chillbox.local_checks import check_required_commands
-from chillbox.utils import logger
+from chillbox.utils import logger, get_file_system_loader
 
 required_keys = set(["instance", "gpg-key", "archive-directory"])
 required_keys_path = set(["id", "src", "dest"])
@@ -114,9 +114,16 @@ def validate_and_load_chillbox_config(chillbox_config_file):
                 raise ChillboxInvalidConfigError(
                     f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that is outside the working directory: {working_directory.resolve()}"
                 )
+            if not src_path.exists():
+                raise ChillboxInvalidConfigError(f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that does not exist.")
 
         if path.get("context") and not path.get("render"):
             logger.warning(f"The path with id of '{path['id']}' has 'context' value defined, but will not be used since 'render' value is not true.")
+
+        if not Path(path["dest"]).is_absolute():
+            raise ChillboxInvalidConfigError(
+                f"INVALID: The dest value on path with id of '{path['id']}' should be an absolute path: {path['dest']}"
+            )
 
     for server in data.get("server", []):
         missing_keys = ["name"]

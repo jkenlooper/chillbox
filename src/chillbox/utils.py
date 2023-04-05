@@ -3,7 +3,12 @@ import logging
 import json
 from pathlib import Path
 
-from chillbox.errors import ChillboxInvalidStateFileError
+from jinja2 import FileSystemLoader
+
+from chillbox.errors import (
+    ChillboxInvalidStateFileError,
+    ChillboxTemplateError,
+)
 
 LOG_FORMAT = "%(levelname)s: %(name)s.%(module)s.%(funcName)s:\n  %(message)s"
 logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
@@ -42,3 +47,17 @@ def remove_temp_files(paths=[]):
             # TODO: Overwrite data first before unlinking to more securely
             # delete sensitive information like secrets.
             Path(f).unlink()
+
+
+def get_file_system_loader(src, working_directory):
+    src_path = working_directory.joinpath(src).resolve()
+    if not src_path.is_relative_to(working_directory):
+        raise ChillboxTemplateError(
+            f"ERROR: The template src path ({src_path}) is outside the working directory: {working_directory.resolve()}"
+        )
+    if not src_path.is_dir():
+        raise ChillboxTemplateError(
+            f"ERROR: The template src path is not a directory: {src_path.resolve()}"
+        )
+    return FileSystemLoader(src_path)
+
