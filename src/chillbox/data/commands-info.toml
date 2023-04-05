@@ -25,6 +25,26 @@ OpenSSL software - a robust, commercial-grade, full-featured toolkit for \
 general-purpose cryptography and secure communication. \
 """
 
+[mktemp]
+required = true
+full-name = "mktemp"
+website = "https://www.gnu.org/software/coreutils/mktemp"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox to create temporary files only readable and writable by the owner."
+description = """
+Create a temporary file or directory, safely, and print its name.
+"""
+
+[shred]
+required = true
+full-name = "shred"
+website = "https://www.gnu.org/software/coreutils/shred/"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox to securely delete files by overwriting them before removing them."
+description = """
+Overwrite a file to hide its contents, and optionally delete it
+"""
+
 [python]
 required = true
 full-name = "Python 3"

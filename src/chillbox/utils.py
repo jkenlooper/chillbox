@@ -2,12 +2,14 @@ import os
 import logging
 import json
 from pathlib import Path
+import subprocess
 
 from jinja2 import FileSystemLoader
 
 from chillbox.errors import (
     ChillboxInvalidStateFileError,
     ChillboxTemplateError,
+    ChillboxExit,
 )
 
 LOG_FORMAT = "%(levelname)s: %(name)s.%(module)s.%(funcName)s:\n  %(message)s"
@@ -41,12 +43,38 @@ def save_state_file_data(archive_directory, state_file_data):
         json.dump(state_file_data, f)
 
 
+def shred_file(file):
+    """
+    Overwrite data first before unlinking to more securely delete sensitive
+    information like secrets. Uses the 'shred' command, but falls back on
+    unlinking if that fails.
+    """
+
+    if not Path(file).exists():
+        logger.warning(f"The file ({file}) does not exist. Nothing to shred.")
+        return
+    if Path(file).is_dir():
+        raise ChillboxExit(f"ERROR: The path ({file}) is a directory. Shredding files in a directory is not supported.")
+
+    try:
+        result = subprocess.run(
+            ["shred", "-fuz", str(file)], capture_output=True, check=True, text=True
+        )
+        logger.debug(result)
+    except FileNotFoundError as err:
+        logger.warning(f"Failed to properly shred {file} file.\n  {err}")
+    except subprocess.CalledProcessError as err:
+        logger.warning(f"Failed to properly shred {file} file.\n  {err}")
+    finally:
+        if Path(file).exists():
+            logger.warning(f"Only performing an unlink of the {file} file.")
+            Path(file).unlink()
+
+
 def remove_temp_files(paths=[]):
     for f in paths:
         if f and Path(f).exists():
-            # TODO: Overwrite data first before unlinking to more securely
-            # delete sensitive information like secrets.
-            Path(f).unlink()
+            shred_file(f)
 
 
 def get_file_system_loader(src, working_directory):

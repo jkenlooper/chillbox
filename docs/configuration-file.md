@@ -13,8 +13,8 @@ Optional:
 - "env"
 - list of "user"
 - list of "secret"
-- list of "local-file"
-- list of "remote-file"
+- list of "template"
+- list of "path"
 - list of "server"
 
 
@@ -78,41 +78,30 @@ user = "site1"
 
 ### Files ###
 
-# Copies these files from the host machine to the archive.
-[[local-file]]
-name = "example-built-tar-file"
-src = "path/to/example-built-tar-file/on-host"
-dest = "path/to/example-built-tar-file/to-store-in-archive"
+[[template]]
+# Create the example-templates directory first.
+src = "example-templates"
+# The prefix is optional. Use the 'local' one here like this when rendering a path: 'local:'
+prefix = "local"
 
-[[local-file]]
-name = "terraform-output-example"
-src = "path-to/file-that-might/not-exist-yet.json"
-optional = true
-dest = "example/terraform-stuff/output.json"
-
-[[remote-file]]
-name = "stream-nginx-conf"
-template = "/path/to/template.nginx.conf.jinja2"
+[[path]]
+id = "stream-nginx-conf"
+src = "chillbox:stream.nginx.conf.jinja"
 dest = "/etc/nginx/conf.d/example-stream.nginx.conf"
-[remote-file.context]
+render = true
+[path.context]
 domains = ["abc.example.com"]
 
-[[remote-file]]
-name = "bootstrap-stream-nginx-server.sh"
-src = "/path/to/bootstrap-stream-nginx-server.sh"
-dest = "/path/to/bootstrap-stream-nginx-server.sh"
+# Copies these files from the host machine to the archive.
+[[path]]
+id = "example-readme"
+src = "README.md"
+dest = "/example/sub/README.md"
 
-[[remote-file]]
-name = "chillbox-nginx-conf"
-template = "/path/to/template.nginx.conf.jinja2"
-dest = "/etc/nginx/conf.d/chillbox.nginx.conf"
-[remote-file.context]
-domains = ["abc.chillbox.example.com"]
-
-[[remote-file]]
-name = "bootstrap-chillbox-server.sh"
-src = "/path/to/bootstrap-chillbox-server.sh"
-dest = "/path/to/bootstrap-chillbox-server.sh"
+[[path]]
+id = "example-docs"
+src = "docs"
+dest = "/example/sub/docs.tar.gz"
 
 
 ### Servers ###

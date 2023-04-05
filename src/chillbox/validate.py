@@ -28,8 +28,10 @@ def src_path_is_template(src, template_list, working_directory):
         if len(prefix_split) > 1:
             if prefix_split[0].find("/") == -1:
                 return True
-
+    src_path = Path(working_directory).joinpath(src)
     if src.startswith(("/", "./")):
+        return False
+    if src_path.exists() and src_path.is_dir():
         return False
     if is_prefix_path(src):
         return True
@@ -53,6 +55,10 @@ def src_path_is_template(src, template_list, working_directory):
         except TemplateNotFound:
             # Ignore so other templates can be checked.
             continue
+
+        if src_path.exists():
+            logger.warning(f"The src path exists at: {src_path.resolve()} and is a file in the template list. This path can't be used as a template because it is ambiguous.")
+            return False
 
         # fs_loader was able to load the template file so it must be an actual
         # template.

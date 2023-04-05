@@ -1,11 +1,13 @@
 import os
 import getpass
-from shutil import which, rmtree, copy2
+from shutil import which, rmtree, copyfileobj
 from pathlib import Path
 import importlib.resources as pkg_resources
 from pprint import pformat
 from tempfile import mkstemp
 from datetime import date
+import tarfile
+import gzip
 
 from invoke import task
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -16,7 +18,7 @@ from chillbox.errors import (
     ChillboxGPGError,
     ChillboxExpiredSecretError,
 )
-from chillbox.utils import logger, remove_temp_files
+from chillbox.utils import logger, remove_temp_files, shred_file
 import chillbox.data.scripts
 from chillbox.template import Renderer
 
@@ -224,7 +226,19 @@ def init_template_renderer(c):
 
 
 def process_path_to_archive(c):
-    "Process local files and directories to the chillbox archive directory"
+    """
+    Process local files and directories to the chillbox archive 'path'
+    directory.
+
+    All processed paths are compressed (gzipped) and encrypted with
+    the local chillbox asymmetric key. These files are then ready to be
+    transferred to their remote destination (dest).
+
+    Note that a different process will be used to decrypt the file and encrypt
+    it using a different public key when transferring.  For example, with server
+    remote destinations the public key of the server will be used to encrypt the
+    file before uploading it with scp.
+    """
     local_path_list = c.chillbox_config.get("path", [])
     logger.debug(local_path_list)
     instance = c.chillbox_config["instance"]
@@ -236,6 +250,8 @@ def process_path_to_archive(c):
     )
 
     errors = []
+    # Set umask so files are only rw by owner.
+    prev_umask = os.umask(0o077)
     for path in local_path_list:
         # TODO: Need to check if path is a directory
         file_errors = []
@@ -248,22 +264,31 @@ def process_path_to_archive(c):
             context.update(c.env)
             context.update(c.secrets)
             context.update(path.get("context", {}))
-            secure_temp_file.write_text(c.renderer.render(path["src"], context))
-            logger.debug(secure_temp_file.read_text())
+            with gzip.open(secure_temp_file, "wb") as f:
+                f.write(bytes(c.renderer.render(path["src"], context), encoding="utf-8"))
         else:
             if path.get("render"):
                 logger.warning(f"The path with id '{path['id']}' has 'render' set but path is not being processed as a template")
             if path.get("context"):
                 logger.warning(f"The path with id '{path['id']}' has 'context' set but path is not being processed as a template.")
             src_path = Path(path["src"])
-            logger.debug(src_path.read_text())
-            copy2(src_path.resolve(), secure_temp_file)
+            if src_path.is_file():
+                # Compress the file
+                with open(src_path.resolve(), "rb") as fin:
+                    with gzip.open(secure_temp_file, "wb") as fout:
+                        copyfileobj(fin, fout)
+            elif src_path.is_dir():
+                # Create tar file
+                with tarfile.open(secure_temp_file, "w:gz") as tar:
+                    tar.add(src_path.resolve())
+
 
         result = c.run(
             f"{encrypt_file_script} -k {public_asymmetric_key.resolve()} -o {id_path.resolve()} {secure_temp_file}",
             hide=True,
         )
-        Path(secure_temp_file).unlink()
+        logger.debug(result)
+        shred_file(secure_temp_file)
 
     if errors:
         template = env.get_template("local-process-path-errors.jinja")
@@ -271,6 +296,9 @@ def process_path_to_archive(c):
         raise ChillboxArchiveDirectoryError(
             f"ERROR: Failed to copy all local files to chillbox directory.\n{file_errors_message}"
         )
+
+    # Return to previous umask
+    os.umask(prev_umask)
 
 
 @task
