@@ -98,6 +98,14 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required:\n  - {lines}\n    {chillbox_config_more_info}"
         )
 
+    ## template
+    template_prefixes = list(map(lambda x: x["prefix"], filter(lambda x: x.get("prefix"), data.get("template", []))))
+    if len(template_prefixes) != len(set(template_prefixes)):
+        raise ChillboxInvalidConfigError(
+            "INVALID: Duplicate template prefix found. The prefix used for each template must be unique."
+        )
+
+    ## path
     for path in data.get("path", []):
         path_keys = set(path.keys())
         if not required_keys_path.issubset(path_keys):
@@ -130,7 +138,13 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             raise ChillboxInvalidConfigError(
                 f"INVALID: The dest value on path with id of '{path['id']}' should be an absolute path: {path['dest']}"
             )
+    path_ids = list(map(lambda x: x["id"], data.get("path", [])))
+    if len(path_ids) != len(set(path_ids)):
+        raise ChillboxInvalidConfigError(
+            "INVALID: Duplicate path id found. The id used for each path must be unique."
+        )
 
+    ## server
     for server in data.get("server", []):
         missing_keys = ["name"]
         lines = "\n  ".join(sorted(missing_keys))
@@ -143,6 +157,11 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             raise ChillboxInvalidConfigError(
                 f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for items in server.user-data:\n  template\n  The server object with error is:\n    {pformat(server)}"
             )
+    server_names = list(map(lambda x: x["name"], data.get("server", [])))
+    if len(server_names) != len(set(server_names)):
+        raise ChillboxInvalidConfigError(
+            "INVALID: Duplicate server name found. The name used for each server must be unique."
+        )
 
     today = date.today()
     owner = getpass.getuser()

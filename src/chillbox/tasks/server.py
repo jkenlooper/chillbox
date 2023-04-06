@@ -11,6 +11,7 @@ from jinja2 import (
 )
 from jinja2.exceptions import TemplateNotFound
 
+from chillbox.tasks.local_archive import init
 from chillbox.validate import validate_and_load_chillbox_config
 from chillbox.utils import logger
 from chillbox.errors import ChillboxMissingFileError, ChillboxServerUserDataError
@@ -21,38 +22,6 @@ def generate_user_data_script(c):
     server_list = c.chillbox_config.get("server", [])
     logger.debug(server_list)
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    archive_templates = archive_directory.joinpath("templates")
-    archive_templates.mkdir(parents=True, exist_ok=True)
-
-    chillbox_data_loader = PackageLoader("chillbox.data")
-    loader = ChoiceLoader(
-        [
-            PrefixLoader(
-                {
-                    "scripts": PackageLoader("chillbox.data", package_path="scripts"),
-                    "chillbox": PackageLoader("chillbox.data"),
-                    "archive": FileSystemLoader(archive_templates.resolve()),
-                }
-            ),
-            FileSystemLoader(archive_templates.resolve()),
-            chillbox_data_loader,
-        ]
-    )
-    env = Environment(loader=loader, autoescape=select_autoescape())
-    logger.debug(loader.list_templates())
-
-    def raise_for_missing_template(missing_template):
-        available_templates = "\n    - ".join(loader.list_templates())
-        err_msg = "\n".join(
-            [
-                f"ERROR: The template ({missing_template}) is not an available template in the list: \n    - {available_templates}",
-                f"  Templates with prefix 'archive/' are loaded from:\n    {archive_templates.resolve()}",
-                f"  Templates with prefix 'scripts/' are loaded from:\n    {chillbox_data_loader._template_root}",
-                f"  Templates with prefix 'chillbox/' are loaded from:\n    {chillbox_data_loader._template_root}",
-                "  Templates with no prefix will load archive/ templates before chillbox/ templates.",
-            ]
-        )
-        raise ChillboxMissingFileError(err_msg)
 
     for server in server_list:
         server_user_data = server.get("user-data")
@@ -67,19 +36,13 @@ def generate_user_data_script(c):
             "login_users": [],
             "no_home_users": [],
         }
+
+        server_user_data_context.update(c.env)
+        # The server user-data context should not get c.secrets. The user-data
+        # is not encrypted.
         server_user_data_context.update(server_user_data.get("context", {}))
 
-        try:
-            template = env.get_template(server_user_data_template)
-        except TemplateNotFound as err:
-            logger.debug(err)
-            raise_for_missing_template(str(err))
-        try:
-            user_data_text = template.render(server_user_data_context)
-        except TemplateNotFound as err:
-            logger.debug(err)
-            raise_for_missing_template(str(err))
-        logger.debug(user_data_text)
+        user_data_text = c.renderer.render(server_user_data_template, server_user_data_context)
 
         user_data_script_file = archive_directory.joinpath(
             "server", server["name"], "user-data"
@@ -98,16 +61,9 @@ def generate_user_data_script(c):
         user_data_script_file.write_text(user_data_text)
 
 
-def render_remote_files(c):
-    """"""
-    # TODO render files for each server
-    print(c.renderer.render("test.html", {}))
-
-
-@task
+@task(pre=[init])
 def server_init(c):
     "Initialize files that will be needed for the chillbox servers."
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
     generate_user_data_script(c)
-    render_remote_files(c)

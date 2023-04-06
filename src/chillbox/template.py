@@ -22,11 +22,11 @@ from chillbox.errors import (
 class Renderer:
     """"""
 
-    def raise_for_missing_template(self, missing_template):
+    def raise_for_missing_template(self, err):
         available_templates = "\n    - ".join(self.loader.list_templates())
         err_msg = "\n".join(
             [
-                f"ERROR: The template ({missing_template}) is not an available template in the list: \n    - {available_templates}",
+                f"ERROR: {err}\n  Available template in the list: \n    - {available_templates}",
             ]
         )
         raise ChillboxMissingFileError(err_msg)

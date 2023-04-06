@@ -116,8 +116,9 @@ name = "example-stream-server"
 login-users = [ "alice:dev" ]
 no-home-users = [ "dev" ]
 secrets = [ "example_secret" ]
+remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]
 [server.user-data]
-template = "chillbox/user-data.sh.jinja"
+template = "chillbox:user-data.sh.jinja"
 # A user-data script may have limits to the file size depending on the cloud
 # host.
 # AWS EC2 limit is 16K
@@ -133,9 +134,6 @@ public-ssh-key = [
   "public-ssh-key-that-is-manually-added-here"
 ]
 nft_script = "example.nft"
-
-
-remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]
 
 [[server]]
 ip = "122.3.4.5"

@@ -45,6 +45,16 @@ description = """
 Overwrite a file to hide its contents, and optionally delete it
 """
 
+[dd]
+required = true
+full-name = "dd"
+website = "https://www.gnu.org/software/coreutils/dd/"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox when encrypting and decrypting files."
+description = """
+Convert and copy a file
+"""
+
 [python]
 required = true
 full-name = "Python 3"
@@ -58,6 +68,26 @@ systems more effectively. \
 
 ### Optional Commands
 
+[wget]
+required = false
+full-name = "wget"
+website = "https://www.gnu.org/software/wget/"
+download = "http://wget.addictivecode.org/FrequentlyAskedQuestions.html#download"
+description = "Wget - The non-interactive network downloader."
+use-case = """
+To download other files from the internet when running shell scripts.
+"""
+
+[qemu-system-x86_64]
+required = false
+full-name = "QEMU"
+website = "https://www.qemu.org/"
+download = "https://www.qemu.org/download/"
+description = "A generic and open source machine emulator and virtualizer"
+use-case = """
+Create a local virtual machine to test out deployment of chillbox.
+"""
+
 [terraform]
 required = false
 full-name = "Terraform"
@@ -68,3 +98,14 @@ description = """
 Terraform is an infrastructure as code tool that lets you build, change, and \
 version cloud and on-prem resources safely and efficiently. \
 """
+
+[make]
+required = false
+full-name = "make"
+website = "https://www.gnu.org/software/make/"
+download = "https://www.gnu.org/software/make/#download"
+description = "GNU make utility to maintain groups of programs"
+use-case = """
+Commonly used to run build scripts, but not directly used by chillbox.
+"""
+
