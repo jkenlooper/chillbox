@@ -1,6 +1,4 @@
-#!/usr/bin/env sh
-
-set -o errexit
+#!/usr/bin/env -S sh -o errexit
 
 #current_user="$(id -u -n)"
 #test "$current_user" = "root" || (echo "ERROR $0: Must be root." && exit 1)
@@ -36,6 +34,7 @@ if [ -z "$has_qemu_x86_64" ]; then
   )
 fi
 
+
 # UPKEEP due: "2023-04-21" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
 alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2023-01-21-2310/alpine-virt-image-2023-01-21-2310.qcow2.bz2"
@@ -58,6 +57,13 @@ if [ ! -e "$image_dir/$image_file" ]; then
     )
   bunzip2 "$cached_alpine_custom_image_file"
 fi
+
+# sudo apt -y install libguestfs-tools
+# TODO set user-data before the first run
+#virt-customize -a "$image_dir/$image_file" --upload path-to/server/user-data:/root/user-data
+# /etc/hostname
+# /root/.ssh/authorized_keys
+# /root/user-data
 
 
 qemu-system-x86_64 \

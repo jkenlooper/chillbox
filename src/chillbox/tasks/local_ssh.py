@@ -8,8 +8,6 @@ import httpx
 from chillbox.tasks.local_archive import init
 from chillbox.utils import (
     logger,
-    get_state_file_data,
-    save_state_file_data,
     remove_temp_files,
 )
 from chillbox.errors import ChillboxHTTPError
@@ -36,19 +34,18 @@ def ssh_unlock(c):
     ```
     """
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    state_file_data = get_state_file_data(archive_directory)
 
-    ssh_config = state_file_data.get("ssh_config_temp")
-    identity_file = state_file_data.get("identity_file_temp")
+    ssh_config = c.state.get("ssh_config_temp")
+    identity_file = c.state.get("identity_file_temp")
 
     # Always delete any older ones first
     remove_temp_files(paths=[ssh_config, identity_file])
 
     ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
-    state_file_data["ssh_config_temp"] = ssh_config
+    c.state["ssh_config_temp"] = ssh_config
     logger.debug(f"{ssh_config=}")
     identity_file = tempfile.mkstemp(suffix=".chillbox.pem")[1]
-    state_file_data["identity_file_temp"] = identity_file
+    c.state["identity_file_temp"] = identity_file
     logger.debug(f"{identity_file=}")
 
     with open(ssh_config, "w") as f:
@@ -64,8 +61,6 @@ def ssh_unlock(c):
     )
     print(ssh_config)
 
-    save_state_file_data(archive_directory, state_file_data)
-
 
 @task(pre=[init])
 def ssh_lock(c):
@@ -73,16 +68,14 @@ def ssh_lock(c):
     Remove temporary ssh_config file and identity file that was created for ssh commands.
     """
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    state_file_data = get_state_file_data(archive_directory)
-    ssh_config = state_file_data.get("ssh_config_temp")
-    identity_file = state_file_data.get("identity_file_temp")
+    ssh_config = c.state.get("ssh_config_temp")
+    identity_file = c.state.get("identity_file_temp")
 
     # Always delete any older ones first
     remove_temp_files(paths=[ssh_config, identity_file])
 
-    del state_file_data["ssh_config_temp"]
-    del state_file_data["identity_file_temp"]
-    save_state_file_data(archive_directory, state_file_data)
+    del c.state["ssh_config_temp"]
+    del c.state["identity_file_temp"]
 
 
 @task

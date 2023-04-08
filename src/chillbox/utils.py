@@ -20,29 +20,6 @@ logger = logging.getLogger(
 )
 
 
-def get_state_file_data(archive_directory):
-    state_file = archive_directory.joinpath("statefile.json")
-    if state_file.exists():
-        with open(state_file.resolve(), "r") as f:
-            try:
-                state_file_data = json.load(f)
-            except json.decoder.JSONDecodeError as err:
-                raise ChillboxInvalidStateFileError(
-                    f"ERROR: Failed to parse json file ({f.name}).\n  {err}"
-                )
-
-    else:
-        state_file_data = {}
-
-    return state_file_data
-
-
-def save_state_file_data(archive_directory, state_file_data):
-    state_file = archive_directory.joinpath("statefile.json")
-    with open(state_file.resolve(), "w") as f:
-        json.dump(state_file_data, f)
-
-
 def shred_file(file):
     """
     Overwrite data first before unlinking to more securely delete sensitive

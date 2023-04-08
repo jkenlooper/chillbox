@@ -68,5 +68,5 @@ def check_optional_commands():
         info = template.render(**locals())
         lines = "\n  ".join(results)
         raise ChillboxDependencyError(
-            f"INVALID: Missing optional commands.\nThe following commands were not found:\n  {lines}\n\nMore details about missing commands:\n---{info}"
+            f"Missing optional commands.\nThe following commands were not found:\n  {lines}\n\nMore details about missing commands:\n---{info}"
         )

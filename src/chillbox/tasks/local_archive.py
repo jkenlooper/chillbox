@@ -21,6 +21,7 @@ from chillbox.errors import (
 from chillbox.utils import logger, remove_temp_files, shred_file
 import chillbox.data.scripts
 from chillbox.template import Renderer
+from chillbox.state import ChillboxState
 
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
 
@@ -310,31 +311,34 @@ def init(c):
     # config toml file.
     c.working_directory = Path(c.config["chillbox-config"]).resolve().parent
 
+    archive_directory = Path(c.chillbox_config["archive-directory"]).resolve()
+    c.state = ChillboxState(archive_directory)
+
     # An owner needs to be set so this instance of the chillbox archive
     # directory will only create items that this user would need to manage.
     owner = getpass.getuser()
-
-    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
+    # TODO get current_user from statefile, keep owner for testing archive
+    # directory ownership.
 
     if (
-        Path(archive_directory_path).exists()
-        and not Path(archive_directory_path).is_dir()
+        archive_directory.exists()
+        and not archive_directory.is_dir()
     ):
         raise ChillboxArchiveDirectoryError(
-            f"ERROR: The archive path ({archive_directory_path}) needs to be a directory."
+            f"ERROR: The archive path ({archive_directory}) needs to be a directory."
         )
-    elif not Path(archive_directory_path).exists():
+    elif not archive_directory.exists():
         # Should only read/writable by owner
-        Path(archive_directory_path).mkdir(mode=0o700, parents=True)
+        archive_directory.mkdir(mode=0o700, parents=True)
 
-    archive_owner = Path(archive_directory_path).owner()
+    archive_owner = archive_directory.owner()
     if owner != archive_owner:
         raise ChillboxArchiveDirectoryError(
             f"ERROR: The archive directory owner needs to match the current user. The {archive_owner=} is not {owner=}"
         )
 
     # Set this so other tasks that have 'init' as a pre-task can use this value.
-    c.archive_directory_path = archive_directory_path
+    c.archive_directory = archive_directory
 
     generate_gpg_key_or_use_existing(c)
     init_local_chillbox_asymmetric_key(c)
@@ -352,19 +356,19 @@ def clean(c):
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
 
-    archive_directory_path = Path(c.chillbox_config["archive-directory"]).resolve()
+    archive_directory = Path(c.chillbox_config["archive-directory"]).resolve()
 
-    if not Path(archive_directory_path).exists():
+    if not archive_directory.exists():
         logger.warning(
-            f"No chillbox archive directory exists at path: {archive_directory_path}"
+            f"No chillbox archive directory exists at path: {archive_directory}"
         )
         return
 
     confirm = input(
-        f"Delete the chillbox archive directory at: {archive_directory_path} path? [y/n]\n"
+        f"Delete the chillbox archive directory at: {archive_directory} path? [y/n]\n"
     )
     if confirm == "y":
         try:
-            rmtree(archive_directory_path)
+            rmtree(archive_directory)
         except Exception as err:
             raise ChillboxArchiveDirectoryError(err)
