@@ -87,7 +87,7 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             raise ChillboxInvalidConfigError(
                 f"INVALID: Failed to parse the {f.name} file.\n  {err}"
             )
-        logger.debug(pformat(data))
+        # logger.debug(pformat(data))
 
     top_level_keys = set(data.keys())
     if not required_keys.issubset(top_level_keys):
@@ -164,10 +164,7 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         )
 
     today = date.today()
-    owner = getpass.getuser()
     for secret in data.get("secret", []):
-        if secret.get("owner") != owner:
-            continue
         expires_date = secret.get("expires")
         if today > expires_date:
             logger.warning(

@@ -68,6 +68,17 @@ systems more effectively. \
 
 ### Optional Commands
 
+[ssh-keygen]
+required = false
+full-name = "OpenSSH"
+website = "https://www.openssh.com/"
+download = "https://www.openssh.com/"
+description = "OpenSSH authentication key utility"
+use-case = """
+Create private and public ssh keys for the current user.
+"""
+
+
 [wget]
 required = false
 full-name = "wget"

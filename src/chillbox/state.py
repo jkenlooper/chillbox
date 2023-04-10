@@ -21,6 +21,7 @@ class ChillboxState(UserDict):
         self.archive_directory = archive_directory
 
         self._state_file = self.archive_directory.joinpath(self.statefile_json)
+
         initialdata = self._load_state_file_data()
         super().__init__(initialdata)
         self._save_state_file_data()
@@ -43,10 +44,14 @@ class ChillboxState(UserDict):
         with open(self._state_file, "w") as f:
             json.dump(self.data, f, indent=2)
 
+    def __getitem__(self, key):
+        self.data = self._load_state_file_data()
+        return super().__getitem__(key)
+
     def __setitem__(self, key, value):
-        super().__setitem__(key, value)
+        self.data[key] = value
         self._save_state_file_data()
 
     def __delitem__(self, key):
-        super().__delitem__(key)
+        self.data.pop(key)
         self._save_state_file_data()

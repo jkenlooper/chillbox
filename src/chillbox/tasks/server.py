@@ -3,6 +3,7 @@ import hashlib
 from tempfile import mkstemp
 import bz2
 from shutil import copyfileobj
+from copy import deepcopy
 
 from invoke import task
 from jinja2 import (
@@ -35,28 +36,95 @@ ephemeral_local_server_defaults = {
     "public-ssh-keys-path": "/root/.ssh/authorized_keys",
 }
 
+def generate_and_encrypt_ssh_key(c, user):
+    ""
+    # TODO show a prompt to warn the user to store a copy of the private pem
+    # file (that is encrypted with the gpg key) outside of the archive
+    # directory.
+    #
+    # No passphrase is set (-N "") since this private key will be encrypted and then
+    # used programatically with the ansible container. This way ansible won't need
+    # to use ssh-agent to use the key.
+
+    # TODO check for existing encrypted private key in archive directory and use
+    # that to output the pub key.
+
+    # TODO store the ssh key at secure temp directory since it will create two
+    # files: private key, public key
+    #
+    # ssh-keygen -t rsa -b 4096 \
+    #   -C "dev@local-ansible-container" \
+    #   -N "" \
+    #   -m "PEM" \
+    #   -q \
+    #   -f "$plaintext_ansible_ssh_key"
+
+    # TODO encrypt private key with the gpg key and store in archive directory.
+
+    # cat "$plaintext_ansible_ssh_key.pub"
+    return f"gen pub ssh key for {user}"
+
+
+def user_ssh_init(c):
+    "Check current user and ensure that a public ssh key is available. Create one if not."
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    current_user = c.state["current_user"]
+
+    current_user_data = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))[0]
+    state_current_user_data = c.state.get("current_user_data", {})
+    current_user_data.update(state_current_user_data)
+    if not current_user_data.get("public-ssh-key"):
+        public_ssh_key = generate_and_encrypt_ssh_key(c, current_user)
+        state_current_user_data["public-ssh-key"] = [public_ssh_key]
+        c.state["current_user_data"] = state_current_user_data
+
+
+
 
 def generate_user_data_script(c):
     """"""
     server_list = c.chillbox_config.get("server", []) + c.chillbox_config.get("ephemeral-local-server", [])
-    logger.debug(server_list)
     archive_directory = Path(c.chillbox_config["archive-directory"])
+    current_user = c.state["current_user"]
 
     for server in server_list:
+        server_owner = server.get("owner")
+        logger.debug(f"Server owner {server_owner}")
+        if not server_owner or server_owner != current_user:
+            continue
         server_user_data = server.get("user-data")
         if not server_user_data:
             continue
         server_user_data_template = server_user_data.get("template")
         if not server_user_data_template:
             continue
+
+        user_data_script_file = archive_directory.joinpath(
+            "server", server["name"], "user-data"
+        )
+        if user_data_script_file.exists():
+            logger.info(f"Skipping replacement of existing user-data file: {user_data_script_file}")
+            continue
+
+        # TODO public ssh key should be of the current_user
+        result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config["user"]))
+        if not result:
+            logger.warning(f"No user name matches with server owner ({server_owner})")
+            continue
+        current_user_data = result[0]
+
+        # TODO Check if the user has a public ssh key set? Generate new one if
+        # they don't and save public ssh key to statefile. The private key
+        # should be encrypted with the gpg key (Already managed by chillbox?).
+        # TODO Check if the user has a password hash set? Generate new one if
+        # they don't and store it in statefile. Password hash is not sensitive.
+
         server_user_data_context = {
-            "public_ssh_keys": ["public ssh key"],
-            "hostname": "",
-            "login_users": [],
-            "no_home_users": [],
+            "chillbox_env": deepcopy(dict(c.env)),
+            "chillbox_user": current_user_data,
+            "chillbox_server": server,
         }
 
-        server_user_data_context.update(c.env)
         # The server user-data context should not get c.secrets. The user-data
         # is not encrypted.
         server_user_data_context.update(server_user_data.get("context", {}))
@@ -65,9 +133,6 @@ def generate_user_data_script(c):
             server_user_data_template, server_user_data_context
         )
 
-        user_data_script_file = archive_directory.joinpath(
-            "server", server["name"], "user-data"
-        )
         user_data_script_file.parent.mkdir(parents=True, exist_ok=True)
         user_data_file_size_limit = server_user_data.get("file-size-limit")
         if (
@@ -87,6 +152,7 @@ def server_init(c):
     "Initialize files that will be needed for the chillbox servers."
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
+    user_ssh_init(c)
     generate_user_data_script(c)
 
 

@@ -17,6 +17,7 @@ from chillbox.errors import (
     ChillboxArchiveDirectoryError,
     ChillboxGPGError,
     ChillboxExpiredSecretError,
+    ChillboxInvalidConfigError,
 )
 from chillbox.utils import logger, remove_temp_files, shred_file
 import chillbox.data.scripts
@@ -140,12 +141,13 @@ def encrypt_secrets_to_archive(c):
     )
 
     today = date.today()
-    owner = getpass.getuser()
+    logger.debug(c.state)
+    current_user = c.state["current_user"]
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != owner:
+        if secret.get("owner") != current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
@@ -194,14 +196,14 @@ def load_secrets(c):
     archive_directory = Path(c.chillbox_config["archive-directory"])
     secret_list = c.chillbox_config.get("secret", [])
     decrypt_file_script = pkg_resources.path(chillbox.data.scripts, "decrypt-file")
-    owner = getpass.getuser()
+    current_user = c.state["current_user"]
 
     secrets = {}
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != owner:
+        if secret.get("owner") != current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {owner}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
@@ -312,14 +314,10 @@ def init(c):
     c.working_directory = Path(c.config["chillbox-config"]).resolve().parent
 
     archive_directory = Path(c.chillbox_config["archive-directory"]).resolve()
-    c.state = ChillboxState(archive_directory)
 
     # An owner needs to be set so this instance of the chillbox archive
     # directory will only create items that this user would need to manage.
     owner = getpass.getuser()
-    # TODO get current_user from statefile, keep owner for testing archive
-    # directory ownership.
-
     if (
         archive_directory.exists()
         and not archive_directory.is_dir()
@@ -336,6 +334,17 @@ def init(c):
         raise ChillboxArchiveDirectoryError(
             f"ERROR: The archive directory owner needs to match the current user. The {archive_owner=} is not {owner=}"
         )
+
+    c.state = ChillboxState(archive_directory)
+    current_user = c.state.get("current_user")
+    if not current_user:
+        current_user = input(f"No current_user has been set in state file. Set the current_user now or set to '{owner}'.\n  ")
+        if not current_user:
+            current_user = owner
+        c.state["current_user"] = current_user
+    result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))
+    if not result:
+        raise ChillboxInvalidConfigError(f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}")
 
     # Set this so other tasks that have 'init' as a pre-task can use this value.
     c.archive_directory = archive_directory
