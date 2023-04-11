@@ -19,7 +19,7 @@ from chillbox.errors import (
     ChillboxExpiredSecretError,
     ChillboxInvalidConfigError,
 )
-from chillbox.utils import logger, remove_temp_files, shred_file
+from chillbox.utils import logger, remove_temp_files, shred_file, encrypt_file
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
@@ -129,16 +129,9 @@ def init_local_chillbox_asymmetric_key(c):
 def encrypt_secrets_to_archive(c):
     """"""
     secret_list = c.chillbox_config.get("secret", [])
-    instance = c.chillbox_config["instance"]
     logger.debug(secret_list)
 
-    encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
-
     archive_directory = Path(c.chillbox_config["archive-directory"])
-
-    public_asymmetric_key = archive_directory.joinpath(
-        "local-chillbox-asymmetric", f"{instance}.public.pem"
-    )
 
     today = date.today()
     logger.debug(c.state)
@@ -173,11 +166,8 @@ def encrypt_secrets_to_archive(c):
         with open(tmp_secret_file, "w") as f:
             f.write(secret_in_cleartext)
         secret_file_path.parent.mkdir(parents=True, exist_ok=True)
-        result = c.run(
-            f"{encrypt_file_script} -k {public_asymmetric_key.resolve()} -o {secret_file_path.resolve()} {tmp_secret_file}",
-            hide=True,
-        )
-        Path(tmp_secret_file).unlink()
+        encrypt_file(c, tmp_secret_file, secret_file_path.resolve())
+        shred_file(tmp_secret_file)
 
 
 def load_env_vars(c):
@@ -247,7 +237,6 @@ def process_path_to_archive(c):
     instance = c.chillbox_config["instance"]
     archive_directory = Path(c.chillbox_config["archive-directory"])
     template_list = c.chillbox_config.get("template", [])
-    encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
     public_asymmetric_key = archive_directory.joinpath(
         "local-chillbox-asymmetric", f"{instance}.public.pem"
     )
@@ -285,12 +274,7 @@ def process_path_to_archive(c):
                 with tarfile.open(secure_temp_file, "w:gz") as tar:
                     tar.add(src_path.resolve())
 
-
-        result = c.run(
-            f"{encrypt_file_script} -k {public_asymmetric_key.resolve()} -o {id_path.resolve()} {secure_temp_file}",
-            hide=True,
-        )
-        logger.debug(result)
+        encrypt_file(c, secure_temp_file, id_path.resolve())
         shred_file(secure_temp_file)
 
     if errors:

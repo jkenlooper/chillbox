@@ -3,9 +3,11 @@ import logging
 import json
 from pathlib import Path
 import subprocess
+import importlib.resources as pkg_resources
 
 from jinja2 import FileSystemLoader
 
+import chillbox.data.scripts
 from chillbox.errors import (
     ChillboxInvalidStateFileError,
     ChillboxTemplateError,
@@ -66,3 +68,18 @@ def get_file_system_loader(src, working_directory):
         )
     return FileSystemLoader(src_path)
 
+
+def encrypt_file(c, plaintext_file, ciphertext_file):
+    "Wrapper around chillbox encrypt-file script that uses the local-chillbox-asymmetric public key."
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    instance = c.chillbox_config["instance"]
+    encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
+    public_asymmetric_key = archive_directory.joinpath(
+        "local-chillbox-asymmetric", f"{instance}.public.pem"
+    ).resolve()
+
+    result = c.run(
+        f"{encrypt_file_script} -k {public_asymmetric_key} -o {ciphertext_file} {plaintext_file}",
+        hide=True,
+    )
+    logger.debug(result)

@@ -1,4 +1,5 @@
-#!/usr/bin/env -S sh -o errexit
+#!/usr/bin/env sh
+set -o errexit
 
 work_dir="$(dirname "$0")"
 
@@ -38,29 +39,29 @@ init_user() {
   # private key and the private key stays in a tmpfs mount which will be lost if
   # the server reboots.
   #}
-useradd -m -U -p '{{ user_pw_hash }}' '{{ user }}'
+useradd -m -U -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 #{#-
 # Include the user to the chillconf group so login users can
 # modify the /etc/chillbox/chillbox.config file.
 #}
 groupadd --system chillconf
-usermod -a -G chillconf '{{ user }}'
+usermod -a -G chillconf '{{ chillbox_user.name }}'
 
 #{#-
 # Set password as expired to force user to reset when logging in
 #}
-passwd --expire '{{ user }}'
+passwd --expire '{{ chillbox_user.name }}'
 
-mkdir -p '/home/{{ user }}/.ssh'
-printf '%b' "{{ public_ssh_keys | join('\n') }}" > '/home/{{ user }}/.ssh/authorized_keys'
-chown -R '{{ user }}:{{ user }}' '/home/{{ user }}/.ssh'
-chmod -R 700 '/home/{{ user }}/.ssh'
-chmod -R 644 '/home/{{ user }}/.ssh/authorized_keys'
+mkdir -p '/home/{{ chillbox_user.name }}/.ssh'
+printf '%b' "{{ chillbox_user["public_ssh_key"] | join('\n') }}" > '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
+chown -R '{{ chillbox_user.name }}:{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
+chmod -R 700 '/home/{{ chillbox_user.name }}/.ssh'
+chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
 
 mkdir -p /etc/doas.d
 cat <<DOAS_CONFIG > /etc/doas.d/chillbox.doas.conf
-permit persist {{ user }} as root
+permit persist {{ chillbox_user.name }} as root
 DOAS_CONFIG
 chmod 0600 /etc/doas.d/chillbox.doas.conf
 doas -C /etc/doas.d/chillbox.doas.conf && echo "doas config ok"
