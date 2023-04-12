@@ -99,36 +99,6 @@ use-case = """
 To verify checksums of downloaded files before using them.
 """
 
-[bunzip2]
-required = false
-full-name = "bzip2"
-website = "https://sourceware.org/bzip2/"
-download = "https://sourceware.org/bzip2/downloads.html"
-description = "High-quality block-sorting file compressor."
-use-case = """
-To uncompress (unzip) the downloaded disk image when running local virtual machine with QEMU.
-"""
-
-[qemu-system-x86_64]
-required = false
-full-name = "QEMU"
-website = "https://www.qemu.org/"
-download = "https://www.qemu.org/download/"
-description = "A generic and open source machine emulator and virtualizer"
-use-case = """
-Create a local virtual machine to test out deployment of chillbox.
-"""
-
-[virt-customize]
-required = false
-full-name = "libguestfs"
-website = "https://www.libguestfs.org/"
-download = "https://libguestfs.org/guestfs-faq.1.html#binaries"
-description = "Tools for accessing and modifying virtual machine disk images."
-use-case = """
-Modify the local virtual machine disk image used by QEMU to add the initial user-data file and public ssh keys.
-"""
-
 [terraform]
 required = false
 full-name = "Terraform"
