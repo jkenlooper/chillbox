@@ -4,6 +4,8 @@ from pathlib import Path
 import json
 from collections import UserDict
 
+from chillbox.errors import ChillboxInvalidStateFileError
+
 
 class ChillboxState(UserDict):
     ""

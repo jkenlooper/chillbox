@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import importlib.resources as pkg_resources
 
-from jinja2 import FileSystemLoader
+from jinja2 import FileSystemLoader, Environment, PackageLoader, select_autoescape
 
 import chillbox.data.scripts
 from chillbox.errors import (
@@ -20,6 +20,14 @@ logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT)
 logger = logging.getLogger(
     "chillbox" if not os.environ.get("INVOKE_DEBUG") else "invoke"
 )
+
+env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
+
+
+def get_template(file):
+    "Return a jinja template from chillbox templates directory."
+    template = env.get_template(file)
+    return template
 
 
 def shred_file(file):
@@ -83,3 +91,23 @@ def encrypt_file(c, plaintext_file, ciphertext_file):
         hide=True,
     )
     logger.debug(result)
+
+
+def decrypt_file(c, plaintext_file, ciphertext_file):
+    "Wrapper around chillbox decrypt-file script that uses the local-chillbox-asymmetric private key."
+    decrypt_file_script = pkg_resources.path(chillbox.data.scripts, "decrypt-file")
+
+    if not Path(c.local_chillbox_asymmetric_key_private).exists():
+        # The decrypt_file is located here because enrypt_file is also here. The
+        # private asymmetric key is removed at the end of the chillbox init to
+        # keep it safe since it is encrypted with the gpg key. Raise an
+        # exception here in case there is code that tries to decrypt something
+        # outside of that chillbox init process.
+        raise RuntimeError("ERROR: using decrypt_file outside of the chillbox init is not supported.")
+
+    result = c.run(
+        f"{decrypt_file_script} -k {c.local_chillbox_asymmetric_key_private} -i {ciphertext_file} {plaintext_file}",
+        hide=True,
+    )
+    if plaintext_file == "-":
+        return result.stdout

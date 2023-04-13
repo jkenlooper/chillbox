@@ -6,13 +6,9 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from jinja2 import Environment, PackageLoader, select_autoescape
-
 from chillbox.errors import ChillboxDependencyError
-from chillbox.utils import logger
+from chillbox.utils import logger, get_template
 import chillbox.data
-
-env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
 
 
 def has_command(cmd):
@@ -42,7 +38,7 @@ def check_required_commands():
     if results:
         with open(pkg_resources.path(chillbox.data, "commands-info.toml"), "rb") as f:
             commands_info = tomllib.load(f)
-        template = env.get_template("commands-info.jinja")
+        template = get_template("commands-info.jinja")
         info = template.render(**locals())
         lines = "\n  ".join(results)
         raise ChillboxDependencyError(
@@ -64,7 +60,7 @@ def check_optional_commands():
     if results:
         with open(pkg_resources.path(chillbox.data, "commands-info.toml"), "rb") as f:
             commands_info = tomllib.load(f)
-        template = env.get_template("commands-info.jinja")
+        template = get_template("commands-info.jinja")
         info = template.render(**locals())
         lines = "\n  ".join(results)
         raise ChillboxDependencyError(

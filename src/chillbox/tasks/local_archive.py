@@ -4,7 +4,7 @@ from shutil import which, rmtree, copyfileobj
 from pathlib import Path
 import importlib.resources as pkg_resources
 from pprint import pformat
-from tempfile import mkstemp
+from tempfile import mkstemp, mkdtemp
 from datetime import date
 import tarfile
 import gzip
@@ -18,8 +18,9 @@ from chillbox.errors import (
     ChillboxGPGError,
     ChillboxExpiredSecretError,
     ChillboxInvalidConfigError,
+    ChillboxMissingFileError,
 )
-from chillbox.utils import logger, remove_temp_files, shred_file, encrypt_file
+from chillbox.utils import logger, remove_temp_files, shred_file, encrypt_file, decrypt_file
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
@@ -196,20 +197,12 @@ def load_secrets(c):
                 f"Skipping the secret '{secret.get('id')}' since it is not owned by {current_user}."
             )
             continue
-        secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
-        result = c.run(
-            f"{decrypt_file_script} -k {c.local_chillbox_asymmetric_key_private} -i {secret_file_path.resolve()} -",
-            hide=True,
-        )
-        secret_in_plaintext = result.stdout
+        secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes").resolve()
+        secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
         secrets[secret["name"]] = secret_in_plaintext
 
     c.secrets = secrets
 
-    # No longer need access to the private key here since the secrets have been
-    # loaded.
-    temp_private_key = Path(c.local_chillbox_asymmetric_key_private)
-    remove_temp_files(paths=[temp_private_key])
 
 
 def init_template_renderer(c):
@@ -287,6 +280,72 @@ def process_path_to_archive(c):
     # Return to previous umask
     os.umask(prev_umask)
 
+def generate_and_encrypt_ssh_key(c, user):
+    """
+    Generate a private ssh key for the user and output the public key. The
+    private ssh key will be encrypted with the local chillbox asymmetric key and
+    stored in the chillbox archive directory. It is up to the user to ensure
+    that these are properly backed up.
+    """
+    key_file_name = f"{user}.chillbox.pem"
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
+
+    if encrypted_private_key_file.exists():
+        raise ChillboxMissingFileError("ERROR: Not implemented. TODO: Handle the case if the statefile was deleted which had the public ssh key.")
+        # plaintext_file = Path(mkstemp()[1])
+        # decrypt_file(c, encrypted_private_key_file, plaintext_file)
+
+        # result = c.run(f"ssh-keygen -f {plaintext_file} -y", hide=True)
+        # shredfile(plaintext_file)
+        # return result.stdout
+
+
+    temp_dir = Path(mkdtemp())
+    key_file = temp_dir.joinpath(key_file_name)
+
+    result = c.run(
+        f"ssh-keygen -t rsa -b 4096 -C '{user} - chillbox managed' -N '' -m 'PEM' -q -f '{key_file}'",
+        hide=True,
+    )
+    logger.debug(result)
+    private_key_file = key_file
+    public_key_file = Path(f"{key_file}.pub")
+
+    encrypted_private_key_file.parent.mkdir(parents=True, exist_ok=True)
+    encrypt_file(c, private_key_file, encrypted_private_key_file)
+
+    shred_file(private_key_file)
+    public_key = public_key_file.read_text()
+    public_key_file.unlink()
+    temp_dir.rmdir()
+
+    return public_key
+
+
+def user_ssh_init(c):
+    "Check current user and ensure that a public ssh key is available. Create one if not."
+    current_user = c.state["current_user"]
+
+    key_file_name = f"{current_user}.chillbox.pem"
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
+
+    current_user_data = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))[0]
+    state_current_user_data = c.state.get("current_user_data", {})
+    current_user_data.update(state_current_user_data)
+    if not current_user_data.get("public_ssh_key"):
+        logger.warning(f"No public ssh key found for user '{current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
+        public_ssh_key = generate_and_encrypt_ssh_key(c, current_user)
+        state_current_user_data["public_ssh_key"] = [public_ssh_key]
+        c.state["current_user_data"] = state_current_user_data
+
+    identity_file_temp = c.state.get("identity_file_temp")
+    if encrypted_private_key_file.exists() and not (identity_file_temp and Path(identity_file_temp).exists()):
+        remove_temp_files(paths=[c.state.get("ssh_config_temp"), identity_file_temp])
+        private_ssh_key_file = Path(mkstemp()[1])
+        decrypt_file(c, private_ssh_key_file, encrypted_private_key_file)
+        c.state["identity_file_temp"] = str(private_ssh_key_file)
 
 @task
 def init(c):
@@ -340,6 +399,12 @@ def init(c):
     load_secrets(c)
     init_template_renderer(c)
     process_path_to_archive(c)
+    user_ssh_init(c)
+
+    # No longer need access to the private key here since the secrets have been
+    # loaded and any files that needed to be decrypted should have been.
+    temp_private_key = Path(c.local_chillbox_asymmetric_key_private)
+    remove_temp_files(paths=[temp_private_key])
 
 
 

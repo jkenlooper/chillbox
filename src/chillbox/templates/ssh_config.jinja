@@ -1,0 +1,26 @@
+
+# Only trust the generated known_hosts file inside the ansible container.
+# A Terraform local-exec provisioner is used to obtain the chillbox server's
+# public key fingerprint. This is stored at the path
+# /var/lib/terraform-020-chillbox/ssh_known_hosts-* for each chillbox server
+# deployed.  These are combined to a single file: /etc/ssh/ssh_known_hosts which
+# is used by ssh when verifying the hosts.
+#StrictHostKeyChecking yes
+
+# Use a chillbox managed known_hosts file.
+StrictHostKeyChecking ask
+UserKnownHostsFile {{ known_hosts_file }}
+
+
+#  IdentityFile {{ identity_file }}
+  {#
+# For each server in the chillbox configuration, a Host block is created.
+{% for hostname, ipv4_address in chillbox_name_ipv4address_map %}
+Host {{ipv4_address}} {{hostname}}
+  {% if identity_file %}
+  IdentityFile {{ identity_file }}
+  {% endif %}
+  Hostname {{hostname}}
+  User {{current_user}}
+{% endfor %}
+#}
