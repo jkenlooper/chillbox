@@ -44,7 +44,7 @@ class ChillboxState(UserDict):
 
     def _save_state_file_data(self):
         with open(self._state_file, "w") as f:
-            json.dump(self.data, f, indent=2)
+            json.dump(self.data, f, indent=2, sort_keys=True)
 
     def __getitem__(self, key):
         self.data = self._load_state_file_data()
