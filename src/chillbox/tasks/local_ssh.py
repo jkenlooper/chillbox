@@ -22,24 +22,26 @@ def ssh_unlock(c):
     The temporary ssh_config file will be automatically created based on
     information found in the chillbox configuration. The identity file is the
     private ssh key if one was created specifically for the user.
-
-    ## Example ssh_config file contents.
-    ```
-    StrictHostKeyChecking yes
-    # For each server in the chillbox configuration, a Host block is created.
-    Host {ipv4_address} {hostname}
-      IdentityFile $TEMPDIR/temporary-path-to/chillbox.pem
-      Hostname {hostname}
-      # The owner is the same as the owner of the chillbox archive directory.
-      User {owner}
-    ```
     """
     archive_directory = Path(c.chillbox_config["archive-directory"])
+    user_known_hosts_file = archive_directory.joinpath("ssh_known_hosts").resolve()
 
     ssh_config = c.state.get("ssh_config_temp")
     identity_file = c.state.get("identity_file_temp")
+    current_user = c.state["current_user"]
 
-    # Always delete any older ones first
+    def user_has_access(server):
+        "The current user has access to a server if they are the owner or in the list of login-users."
+        if server.get("owner") and server.get("owner") == current_user:
+            return True
+        login_users = server.get("login-users", [])
+        return any(map(lambda x: x.startswith(current_user), login_users))
+
+    user_server_list = list(filter(user_has_access, c.chillbox_config.get("server", [])))
+
+    # Always delete any older ssh_config first. The identity_file_temp was
+    # created in user_ssh_init as part of init process and should not be removed
+    # here.
     remove_temp_files(paths=[ssh_config])
 
     ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
@@ -49,36 +51,15 @@ def ssh_unlock(c):
     template = get_template("ssh_config.jinja")
     with open(ssh_config, "w") as f:
         f.write(template.render({
-            "known_hosts_file": "",
+            "ssh_config": ssh_config,
+            "current_user": c.state["current_user"],
+            "known_hosts_file": user_known_hosts_file,
             "identity_file": identity_file,
+            "user_server_list": user_server_list,
         }))
 
-
-
-
-
-    # output=""
-    # while test -z "$output"; do
-    #   output="$(ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address})"
-    #   ssh-keyscan -t ed25519 -T 120 ${self.ipv4_address} \
-    #     | sed -nE 's/^(${self.ipv4_address})(.*)$/\1\2\n${self.name}\2\nchillbox-${regex("chillbox-.*-(\\d+)", self.name)[0]}\2/p' \
-    #       > /var/lib/terraform-020-chillbox/ssh_known_hosts-${self.name}
-    #   sleep 5
-    # done
-    # ^  ssh-keyscan -t ed25519 -T 120 -p 2222 127.0.0.1 | sed -nE 's/^(\[127.0.0.1\]:2222)(.*)$/\1\2\nchillbox-something\2/p'
-    #
-
-    # TODO
-    # # Rebuild the ssh known hosts file since new chillbox servers may have been
-    # # created or replaced. Set it to write-only to hint that it is created from
-    # # other files.
-    # touch /etc/ssh/ssh_known_hosts
-    # chmod 0644 /etc/ssh/ssh_known_hosts
-    # cat /var/lib/terraform-020-chillbox/ssh_known_hosts-* > /etc/ssh/ssh_known_hosts
-    # chmod 0444 /etc/ssh/ssh_known_hosts
-
     logger.info(
-        f"Generated a ssh_config file to use with ssh when connecting to a chillbox server. Replace CHILLBOX_SERVER_HOSTNAME with hostname of the server.\n  Use the ssh command:\n  ssh -F {ssh_config=} CHILLBOX_SERVER_HOSTNAME"
+        f"Generated a ssh_config file to use with ssh when connecting to a chillbox server. Replace CHILLBOX_SERVER_HOSTNAME with hostname of the server.\n  Use the ssh command:\n  ssh -F {ssh_config} CHILLBOX_SERVER_HOSTNAME"
     )
     print(ssh_config)
 

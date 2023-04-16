@@ -1,26 +1,26 @@
+# Generated from chillbox template ssh_config.jinja for temporary use.
+# Use the '-F' ssh option when using this file.
+{%- for server in user_server_list %}
+# ssh -F {{ ssh_config }} {{ server.name }}
+{%- endfor %}
 
-# Only trust the generated known_hosts file inside the ansible container.
-# A Terraform local-exec provisioner is used to obtain the chillbox server's
-# public key fingerprint. This is stored at the path
-# /var/lib/terraform-020-chillbox/ssh_known_hosts-* for each chillbox server
-# deployed.  These are combined to a single file: /etc/ssh/ssh_known_hosts which
-# is used by ssh when verifying the hosts.
-#StrictHostKeyChecking yes
+User {{ current_user }}
 
 # Use a chillbox managed known_hosts file.
 StrictHostKeyChecking ask
 UserKnownHostsFile {{ known_hosts_file }}
 
+{%- if identity_file %}
+# Temporary identity file decrypted from {{ current_user }}.chillbox.pem.aes
+IdentityFile {{ identity_file }}
+{%- endif %}
 
-#  IdentityFile {{ identity_file }}
-  {#
-# For each server in the chillbox configuration, a Host block is created.
-{% for hostname, ipv4_address in chillbox_name_ipv4address_map %}
-Host {{ipv4_address}} {{hostname}}
-  {% if identity_file %}
-  IdentityFile {{ identity_file }}
-  {% endif %}
-  Hostname {{hostname}}
-  User {{current_user}}
+# The current user ({{ current_user }}) only has access to these servers.
+{% for server in user_server_list %}
+Host {{ server.ip }} {{ server.name }}
+  Hostname {{ server.ip }}
+  HostKeyAlias {{ server.name }}
+  {%- if server.ssh_port %}
+  Port {{ server.ssh_port }}
+  {%- endif %}
 {% endfor %}
-#}
