@@ -123,6 +123,7 @@ def init_local_chillbox_asymmetric_key(c):
     c.local_chillbox_asymmetric_key_private = decrypt_file_with_gpg(
         c, gpg_encrypted_asymmetric_key_path
     )
+    c.state["local_chillbox_asymmetric_key_private"] = c.local_chillbox_asymmetric_key_private
     logger.info("Set the local chillbox asymmetric key")
 
 
@@ -400,12 +401,6 @@ def init(c):
     init_template_renderer(c)
     process_path_to_archive(c)
     user_ssh_init(c)
-
-    # No longer need access to the private key here since the secrets have been
-    # loaded and any files that needed to be decrypted should have been.
-    temp_private_key = Path(c.local_chillbox_asymmetric_key_private)
-    remove_temp_files(paths=[temp_private_key])
-
 
 
 @task

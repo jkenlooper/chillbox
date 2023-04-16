@@ -3,6 +3,8 @@
 import os
 from pprint import pprint
 import logging
+import json
+from pathlib import Path
 
 try:
     import tomllib
@@ -15,7 +17,7 @@ from invoke.config import Config, merge_dicts
 from chillbox._version import __version__
 from chillbox import tasks
 from chillbox.errors import ChillboxInvalidConfigError
-from chillbox.utils import logger
+from chillbox.utils import logger, remove_temp_files
 
 # The default path to the chillbox configuration file should be at the top level
 # of a project directory. The chillbox command would normally be executed at the
@@ -59,6 +61,26 @@ class ChillboxProgram(Program):
         self.config["chillbox-config"] = self.args["chillbox-config"].value
 
 
+    def cleanup(self):
+        """
+        Clean up the temporary chillbox asymmetric private key that was
+        decrypted by GPG when the program started.
+        """
+        with open(self.config["chillbox-config"], "rb") as f:
+            chillbox_config = tomllib.load(f)
+
+        archive_directory = Path(chillbox_config["archive-directory"])
+        statefile_json = archive_directory.joinpath("statefile.json")
+        with open(statefile_json, "r") as f:
+            state = json.load(f)
+
+        local_chillbox_asymmetric_key_private = state.get("local_chillbox_asymmetric_key_private")
+
+        logger.info(f"Removing temp private key {local_chillbox_asymmetric_key_private=}")
+        temp_private_key = Path(local_chillbox_asymmetric_key_private)
+        remove_temp_files(paths=[temp_private_key])
+
+
 class ChillboxConfig(Config):
     prefix = "chillbox"
     env_prefix = "CHILLBOX"
@@ -82,6 +104,11 @@ program = ChillboxProgram(
 
 def main():
     program.run()
+
+    try:
+        program.cleanup()
+    except Exception as err:
+        logger.warning(f"Cleanup failed with error: {err}")
 
 
 if __name__ == "__main__":
