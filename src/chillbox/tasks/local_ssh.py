@@ -12,51 +12,23 @@ from chillbox.utils import (
     get_template,
 )
 from chillbox.errors import ChillboxHTTPError
+from chillbox.ssh import generate_ssh_config_temp, cleanup_ssh_config_temp
 
 
 @task(pre=[init])
 def ssh_unlock(c):
     """
     Create a temporary ssh_config file and identity file that can be used for ssh commands.
-
-    The temporary ssh_config file will be automatically created based on
-    information found in the chillbox configuration. The identity file is the
-    private ssh key if one was created specifically for the user.
     """
-    archive_directory = Path(c.chillbox_config["archive-directory"])
-    user_known_hosts_file = archive_directory.joinpath("ssh_known_hosts").resolve()
 
     ssh_config = c.state.get("ssh_config_temp")
-    identity_file = c.state.get("identity_file_temp")
-    current_user = c.state["current_user"]
-
-    def user_has_access(server):
-        "The current user has access to a server if they are the owner or in the list of login-users."
-        if server.get("owner") and server.get("owner") == current_user:
-            return True
-        login_users = server.get("login-users", [])
-        return any(map(lambda x: x.startswith(current_user), login_users))
-
-    user_server_list = list(filter(user_has_access, c.chillbox_config.get("server", [])))
-
     # Always delete any older ssh_config first. The identity_file_temp was
     # created in user_ssh_init as part of init process and should not be removed
     # here.
     remove_temp_files(paths=[ssh_config])
 
-    ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
+    ssh_config = generate_ssh_config_temp(c)
     c.state["ssh_config_temp"] = ssh_config
-    logger.debug(f"{ssh_config=}")
-
-    template = get_template("ssh_config.jinja")
-    with open(ssh_config, "w") as f:
-        f.write(template.render({
-            "ssh_config": ssh_config,
-            "current_user": c.state["current_user"],
-            "known_hosts_file": user_known_hosts_file,
-            "identity_file": identity_file,
-            "user_server_list": user_server_list,
-        }))
 
     logger.info(
         f"Generated a ssh_config file to use with ssh when connecting to a chillbox server. Replace CHILLBOX_SERVER_HOSTNAME with hostname of the server.\n  Use the ssh command:\n  ssh -F {ssh_config} CHILLBOX_SERVER_HOSTNAME"
@@ -69,15 +41,7 @@ def ssh_lock(c):
     """
     Remove temporary ssh_config file and identity file that was created for ssh commands.
     """
-    archive_directory = Path(c.chillbox_config["archive-directory"])
-    ssh_config = c.state.get("ssh_config_temp")
-    identity_file = c.state.get("identity_file_temp")
-
-    # Always delete any older ones first
-    remove_temp_files(paths=[ssh_config, identity_file])
-
-    del c.state["ssh_config_temp"]
-    del c.state["identity_file_temp"]
+    cleanup_ssh_config_temp(c)
 
 
 @task

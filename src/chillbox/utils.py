@@ -77,14 +77,15 @@ def get_file_system_loader(src, working_directory):
     return FileSystemLoader(src_path)
 
 
-def encrypt_file(c, plaintext_file, ciphertext_file):
+def encrypt_file(c, plaintext_file, ciphertext_file, public_asymmetric_key=None):
     "Wrapper around chillbox encrypt-file script that uses the local-chillbox-asymmetric public key."
     archive_directory = Path(c.chillbox_config["archive-directory"])
     instance = c.chillbox_config["instance"]
     encrypt_file_script = pkg_resources.path(chillbox.data.scripts, "encrypt-file")
-    public_asymmetric_key = archive_directory.joinpath(
-        "local-chillbox-asymmetric", f"{instance}.public.pem"
-    ).resolve()
+    if public_asymmetric_key is None:
+        public_asymmetric_key = archive_directory.joinpath(
+            "local-chillbox-asymmetric", f"{instance}.public.pem"
+        ).resolve()
 
     result = c.run(
         f"{encrypt_file_script} -k {public_asymmetric_key} -o {ciphertext_file} {plaintext_file}",
@@ -97,6 +98,7 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
     "Wrapper around chillbox decrypt-file script that uses the local-chillbox-asymmetric private key."
     decrypt_file_script = pkg_resources.path(chillbox.data.scripts, "decrypt-file")
 
+    # TODO: the main.cleanup handles removal of private key. Update this comment and error.
     if not Path(c.local_chillbox_asymmetric_key_private).exists():
         # The decrypt_file is located here because enrypt_file is also here. The
         # private asymmetric key is removed at the end of the chillbox init to
@@ -111,3 +113,18 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
     )
     if plaintext_file == "-":
         return result.stdout
+
+
+def get_user_server_list(c):
+    ""
+    current_user = c.state["current_user"]
+    def user_has_access(server):
+        "The current user has access to a server if they are the owner or in the list of login-users."
+        if server.get("owner") and server.get("owner") == current_user:
+            return True
+        login_users = server.get("login-users", [])
+        return any(map(lambda x: x.startswith(current_user), login_users))
+
+    user_server_list = list(filter(user_has_access, c.chillbox_config.get("server", [])))
+    return user_server_list
+
