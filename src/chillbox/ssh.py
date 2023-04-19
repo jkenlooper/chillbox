@@ -17,8 +17,8 @@ def generate_ssh_config_temp(c):
     """
     archive_directory = Path(c.chillbox_config["archive-directory"])
     user_known_hosts_file = archive_directory.joinpath("ssh_known_hosts").resolve()
-    identity_file = c.state.get("identity_file_temp")
-    current_user = c.state["current_user"]
+    identity_file = c.state.identity_file_temp
+    current_user = c.state.current_user
 
     user_server_list = get_user_server_list(c)
 
@@ -42,11 +42,10 @@ def cleanup_ssh_config_temp(c):
     ""
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    ssh_config = c.state.get("ssh_config_temp")
-    identity_file = c.state.get("identity_file_temp")
+    ssh_config = c.state.ssh_config_temp
+    identity_file = c.state.identity_file_temp
 
     # Always delete any older ones first
     remove_temp_files(paths=[ssh_config, identity_file])
-
-    del c.state["ssh_config_temp"]
-    del c.state["identity_file_temp"]
+    c.state.ssh_config_temp = None
+    c.state.identity_file_temp = None

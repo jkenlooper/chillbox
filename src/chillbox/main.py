@@ -76,9 +76,10 @@ class ChillboxProgram(Program):
 
         local_chillbox_asymmetric_key_private = state.get("local_chillbox_asymmetric_key_private")
 
-        logger.info(f"Removing temp private key {local_chillbox_asymmetric_key_private=}")
-        temp_private_key = Path(local_chillbox_asymmetric_key_private)
-        remove_temp_files(paths=[temp_private_key])
+        if local_chillbox_asymmetric_key_private:
+            logger.info(f"Removing temp private key {local_chillbox_asymmetric_key_private=}")
+            temp_private_key = Path(local_chillbox_asymmetric_key_private)
+            remove_temp_files(paths=[temp_private_key])
 
 
 class ChillboxConfig(Config):

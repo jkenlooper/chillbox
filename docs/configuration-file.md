@@ -41,9 +41,8 @@ public-ssh-key = [
 
 [[user]]
 name = "bob"
-public-ssh-key = [
-  "public-ssh-key-that-is-manually-added-here"
-]
+# Not setting a public_ssh_key will trigger auto creation of one along with
+# a private key that is encrypted.
 
 ### Environment ###
 
@@ -66,7 +65,7 @@ ENVIRONMENT = "development"
 id = "example_secret"
 name = "SECRET_KEY"
 prompt = "Enter secret key"
-expires = 2023-03-16
+expires = 2024-03-16
 owner = "alice"
 # Secret can be shared by two users
 [[secret.remote]]
@@ -114,7 +113,6 @@ ip = "122.33.44.55"
 name = "example-stream-server"
 # For this example, 'bob' would not have access to this server.
 login-users = [ "alice:dev" ]
-no-home-users = [ "dev" ]
 secrets = [ "example_secret" ]
 remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]
 [server.user-data]
@@ -128,18 +126,12 @@ template = "chillbox:user-data.sh.jinja"
 file-size-limit = 16384
 [server.user-data.context]
 something = "example"
-user = "alice"
-user_pw_hash = ""
-public-ssh-key = [
-  "public-ssh-key-that-is-manually-added-here"
-]
 nft_script = "example.nft"
 
 [[server]]
 ip = "122.3.4.5"
 name = "example-web-server-for-bob"
 login-users = [ "alice:dev", "bob:dev" ]
-no-home-users = [ "dev", "weboftomorrow", "site1" ]
 secrets = [ "example_secret" ]
 remote-files = [ "chillbox-nginx-conf", "bootstrap-chillbox-server.sh" ]
 ```

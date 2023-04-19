@@ -44,22 +44,22 @@ def generate_password_hash(c, user):
 
 def user_password_hash_init(c):
     ""
-    current_user = c.state["current_user"]
+    current_user = c.state.current_user
 
     current_user_data = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))[0]
-    state_current_user_data = c.state.get("current_user_data", {})
+    state_current_user_data = c.state.current_user_data
     current_user_data.update(state_current_user_data)
     if not current_user_data.get("password_hash"):
         password_hash = generate_password_hash(c, current_user)
         state_current_user_data["password_hash"] = password_hash
-        c.state["current_user_data"] = state_current_user_data
+        c.state.current_user_data = state_current_user_data
 
 
 def generate_user_data_script(c):
     """"""
     server_list = c.chillbox_config.get("server", [])
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    current_user = c.state["current_user"]
+    current_user = c.state.current_user
 
     for server in server_list:
         server_owner = server.get("owner")
@@ -127,7 +127,7 @@ def generate_user_data_script(c):
 def output_current_user_public_ssh_key(c):
     server_list = c.chillbox_config.get("server", [])
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    current_user = c.state["current_user"]
+    current_user = c.state.current_user
 
     for server in server_list:
         server_owner = server.get("owner")
@@ -140,7 +140,7 @@ def output_current_user_public_ssh_key(c):
         if public_ssh_key_file.exists():
             public_ssh_key_file.unlink()
         public_ssh_key_file.parent.mkdir(parents=True, exist_ok=True)
-        public_ssh_key_file.write_text("\n".join(c.state["current_user_data"]["public_ssh_key"]))
+        public_ssh_key_file.write_text("\n".join(c.state.current_user_data["public_ssh_key"]))
 
 
 @task(pre=[init])
@@ -158,7 +158,7 @@ def server_init(c):
 def upload(c):
     ""
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    ssh_config_file = c.state.get("ssh_config_temp")
+    ssh_config_file = c.state.ssh_config_temp
     is_ssh_unlocked = bool(ssh_config_file and Path(ssh_config_file).exists())
     user_server_list = get_user_server_list(c)
 

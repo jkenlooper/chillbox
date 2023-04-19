@@ -123,7 +123,7 @@ def init_local_chillbox_asymmetric_key(c):
     c.local_chillbox_asymmetric_key_private = decrypt_file_with_gpg(
         c, gpg_encrypted_asymmetric_key_path
     )
-    c.state["local_chillbox_asymmetric_key_private"] = c.local_chillbox_asymmetric_key_private
+    c.state.local_chillbox_asymmetric_key_private = c.local_chillbox_asymmetric_key_private
     logger.info("Set the local chillbox asymmetric key")
 
 
@@ -137,12 +137,11 @@ def encrypt_secrets_to_archive(c):
 
     today = date.today()
     logger.debug(c.state)
-    current_user = c.state["current_user"]
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != current_user:
+        if secret.get("owner") != c.state.current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {current_user}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {c.state.current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
@@ -188,14 +187,13 @@ def load_secrets(c):
     archive_directory = Path(c.chillbox_config["archive-directory"])
     secret_list = c.chillbox_config.get("secret", [])
     decrypt_file_script = pkg_resources.path(chillbox.data.scripts, "decrypt-file")
-    current_user = c.state["current_user"]
 
     secrets = {}
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != current_user:
+        if secret.get("owner") != c.state.current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {current_user}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {c.state.current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes").resolve()
@@ -326,27 +324,33 @@ def generate_and_encrypt_ssh_key(c, user):
 
 def user_ssh_init(c):
     "Check current user and ensure that a public ssh key is available. Create one if not."
-    current_user = c.state["current_user"]
+    logger.debug(f"{c.state.current_user=}")
 
-    key_file_name = f"{current_user}.chillbox.pem"
+    key_file_name = f"{c.state.current_user}.chillbox.pem"
     archive_directory = Path(c.chillbox_config["archive-directory"])
     encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
 
-    current_user_data = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))[0]
-    state_current_user_data = c.state.get("current_user_data", {})
+    logger.debug(f"{c.chillbox_config.get('user')=}")
+    current_user_match_list = list(filter(lambda x: x["name"] == c.state.current_user, c.chillbox_config.get("user", [])))
+    if current_user_match_list:
+        current_user_data = current_user_match_list[0]
+    else:
+        raise Exception("Not handled")
+    logger.debug(f"{current_user_match_list=}")
+    state_current_user_data = c.state.current_user_data
     current_user_data.update(state_current_user_data)
     if not current_user_data.get("public_ssh_key"):
-        logger.warning(f"No public ssh key found for user '{current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
-        public_ssh_key = generate_and_encrypt_ssh_key(c, current_user)
+        logger.warning(f"No public ssh key found for user '{c.state.current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
+        public_ssh_key = generate_and_encrypt_ssh_key(c, c.state.current_user)
         state_current_user_data["public_ssh_key"] = [public_ssh_key]
-        c.state["current_user_data"] = state_current_user_data
+        c.state.current_user_data = state_current_user_data
 
-    identity_file_temp = c.state.get("identity_file_temp")
+    identity_file_temp = c.state.identity_file_temp
     if encrypted_private_key_file.exists() and not (identity_file_temp and Path(identity_file_temp).exists()):
-        remove_temp_files(paths=[c.state.get("ssh_config_temp"), identity_file_temp])
+        remove_temp_files(paths=[c.state.ssh_config_temp, identity_file_temp])
         private_ssh_key_file = Path(mkstemp()[1])
         decrypt_file(c, private_ssh_key_file, encrypted_private_key_file)
-        c.state["identity_file_temp"] = str(private_ssh_key_file)
+        c.state.identity_file_temp = str(private_ssh_key_file)
 
 @task
 def init(c):
@@ -380,12 +384,13 @@ def init(c):
         )
 
     c.state = ChillboxState(archive_directory)
-    current_user = c.state.get("current_user")
+    current_user = c.state.current_user
     if not current_user:
         current_user = input(f"No current_user has been set in state file. Set the current_user now or set to '{owner}'.\n  ")
         if not current_user:
             current_user = owner
-        c.state["current_user"] = current_user
+        c.state.current_user = current_user
+    logger.debug(f"{c.state.current_user=}")
     result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))
     if not result:
         raise ChillboxInvalidConfigError(f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}")

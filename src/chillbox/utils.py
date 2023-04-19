@@ -117,7 +117,7 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
 
 def get_user_server_list(c):
     ""
-    current_user = c.state["current_user"]
+    current_user = c.state.current_user
     def user_has_access(server):
         "The current user has access to a server if they are the owner or in the list of login-users."
         if server.get("owner") and server.get("owner") == current_user:

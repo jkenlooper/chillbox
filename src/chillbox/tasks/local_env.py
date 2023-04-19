@@ -30,13 +30,13 @@ def output_env(c, include_secrets=False):
     """
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    temp_output_env_file = c.state.get("output_env_temp")
+    temp_output_env_file = c.state.output_env_temp
 
     # Always delete any older ones first
     remove_temp_files(paths=[temp_output_env_file])
 
     temp_output_env = Path(tempfile.mkstemp(suffix=".chillbox.env")[1])
-    c.state["output_env_temp"] = str(temp_output_env.resolve())
+    c.state.output_env_temp = str(temp_output_env.resolve())
     logger.debug(f"{temp_output_env=}")
 
     # CHILLBOX_ARCHIVE_DIRECTORY="{c.archive_directory_path}"
@@ -71,9 +71,9 @@ def output_env_clean(c):
     """
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    temp_output_env_file = c.state.get("output_env_temp")
+    temp_output_env_file = c.state.output_env_temp
 
     remove_temp_files(paths=[temp_output_env_file])
 
-    if c.state.get("output_env_temp"):
-        del c.state["output_env_temp"]
+    if c.state.output_env_temp:
+        c.state.output_env_temp = None
