@@ -14,6 +14,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from chillbox.validate import validate_and_load_chillbox_config, src_path_is_template
 from chillbox.errors import (
+    ChillboxServerUserDataError,
     ChillboxArchiveDirectoryError,
     ChillboxGPGError,
     ChillboxExpiredSecretError,
@@ -94,7 +95,7 @@ def decrypt_file_with_gpg(c, ciphertext_gpg_file):
     return secure_temp_file
 
 
-def init_local_chillbox_asymmetric_key(c):
+def init_local_chillbox_asymmetric_key(c, state):
     "Initialize the local chillbox asymmetric key"
     instance = c.chillbox_config["instance"]
 
@@ -123,12 +124,12 @@ def init_local_chillbox_asymmetric_key(c):
     c.local_chillbox_asymmetric_key_private = decrypt_file_with_gpg(
         c, gpg_encrypted_asymmetric_key_path
     )
-    c.state.local_chillbox_asymmetric_key_private = c.local_chillbox_asymmetric_key_private
+    state.local_chillbox_asymmetric_key_private = c.local_chillbox_asymmetric_key_private
     logger.info("Set the local chillbox asymmetric key")
 
 
 
-def encrypt_secrets_to_archive(c):
+def encrypt_secrets_to_archive(c, state):
     """"""
     secret_list = c.chillbox_config.get("secret", [])
     logger.debug(secret_list)
@@ -136,12 +137,12 @@ def encrypt_secrets_to_archive(c):
     archive_directory = Path(c.chillbox_config["archive-directory"])
 
     today = date.today()
-    logger.debug(c.state)
+    logger.debug(state)
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != c.state.current_user:
+        if secret.get("owner") != state.current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {c.state.current_user}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {state.current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes")
@@ -180,7 +181,7 @@ def load_env_vars(c):
     c.env = c.chillbox_config.get("env", {})
 
 
-def load_secrets(c):
+def load_secrets(c, state):
     """
     Similiar to load_env_vars, but sets c.secrets
     """
@@ -191,9 +192,9 @@ def load_secrets(c):
     secrets = {}
     for secret in secret_list:
         logger.debug(f"{secret=}")
-        if secret.get("owner") != c.state.current_user:
+        if secret.get("owner") != state.current_user:
             logger.info(
-                f"Skipping the secret '{secret.get('id')}' since it is not owned by {c.state.current_user}."
+                f"Skipping the secret '{secret.get('id')}' since it is not owned by {state.current_user}."
             )
             continue
         secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes").resolve()
@@ -279,6 +280,30 @@ def process_path_to_archive(c):
     # Return to previous umask
     os.umask(prev_umask)
 
+
+def generate_password_hash(c, user):
+    ""
+    print(f"No password_hash set for user '{user}'. Enter new password for this user.")
+    result = c.run(
+        "openssl passwd -6", hide=True
+    )
+    return result.stdout.strip()
+
+def user_password_hash_init(c, state):
+    ""
+    if state.current_user_data.get("password_hash"):
+        return
+
+    password_hash = generate_password_hash(c, state.current_user)
+    if not password_hash:
+        raise ChillboxServerUserDataError(f"No password_hash available for '{state.current_user}'")
+
+    merged_current_user_data = {}
+    merged_current_user_data.update(state.current_user_data)
+    merged_current_user_data["password_hash"] = password_hash
+    state.current_user_data = merged_current_user_data
+
+
 def generate_and_encrypt_ssh_key(c, user):
     """
     Generate a private ssh key for the user and output the public key. The
@@ -322,35 +347,39 @@ def generate_and_encrypt_ssh_key(c, user):
     return public_key
 
 
-def user_ssh_init(c):
+def user_ssh_init(c, state):
     "Check current user and ensure that a public ssh key is available. Create one if not."
-    logger.debug(f"{c.state.current_user=}")
+    logger.debug(f"{state.current_user=}")
+    if not state.current_user:
+        raise Exception(f"The current_user in state file has not been set. {state=}")
 
-    key_file_name = f"{c.state.current_user}.chillbox.pem"
+    key_file_name = f"{state.current_user}.chillbox.pem"
     archive_directory = Path(c.chillbox_config["archive-directory"])
     encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
 
+    merged_current_user_data = {}
     logger.debug(f"{c.chillbox_config.get('user')=}")
-    current_user_match_list = list(filter(lambda x: x["name"] == c.state.current_user, c.chillbox_config.get("user", [])))
+    current_user_match_list = list(filter(lambda x: x["name"] == state.current_user, c.chillbox_config.get("user", [])))
     if current_user_match_list:
-        current_user_data = current_user_match_list[0]
+        merged_current_user_data.update(current_user_match_list[0])
     else:
         raise Exception("Not handled")
-    logger.debug(f"{current_user_match_list=}")
-    state_current_user_data = c.state.current_user_data
-    current_user_data.update(state_current_user_data)
-    if not current_user_data.get("public_ssh_key"):
-        logger.warning(f"No public ssh key found for user '{c.state.current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
-        public_ssh_key = generate_and_encrypt_ssh_key(c, c.state.current_user)
-        state_current_user_data["public_ssh_key"] = [public_ssh_key]
-        c.state.current_user_data = state_current_user_data
+    logger.debug(f"{current_user_match_list=}, {merged_current_user_data=}")
+    merged_current_user_data.update(state.current_user_data)
+    if not merged_current_user_data.get("public_ssh_key"):
+        logger.warning(f"No public ssh key found for user '{state.current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
+        public_ssh_key = generate_and_encrypt_ssh_key(c, state.current_user)
+        merged_current_user_data["public_ssh_key"] = [public_ssh_key]
+    state.current_user_data = merged_current_user_data
 
-    identity_file_temp = c.state.identity_file_temp
+    identity_file_temp = state.identity_file_temp
     if encrypted_private_key_file.exists() and not (identity_file_temp and Path(identity_file_temp).exists()):
-        remove_temp_files(paths=[c.state.ssh_config_temp, identity_file_temp])
+        remove_temp_files(paths=[state.ssh_config_temp, identity_file_temp])
         private_ssh_key_file = Path(mkstemp()[1])
         decrypt_file(c, private_ssh_key_file, encrypted_private_key_file)
-        c.state.identity_file_temp = str(private_ssh_key_file)
+        state.identity_file_temp = str(private_ssh_key_file)
+
+    user_password_hash_init(c, state)
 
 @task
 def init(c):
@@ -383,14 +412,14 @@ def init(c):
             f"ERROR: The archive directory owner needs to match the current user. The {archive_owner=} is not {owner=}"
         )
 
-    c.state = ChillboxState(archive_directory)
-    current_user = c.state.current_user
+    state = ChillboxState(archive_directory)
+    current_user = state.current_user
     if not current_user:
         current_user = input(f"No current_user has been set in state file. Set the current_user now or set to '{owner}'.\n  ")
         if not current_user:
             current_user = owner
-        c.state.current_user = current_user
-    logger.debug(f"{c.state.current_user=}")
+        state.current_user = current_user
+    logger.debug(f"{state.current_user=}")
     result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))
     if not result:
         raise ChillboxInvalidConfigError(f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}")
@@ -399,13 +428,13 @@ def init(c):
     c.archive_directory = archive_directory
 
     generate_gpg_key_or_use_existing(c)
-    init_local_chillbox_asymmetric_key(c)
-    encrypt_secrets_to_archive(c)
+    init_local_chillbox_asymmetric_key(c, state)
+    encrypt_secrets_to_archive(c, state)
     load_env_vars(c)
-    load_secrets(c)
+    load_secrets(c, state)
     init_template_renderer(c)
     process_path_to_archive(c)
-    user_ssh_init(c)
+    user_ssh_init(c, state)
 
 
 @task

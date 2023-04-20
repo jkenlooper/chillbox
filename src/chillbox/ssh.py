@@ -9,7 +9,7 @@ from chillbox.utils import (
 )
 
 
-def generate_ssh_config_temp(c):
+def generate_ssh_config_temp(c, current_user, identity_file):
     """
     The temporary ssh_config file will be automatically created based on
     information found in the chillbox configuration. The identity file is the
@@ -17,10 +17,9 @@ def generate_ssh_config_temp(c):
     """
     archive_directory = Path(c.chillbox_config["archive-directory"])
     user_known_hosts_file = archive_directory.joinpath("ssh_known_hosts").resolve()
-    identity_file = c.state.identity_file_temp
-    current_user = c.state.current_user
+    server_list = c.chillbox_config.get("server", [])
 
-    user_server_list = get_user_server_list(c)
+    user_server_list = get_user_server_list(server_list, current_user)
 
     ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
     logger.debug(f"{ssh_config=}")
@@ -38,14 +37,9 @@ def generate_ssh_config_temp(c):
     return ssh_config
 
 
-def cleanup_ssh_config_temp(c):
+def cleanup_ssh_config_temp(state):
     ""
-
-    archive_directory = Path(c.chillbox_config["archive-directory"])
-    ssh_config = c.state.ssh_config_temp
-    identity_file = c.state.identity_file_temp
-
     # Always delete any older ones first
-    remove_temp_files(paths=[ssh_config, identity_file])
-    c.state.ssh_config_temp = None
-    c.state.identity_file_temp = None
+    remove_temp_files(paths=[state.ssh_config_temp, state.identity_file_temp])
+    state.ssh_config_temp = None
+    state.identity_file_temp = None

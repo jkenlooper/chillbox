@@ -4,6 +4,7 @@ from tempfile import mkstemp
 import bz2
 from shutil import copyfileobj
 from copy import deepcopy
+from getpass import getpass
 
 from invoke import task
 from fabric import Connection, Config
@@ -17,14 +18,17 @@ from jinja2 import (
 )
 from jinja2.exceptions import TemplateNotFound
 import httpx
+from scp import SCPClient
 
 from chillbox.tasks.local_archive import init
 from chillbox.validate import validate_and_load_chillbox_config
 from chillbox.utils import (
     logger,
     encrypt_file,
+    decrypt_file,
     shred_file,
     get_user_server_list,
+    remove_temp_files,
 )
 from chillbox.errors import (
     ChillboxServerUserDataError,
@@ -32,34 +36,14 @@ from chillbox.errors import (
 )
 from chillbox.local_checks import check_optional_commands
 from chillbox.ssh import generate_ssh_config_temp, cleanup_ssh_config_temp
+from chillbox.state import ChillboxState
 
 
-def generate_password_hash(c, user):
-    ""
-    print(f"No password_hash set for user '{user}'. Enter new password for this user.")
-    result = c.run(
-        "openssl passwd -6", hide=True
-    )
-    return result.stdout.strip()
-
-def user_password_hash_init(c):
-    ""
-    current_user = c.state.current_user
-
-    current_user_data = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))[0]
-    state_current_user_data = c.state.current_user_data
-    current_user_data.update(state_current_user_data)
-    if not current_user_data.get("password_hash"):
-        password_hash = generate_password_hash(c, current_user)
-        state_current_user_data["password_hash"] = password_hash
-        c.state.current_user_data = state_current_user_data
-
-
-def generate_user_data_script(c):
+def generate_user_data_script(c, state):
     """"""
     server_list = c.chillbox_config.get("server", [])
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    current_user = c.state.current_user
+    current_user = state.current_user
 
     for server in server_list:
         server_owner = server.get("owner")
@@ -80,25 +64,18 @@ def generate_user_data_script(c):
             logger.info(f"Skipping replacement of existing user-data file: {user_data_script_file}")
             continue
 
-        # TODO public ssh key should be of the current_user
         result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config["user"]))
         if not result:
             logger.warning(f"No user name matches with server owner ({server_owner})")
             continue
-        current_user_data = result[0]
 
         # TODO Check if the user has a public ssh key set? Generate new one if
         # they don't and save public ssh key to statefile. The private key
         # should be encrypted with the gpg key (Already managed by chillbox?).
 
-
-
-        # TODO Check if the user has a password hash set? Generate new one if
-        # they don't and store it in statefile. Password hash is not sensitive.
-
         server_user_data_context = {
             "chillbox_env": deepcopy(dict(c.env)),
-            "chillbox_user": current_user_data,
+            "chillbox_user": state.current_user_data,
             "chillbox_server": server,
         }
 
@@ -124,10 +101,10 @@ def generate_user_data_script(c):
         user_data_script_file.write_text(user_data_text)
 
 
-def output_current_user_public_ssh_key(c):
+def output_current_user_public_ssh_key(c, state):
     server_list = c.chillbox_config.get("server", [])
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    current_user = c.state.current_user
+    current_user = state.current_user
 
     for server in server_list:
         server_owner = server.get("owner")
@@ -140,7 +117,7 @@ def output_current_user_public_ssh_key(c):
         if public_ssh_key_file.exists():
             public_ssh_key_file.unlink()
         public_ssh_key_file.parent.mkdir(parents=True, exist_ok=True)
-        public_ssh_key_file.write_text("\n".join(c.state.current_user_data["public_ssh_key"]))
+        public_ssh_key_file.write_text("\n".join(state.current_user_data["public_ssh_key"]))
 
 
 @task(pre=[init])
@@ -148,9 +125,10 @@ def server_init(c):
     "Initialize files that will be needed for the chillbox servers."
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
-    user_password_hash_init(c)
-    generate_user_data_script(c)
-    output_current_user_public_ssh_key(c)
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    state = ChillboxState(archive_directory)
+    generate_user_data_script(c, state)
+    output_current_user_public_ssh_key(c, state)
 
 
 
@@ -158,55 +136,79 @@ def server_init(c):
 def upload(c):
     ""
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    ssh_config_file = c.state.ssh_config_temp
+    state = ChillboxState(archive_directory)
+    server_list = c.chillbox_config.get("server", [])
+    ssh_config_file = state.ssh_config_temp
     is_ssh_unlocked = bool(ssh_config_file and Path(ssh_config_file).exists())
-    user_server_list = get_user_server_list(c)
+    user_server_list = get_user_server_list(server_list, state.current_user)
 
-    def upload_sensitive_path(rc, path):
+    path_mapping = dict(map(lambda x: (x["id"], x), c.chillbox_config.get("path", [])))
+
+
+    def upload_sensitive_path(rc_scp, path, dest):
         ""
         tmp_plaintext_file = mkstemp()[1]
         tmp_remote_ciphertext_file = mkstemp()[1]
         local_ciphertext_file = archive_directory.joinpath("path", path["id"])
         decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
         encrypt_file(c, tmp_plaintext_file, tmp_remote_ciphertext_file, public_asymmetric_key=tmp_server_pub_key)
-        rc.put(tmp_remote_ciphertext_file, remote=f"/var/lib/chillbox/path_sensitive{path['dest']}")
+        rc_scp.put(tmp_remote_ciphertext_file, remote_path=dest)
 
         # TODO A running service on the server could be configured to watch
         # paths in /var/lib/chillbox/path_sensitive/* and automatically decrypt
         # the file to the dest location.
 
-    def upload_path(rc, path):
+    def upload_path(rc_scp, path, dest):
         ""
         tmp_plaintext_file = mkstemp()[1]
         tmp_remote_ciphertext_file = mkstemp()[1]
         local_ciphertext_file = archive_directory.joinpath("path", path["id"])
         decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
-        rc.put(tmp_plaintext_file, remote=path['dest'])
+        logger.debug(f"plaintext file {path['id']} \n{tmp_plaintext_file}")
+        rc_scp.put(tmp_plaintext_file, remote_path=dest)
         remove_temp_files([tmp_plaintext_file])
 
     if not is_ssh_unlocked:
-        ssh_config_file = generate_ssh_config_temp(c)
+        ssh_config_file = generate_ssh_config_temp(c, current_user=state.current_user, identity_file=state.identity_file_temp)
 
     config = Config(runtime_ssh_path=ssh_config_file)
     for server in user_server_list:
-        with Connection(server["name"], config=config) as rc:
-            tmp_server_pub_key = mkstemp()[1]
+        logger.debug(f"{server=}")
+        password_for_user = getpass(f"password for user '{state.current_user}' on the server '{server['name']}': ")
+        rc = Connection(server["name"], config=config, connect_kwargs={"password":password_for_user})
+        rc.open()
+        ssh_transport = rc.client.get_transport()
+        tmp_server_pub_key = mkstemp()[1]
 
+        with SCPClient(ssh_transport) as rc_scp:
             # Depends on the user-data script to have made a public asymmetric
             # key at this location.
-            rc.get(f"/usr/local/share/chillbox/key/{server['name']}.public.pem", local=tmp_server_pub_key)
+            rc_scp.get(f"/usr/local/share/chillbox/key/{server['name']}.public.pem", local_path=tmp_server_pub_key)
 
             # TODO upload secrets
 
             # All local paths are encrypted, but only re-encrypt them to the
             # server public key if they are sensitive (contain secrets) before
             # uploading.
-            for path in server.get("", []):
+            for remote_file_id in server.get("remote-files", []):
+                path = path_mapping.get(remote_file_id)
+                if not path:
+                    logger.warning(f"No path with id '{remote_file_id}'")
+                    continue
+
+                target_path = path["dest"] if not path.get("sensitive") else f"/var/lib/chillbox/path_sensitive/{state.current_user}/{path['dest']}"
+                parent_dir = Path(target_path).resolve(strict=False).parent
+                rc.run(f"mkdir -p {parent_dir}")
+                result = rc.run(f"mktemp")
+                tmp_upload_path = result.stdout.strip()
+
                 if path.get("sensitive"):
-                    upload_sensitive_path(rc, path)
+                    upload_sensitive_path(rc_scp, path, dest=tmp_upload_path)
                 else:
-                    upload_path(rc, path)
+                    upload_path(rc_scp, path, dest=tmp_upload_path)
+                rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
+        rc.close()
 
     # Clean up
     if not is_ssh_unlocked:
-        cleanup_ssh_config_temp(c)
+        cleanup_ssh_config_temp(state)

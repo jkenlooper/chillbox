@@ -5,6 +5,7 @@ from pathlib import Path
 from invoke import task
 
 from chillbox.tasks.local_archive import init
+from chillbox.state import ChillboxState
 from chillbox.utils import (
     logger,
     remove_temp_files,
@@ -30,13 +31,14 @@ def output_env(c, include_secrets=False):
     """
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    temp_output_env_file = c.state.output_env_temp
+    state = ChillboxState(archive_directory)
+    temp_output_env_file = state.output_env_temp
 
     # Always delete any older ones first
     remove_temp_files(paths=[temp_output_env_file])
 
     temp_output_env = Path(tempfile.mkstemp(suffix=".chillbox.env")[1])
-    c.state.output_env_temp = str(temp_output_env.resolve())
+    state.output_env_temp = str(temp_output_env.resolve())
     logger.debug(f"{temp_output_env=}")
 
     # CHILLBOX_ARCHIVE_DIRECTORY="{c.archive_directory_path}"
@@ -71,9 +73,10 @@ def output_env_clean(c):
     """
 
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    temp_output_env_file = c.state.output_env_temp
+    state = ChillboxState(archive_directory)
+    temp_output_env_file = state.output_env_temp
 
     remove_temp_files(paths=[temp_output_env_file])
 
-    if c.state.output_env_temp:
-        c.state.output_env_temp = None
+    if state.output_env_temp:
+        state.output_env_temp = None

@@ -115,9 +115,8 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
         return result.stdout
 
 
-def get_user_server_list(c):
+def get_user_server_list(server_list, current_user):
     ""
-    current_user = c.state.current_user
     def user_has_access(server):
         "The current user has access to a server if they are the owner or in the list of login-users."
         if server.get("owner") and server.get("owner") == current_user:
@@ -125,6 +124,6 @@ def get_user_server_list(c):
         login_users = server.get("login-users", [])
         return any(map(lambda x: x.startswith(current_user), login_users))
 
-    user_server_list = list(filter(user_has_access, c.chillbox_config.get("server", [])))
+    user_server_list = list(filter(user_has_access, server_list))
     return user_server_list
 

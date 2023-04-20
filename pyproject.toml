@@ -32,6 +32,7 @@ dependencies = [
   "Jinja2 >= 3.1",
   "httpx",
   "fabric>=3",
+  "scp>=0.14",
 ]
 
 [project.urls]

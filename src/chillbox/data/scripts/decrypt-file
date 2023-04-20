@@ -2,6 +2,8 @@
 
 script_name="$(basename "$0")"
 
+set -x
+
 usage() {
   cat <<HERE
 

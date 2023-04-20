@@ -6,6 +6,7 @@ from invoke import task
 import httpx
 
 from chillbox.tasks.local_archive import init
+from chillbox.state import ChillboxState
 from chillbox.utils import (
     logger,
     remove_temp_files,
@@ -21,14 +22,16 @@ def ssh_unlock(c):
     Create a temporary ssh_config file and identity file that can be used for ssh commands.
     """
 
-    ssh_config = c.state.get("ssh_config_temp")
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    state = ChillboxState(archive_directory)
+    ssh_config = state.ssh_config_temp
     # Always delete any older ssh_config first. The identity_file_temp was
     # created in user_ssh_init as part of init process and should not be removed
     # here.
     remove_temp_files(paths=[ssh_config])
 
-    ssh_config = generate_ssh_config_temp(c)
-    c.state["ssh_config_temp"] = ssh_config
+    ssh_config = generate_ssh_config_temp(c, current_user=state.current_user, identity_file=state.identity_file_temp)
+    state.ssh_config_temp = ssh_config
 
     logger.info(
         f"Generated a ssh_config file to use with ssh when connecting to a chillbox server. Replace CHILLBOX_SERVER_HOSTNAME with hostname of the server.\n  Use the ssh command:\n  ssh -F {ssh_config} CHILLBOX_SERVER_HOSTNAME"
@@ -41,7 +44,9 @@ def ssh_lock(c):
     """
     Remove temporary ssh_config file and identity file that was created for ssh commands.
     """
-    cleanup_ssh_config_temp(c)
+    archive_directory = Path(c.chillbox_config["archive-directory"])
+    state = ChillboxState(archive_directory)
+    cleanup_ssh_config_temp(state)
 
 
 @task

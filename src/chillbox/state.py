@@ -55,7 +55,7 @@ class ChillboxState:
 
     @output_env_temp.setter
     def output_env_temp(self, value):
-        self._output_env_temp = str(value)
+        self._output_env_temp = value
         self._save_state_file_data()
 
     @property
@@ -64,7 +64,9 @@ class ChillboxState:
 
     @current_user.setter
     def current_user(self, value):
-        self._current_user = str(value)
+        if not value:
+            raise Exception("invalid value for current_user")
+        self._current_user = value
         self._save_state_file_data()
 
     @property
@@ -82,7 +84,7 @@ class ChillboxState:
 
     @ssh_config_temp.setter
     def ssh_config_temp(self, value):
-        self._ssh_config_temp = str(value)
+        self._ssh_config_temp = value
         self._save_state_file_data()
 
     @property
@@ -91,7 +93,7 @@ class ChillboxState:
 
     @identity_file_temp.setter
     def identity_file_temp(self, value):
-        self._identity_file_temp = str(value)
+        self._identity_file_temp = value
         self._save_state_file_data()
 
     @property
@@ -100,5 +102,5 @@ class ChillboxState:
 
     @local_chillbox_asymmetric_key_private.setter
     def local_chillbox_asymmetric_key_private(self, value):
-        self._local_chillbox_asymmetric_key_private = str(value)
+        self._local_chillbox_asymmetric_key_private = value
         self._save_state_file_data()
