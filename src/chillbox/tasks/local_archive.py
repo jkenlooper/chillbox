@@ -265,7 +265,7 @@ def process_path_to_archive(c):
             elif src_path.is_dir():
                 # Create tar file
                 with tarfile.open(secure_temp_file, "w:gz") as tar:
-                    tar.add(src_path.resolve())
+                    tar.add(src_path.resolve(), arcname=path["src"])
 
         encrypt_file(c, secure_temp_file, id_path.resolve())
         shred_file(secure_temp_file)

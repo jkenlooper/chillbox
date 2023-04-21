@@ -145,26 +145,23 @@ def upload(c):
     path_mapping = dict(map(lambda x: (x["id"], x), c.chillbox_config.get("path", [])))
 
 
-    def upload_sensitive_path(rc_scp, path, dest):
+    def upload_sensitive_path(rc_scp, path, dest, public_asymmetric_key):
         ""
         tmp_plaintext_file = mkstemp()[1]
         tmp_remote_ciphertext_file = mkstemp()[1]
         local_ciphertext_file = archive_directory.joinpath("path", path["id"])
         decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
-        encrypt_file(c, tmp_plaintext_file, tmp_remote_ciphertext_file, public_asymmetric_key=tmp_server_pub_key)
+        encrypt_file(c, tmp_plaintext_file, tmp_remote_ciphertext_file, public_asymmetric_key=public_asymmetric_key)
+        logger.info(f"Uploading sensitive encrypted gzipped file to {dest}")
         rc_scp.put(tmp_remote_ciphertext_file, remote_path=dest)
-
-        # TODO A running service on the server could be configured to watch
-        # paths in /var/lib/chillbox/path_sensitive/* and automatically decrypt
-        # the file to the dest location.
+        remove_temp_files([tmp_plaintext_file, tmp_remote_ciphertext_file])
 
     def upload_path(rc_scp, path, dest):
         ""
         tmp_plaintext_file = mkstemp()[1]
-        tmp_remote_ciphertext_file = mkstemp()[1]
         local_ciphertext_file = archive_directory.joinpath("path", path["id"])
         decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
-        logger.debug(f"plaintext file {path['id']} \n{tmp_plaintext_file}")
+        logger.info(f"Uploading gzipped file to {dest}")
         rc_scp.put(tmp_plaintext_file, remote_path=dest)
         remove_temp_files([tmp_plaintext_file])
 
@@ -196,17 +193,19 @@ def upload(c):
                     logger.warning(f"No path with id '{remote_file_id}'")
                     continue
 
-                target_path = path["dest"] if not path.get("sensitive") else f"/var/lib/chillbox/path_sensitive/{state.current_user}/{path['dest']}"
+                target_path = path["dest"] if not path.get("sensitive") else f"/var/lib/chillbox/path_sensitive/{state.current_user}{path['dest']}"
                 parent_dir = Path(target_path).resolve(strict=False).parent
                 rc.run(f"mkdir -p {parent_dir}")
-                result = rc.run(f"mktemp")
-                tmp_upload_path = result.stdout.strip()
 
                 if path.get("sensitive"):
-                    upload_sensitive_path(rc_scp, path, dest=tmp_upload_path)
+                    upload_sensitive_path(rc_scp, path, dest=target_path, public_asymmetric_key=tmp_server_pub_key)
                 else:
+                    result = rc.run(f"mktemp", hide=True)
+                    tmp_upload_path = result.stdout.strip()
                     upload_path(rc_scp, path, dest=tmp_upload_path)
-                rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
+                    logger.info(f"Unzipping file {tmp_upload_path} to {target_path}")
+                    rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
+                    rc.run(f"rm -rf {tmp_upload_path}")
         rc.close()
 
     # Clean up
