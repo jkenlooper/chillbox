@@ -38,6 +38,8 @@ from chillbox.local_checks import check_optional_commands
 from chillbox.ssh import generate_ssh_config_temp, cleanup_ssh_config_temp
 from chillbox.state import ChillboxState
 
+PATH_SENSITIVE = "/var/lib/chillbox/path_sensitive/"
+PATH_SECRETS = "/var/lib/chillbox/secrets/"
 
 def generate_user_data_script(c, state):
     """"""
@@ -134,7 +136,11 @@ def server_init(c):
 
 @task(pre=[server_init])
 def upload(c):
-    ""
+    """
+    Upload path objects and secrets to all servers that include them
+    """
+    # Note that the docstring is extended after the def.
+
     archive_directory = Path(c.chillbox_config["archive-directory"])
     state = ChillboxState(archive_directory)
     server_list = c.chillbox_config.get("server", [])
@@ -143,6 +149,7 @@ def upload(c):
     user_server_list = get_user_server_list(server_list, state.current_user)
 
     path_mapping = dict(map(lambda x: (x["id"], x), c.chillbox_config.get("path", [])))
+    secret_mapping = dict(map(lambda x: (x["id"], x), c.chillbox_config.get("secret", [])))
 
 
     def upload_sensitive_path(rc_scp, path, dest, public_asymmetric_key):
@@ -182,7 +189,46 @@ def upload(c):
             # key at this location.
             rc_scp.get(f"/usr/local/share/chillbox/key/{server['name']}.public.pem", local_path=tmp_server_pub_key)
 
-            # TODO upload secrets
+            # Build secret files to upload
+            secret_dest_file_mapping = {}
+            for secret_id in server.get("secrets", []):
+                secret = secret_mapping.get(secret_id)
+                if not secret:
+                    logger.warning(f"No secret with id '{secret_id}'")
+                    continue
+                if secret.get("owner") and secret.get("owner") != state.current_user:
+                    logger.info(f"Skipping upload of secret '{secret_id}' because it is not owned by '{state.current_user}'.")
+                    continue
+                secret_remote_list = secret.get("remote", [])
+                if not secret_remote_list:
+                    logger.warning(f"No secret remote list set for secret with id '{secret_id}'")
+                    continue
+                for secret_remote in secret_remote_list:
+                    append_dest = secret_remote.get("append-dest")
+                    if not append_dest:
+                        logger.error(f"No secret remote append-dest set for secret with id '{secret_id}'")
+                        # TODO: Handle this error in the validate step.
+                        continue
+                    if not secret_dest_file_mapping.get(append_dest):
+                        secret_dest_file_mapping[append_dest] = []
+                    secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes").resolve()
+                    secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
+                    secret_dest_file_mapping[append_dest].append(secret_in_plaintext)
+
+            # Upload the built secrets
+            for append_dest, secret_content_list in secret_dest_file_mapping.items():
+                tmp_secret_plaintext_file = mkstemp()[1]
+                Path(tmp_secret_plaintext_file).write_text("\n".join(secret_content_list))
+
+                tmp_secret_remote_ciphertext_file = mkstemp()[1]
+                encrypt_file(c, tmp_secret_plaintext_file, tmp_secret_remote_ciphertext_file, public_asymmetric_key=tmp_server_pub_key)
+                target_path = f"{PATH_SECRETS}{state.current_user}{append_dest}"
+                logger.info(f"Uploading secret encrypted file to {target_path}")
+                parent_dir = Path(target_path).resolve(strict=False).parent
+                rc.run(f"mkdir -p {parent_dir}")
+                rc_scp.put(tmp_secret_remote_ciphertext_file, remote_path=target_path)
+                remove_temp_files([tmp_secret_plaintext_file, tmp_secret_remote_ciphertext_file])
+
 
             # All local paths are encrypted, but only re-encrypt them to the
             # server public key if they are sensitive (contain secrets) before
@@ -193,7 +239,7 @@ def upload(c):
                     logger.warning(f"No path with id '{remote_file_id}'")
                     continue
 
-                target_path = path["dest"] if not path.get("sensitive") else f"/var/lib/chillbox/path_sensitive/{state.current_user}{path['dest']}"
+                target_path = path["dest"] if not path.get("sensitive") else f"{PATH_SENSITIVE}{state.current_user}{path['dest']}"
                 parent_dir = Path(target_path).resolve(strict=False).parent
                 rc.run(f"mkdir -p {parent_dir}")
 
@@ -203,11 +249,38 @@ def upload(c):
                     result = rc.run(f"mktemp", hide=True)
                     tmp_upload_path = result.stdout.strip()
                     upload_path(rc_scp, path, dest=tmp_upload_path)
-                    logger.info(f"Unzipping file {tmp_upload_path} to {target_path}")
-                    rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
+                    if Path(path["src"]).is_dir():
+                        logger.info(f"Unzipping and extracting tar file {tmp_upload_path} to {target_path}")
+                        target_dir = Path(target_path).resolve(strict=False)
+                        rc.run(f"mkdir -p {target_dir}")
+                        rc.run(f"tar x -z -f {tmp_upload_path} -C {target_dir} --strip-components 1")
+                    else:
+                        logger.info(f"Unzipping file {tmp_upload_path} to {target_path}")
+                        rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
                     rc.run(f"rm -rf {tmp_upload_path}")
         rc.close()
 
     # Clean up
     if not is_ssh_unlocked:
         cleanup_ssh_config_temp(state)
+
+upload.__doc__ = f"""
+{upload.__doc__.strip()}
+
+- The path objects that are set as 'sensitive' are encrypted to the server's
+  public asymmetric key. The actual destination on the server will be:
+  {PATH_SENSITIVE}$CURRENT_USER$DEST where
+  '$CURRENT_USER' and '$DEST' are replaced.
+
+- Path objects that are files and are not sensitive are uploaded to the set
+  'dest'.
+
+- Path objects that have a 'src' as a directory are stored as an archive
+  file. These will be extracted to the 'dest' on the server with the 'dest'
+  always being a directory; the contents of the 'src' will be placed in the
+  'dest'.
+
+- The secrets are encrypted to the server's public asymmetric key. The actual
+  destination on the server will be: {PATH_SECRETS}$CURRENT_USER$APPEND_DEST
+  where '$CURRENT_USER' and '$APPEND_DEST' are replaced.
+"""
