@@ -21,7 +21,7 @@
 # when files are added or removed.
 #/build/MANIFEST
 
-/src/chillbox/dep/*
-!/src/chillbox/dep/pip-requirements.txt
-!/src/chillbox/dep/requirements.txt
+/dep/*
+!/dep/pip-requirements.txt
+!/dep/requirements.txt
 
