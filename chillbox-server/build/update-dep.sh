@@ -13,7 +13,7 @@ test "${#name_hash}" -eq "32" || (echo "ERROR $script_name: Failed to create a n
 usage() {
   cat <<HERE
 Update the python requirement txt files, check for known vulnerabilities,
-download local python packages to src/chillbox/dep/.
+download local python packages to dep/.
 
 Usage:
   $script_name -h
@@ -42,15 +42,15 @@ while getopts "hi" OPTION ; do
 done
 shift $((OPTIND - 1))
 
-mkdir -p "$project_dir/src/chillbox/dep"
-date -I > "$project_dir/src/chillbox/.pip-audit-last-run.txt"
+mkdir -p "$project_dir/dep"
+date -I > "$project_dir/.pip-audit-last-run.txt"
 image_name="update-dep-$name_hash"
 docker image rm "$image_name" > /dev/null 2>&1 || printf ""
 echo "INFO $script_name: Building docker image: $image_name"
 DOCKER_BUILDKIT=1 docker build \
   -t "$image_name" \
   -f "$script_dir/update-dep.Dockerfile" \
-  "$project_dir/src/chillbox"
+  "$project_dir"
 
 container_name="update-dep-$name_hash"
 if [ "$interactive" = "y" ]; then
@@ -65,6 +65,6 @@ else
     "$image_name"
 fi
 
-docker cp --quiet "$container_name:/home/dev/app/dep/." "$project_dir/src/chillbox/dep/"
+docker cp --quiet "$container_name:/home/dev/app/dep/." "$project_dir/dep/"
 docker stop --time 0 "$container_name" > /dev/null 2>&1 || printf ""
 docker rm "$container_name" > /dev/null 2>&1 || printf ""

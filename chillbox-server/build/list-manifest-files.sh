@@ -16,12 +16,14 @@ find . \
   \! -path './.git/*' \
   \! -path './.github/*' \
   \! -name '.gitkeep' \
-  \! -path './src/chillbox/.pip-audit-last-run.txt' \
+  \! -path './.pip-audit-last-run.txt' \
   \( \
-    -path './src/*' \
+    -path './bin/*' \
+    -o -path './dep/*' \
+    -o -path './nginx/*' \
+    -o -path './redis/*' \
+    -o -path './terraform/*' \
     -o -path './README.md' \
     -o -path './LICENSE' \
-    -o -path './chillbox.sh' \
-    -o -path './example/*' \
   \) \
   | sort

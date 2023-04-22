@@ -8,7 +8,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 
 # The version string includes the build metadata
-VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell ./build/list-manifest-files.sh | xargs -n1 md5sum | md5sum - | cut -d' ' -f1)
+VERSION := $(shell cat $(project_dir)/VERSION)+$(shell ./build/list-manifest-files.sh | xargs -n1 md5sum | md5sum - | cut -d' ' -f1)
 
 objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
 

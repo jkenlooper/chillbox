@@ -24,4 +24,4 @@
 /dep/*
 !/dep/pip-requirements.txt
 !/dep/requirements.txt
-
+/.pip-audit-last-run.txt

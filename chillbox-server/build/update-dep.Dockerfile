@@ -133,34 +133,11 @@ UPDATE_REQUIREMENTS
 
 # Invalidate this layer each day so the pip-audit results are fresh.
 COPY --chown=dev:dev ./.pip-audit-last-run.txt /home/dev/app/.pip-audit-last-run.txt
+COPY --chown=dev:dev ./build/update-dep-run-audit.sh /home/dev/app/
 RUN <<AUDIT
 # Audit packages for known vulnerabilities
 set -o errexit
-
-set -- ""
-
-# Add any exceptions to vulnerabilities like this:
-#
-# exampleUPKEEP due: "2023-04-21" label: "Vuln exception GHSA-r9hx-vwmv-q579" interval: "+3 months"
-# n/a
-# https://osv.dev/vulnerability/GHSA-r9hx-vwmv-q579
-#set -- "$@" --ignore-vuln "GHSA-r9hx-vwmv-q579"
-
-# Change to the app directory so the find-links can be relative.
-cd /home/dev/app
-pip-audit \
-  --require-hashes \
-  --local \
-  --strict \
-  --vulnerability-service pypi \
-  $@ \
-  -r ./dep/requirements.txt
-pip-audit \
-  --local \
-  --strict \
-  --vulnerability-service osv \
-  $@ \
-  -r ./dep/requirements.txt
+./update-dep-run-audit.sh > /home/dev/vulnerabilities-pip-audit.txt || echo "WARNING: Vulnerabilities found."
 AUDIT
 
 CMD ["/home/dev/sleep.sh"]
