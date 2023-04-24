@@ -20,7 +20,16 @@ from chillbox.errors import (
 
 
 class Renderer:
-    """"""
+    """
+    Provides a template renderer that loads templates from multiple locations on the file system.
+
+    Prefix loaders use a ':' delimiter to separate the prefix from the path.
+
+    - 'chillbox-scripts:' contains common scripts that chillbox uses.
+    - 'chillbox:' has other general templates like user-data scripts.
+    - Other templates are defined by the chillbox configuration that was loaded.
+      These can be set with a prefix or not.
+    """
 
     def raise_for_missing_template(self, err):
         available_templates = "\n    - ".join(self.loader.list_templates())

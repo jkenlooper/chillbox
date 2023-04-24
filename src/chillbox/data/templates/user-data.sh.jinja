@@ -136,10 +136,28 @@ CREATE_ASYMMETRIC_KEY_HERE
 chmod +x "/usr/local/bin/create-asymmetric-key"
 }
 
+create_dirs() {
+#{#-
+## Include script to create initial directories and set the owner and permissions as needed.
+## This is to support upload of path objects defined in the chillbox config toml.
+#}
+cat <<'CHILLBOXUSERDATACREATEDIRS' > "$work_dir/chillbox-user-data-create_dirs.sh"
+{%- include [create_dirs_script, 'create_dirs.sh', 'local:create_dirs.sh', 'chillbox-server:create_dirs.sh'] ignore missing -%}
+CHILLBOXUSERDATACREATEDIRS
+#{#-
+## Only need to execute the create_dirs.sh script if it was defined.
+#}
+if [ -s "$work_dir/chillbox-user-data-create_dirs.sh" ]; then
+  chmod u+x "$work_dir/chillbox-user-data-create_dirs.sh"
+  "$work_dir/chillbox-user-data-create_dirs.sh"
+fi
+}
+
 install_packages
 nftables_setup
 init_user
 create_scripts
+create_dirs
 
 mkdir -p /root/chillbox/key
 key_name="$(hostname -s | xargs)"
