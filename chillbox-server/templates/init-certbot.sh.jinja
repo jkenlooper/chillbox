@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+set -o errexit
+
+acme_server="${ACME_SERVER:-https://acme-staging-v02.api.letsencrypt.org/directory}"
+
+# Recreate the letsencrypt account directory. The 'certbot register' is done on
+# the local machine interactively.
+acme_hostname="$(echo "$acme_server" | sed -E 's%https://([^/]+)/?.*%\1%')"
+mkdir -p "/etc/letsencrypt/accounts/$acme_hostname"
+cat <<'LETS_ENCRYPT_ACCOUNT_TAR' | base64 -d - | tar x -f - -C "/etc/letsencrypt/accounts/$acme_hostname"
+{{ CERTBOT_ACCOUNT_DIRECTORY_TAR_B64 }}
+LETS_ENCRYPT_ACCOUNT_TAR

@@ -75,6 +75,15 @@ user = "weboftomorrow"
 append-dest = "/usr/lib/share/site1/secret.cfg"
 user = "site1"
 
+# Can also load files as secrets
+[[secret]]
+id = "certbot_account"
+name = "CERTBOT_ACCOUNT"
+type = "file"
+prompt = "Enter the file path for the certbot account that was registered."
+owner = "alice"
+
+
 ### Files ###
 
 [[template]]

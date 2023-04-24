@@ -28,6 +28,13 @@ owner = "bob"
 append-dest = "/home/bob/env-secrets"
 user = "bob"
 
+[[secret]]
+id = "certbot_account_directory_tar_b64"
+name = "CERTBOT_ACCOUNT_DIRECTORY_TAR_B64"
+type = "file"
+prompt = "Enter the file path for the certbot account that was registered (output from running ./register-certbot-account.sh)."
+expires = 2023-08-16
+owner = "bob"
 
 [[template]]
 src = "chillbox-server/templates"
@@ -43,6 +50,13 @@ sensitive = true
 # TODO Should be set with only read/write for user if sensitive
 # chmod 0600 /home/bob/.aws/credentials
 # chown bob:bob /home/bob/.aws/credentials
+
+[[path]]
+id = "init-certbot-with-pre-registered-account"
+src = "chillbox-server:init-certbot.sh.jinja"
+dest = "/home/bob/bin/init-certbot.sh"
+render = true
+sensitive = true
 
 
 [[path]]
@@ -91,6 +105,7 @@ login-users = [ "alice:dev", "bob:dev" ]
 secrets = [ "access_key_id", "secret_access_key" ]
 remote-files = [
   "chillbox-s3-credentials",
+  "init-certbot-with-pre-registered-account",
   "chillbox-nginx-templates",
   "chillbox-bin",
   "chillbox-dep",

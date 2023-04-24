@@ -17,8 +17,6 @@ s3_endpoint_url="${S3_ENDPOINT_URL:-}"
 chillbox_server_name="${CHILLBOX_SERVER_NAME:-}"
 manage_hostname_dns_records="${MANAGE_HOSTNAME_DNS_RECORDS:-false}"
 manage_dns_records="${MANAGE_DNS_RECORDS:-false}"
-# TODO The environment is not currently being used for anything at this time.
-environment="${ENVIRONMENT:-}"
 acme_server="${ACME_SERVER:-}"
 enable_certbot="${ENABLE_CERTBOT:-}"
 
@@ -172,6 +170,7 @@ rm -rf "$s5cmd_tmp_dir"
 chmod 0444 /etc/chillbox/redis/redis.conf
 
 ## RUN_INSTALL_SCRIPTS
+/etc/chillbox/bin/install-s5cmd.sh
 /etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-certbot.sh

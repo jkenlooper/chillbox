@@ -163,10 +163,25 @@ def encrypt_secrets_to_archive(c, state):
                     f"The secret '{secret.get('id')}' exists, but it has expired."
                 )
 
-        secret_in_cleartext = getpass.getpass(prompt=f"{secret.get('prompt')}\n")
-        tmp_secret_file = mkstemp(text=True)[1]
-        with open(tmp_secret_file, "w") as f:
-            f.write(secret_in_cleartext)
+        if secret.get("type") == "file":
+            secret_file_path = input(f"{secret.get('prompt', 'file path: ')}\n")
+            if not secret_file_path:
+                logger.warning(f"No file path entered. Continuing.")
+                continue
+            secret_file = Path(secret_file_path).resolve()
+            if not secret_file.exists():
+                logger.warning(f"No file found at {secret_file_path}")
+                continue
+            tmp_secret_file = mkstemp(text=True)[1]
+            with open(secret_file, "rb") as fin:
+                with open(tmp_secret_file, "wb") as fout:
+                    copyfileobj(fin, fout)
+        else:
+            secret_in_cleartext = getpass.getpass(prompt=f"{secret.get('prompt')}\n")
+            tmp_secret_file = mkstemp(text=True)[1]
+            with open(tmp_secret_file, "w") as f:
+                f.write(secret_in_cleartext)
+
         secret_file_path.parent.mkdir(parents=True, exist_ok=True)
         encrypt_file(c, tmp_secret_file, secret_file_path.resolve())
         shred_file(tmp_secret_file)
