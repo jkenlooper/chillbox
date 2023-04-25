@@ -22,3 +22,6 @@ mkdir -p /srv/chillbox/.well-known/acme-challenge
 chown -R {{ chillbox_user.name }}:{{ chillbox_user.name }} /srv/chillbox/.well-known/acme-challenge
 chmod -R ug+w /srv/chillbox/.well-known/acme-challenge
 
+# Support setting env variables for all users.
+touch /etc/profile.d/chillbox-env.sh
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-env.sh

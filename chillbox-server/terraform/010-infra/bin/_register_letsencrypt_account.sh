@@ -48,22 +48,6 @@ mkdir -p "$(dirname "$encrypted_letsencrypt_account_archive")"
 
 echo "No existing encrypted letsencrypt account archive exists at /var/lib/doterra/secrets/. Creating a new one."
 
-tmp_accounts_tar_b64="$(mktemp)"
-tmp_config="$(mktemp -d)"
-certbot register \
-    --server https://acme-staging-v02.api.letsencrypt.org/directory \
-    --config-dir "$tmp_config" \
-    --work-dir /dev/null \
-    --logs-dir /dev/null \
-    --register-unsafely-without-email
-tar c \
-  -f - \
-  -C "$tmp_config/accounts/$acme_hostname" \
-  directory | base64 > "$tmp_accounts_tar_b64"
-find "$tmp_config" -type f \
-  -exec sh -c 'shred -z -u "$1" || rm -f "$1"' shell {} \;
-echo "$tmp_accounts_tar_b64"
-
 certbot register \
   --user-agent-comment "chillbox/0.0" \
   --server "$ACME_SERVER"

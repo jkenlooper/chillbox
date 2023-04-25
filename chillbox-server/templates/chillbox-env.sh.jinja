@@ -1,0 +1,25 @@
+# The TECH_EMAIL could be used by hosted sites.
+export TECH_EMAIL="{{ TECH_EMAIL }}"
+
+export SITES_ARTIFACT="{{ SITES_ARTIFACT }}"
+
+export AWS_PROFILE="{{ AWS_PROFILE }}"
+export S3_ENDPOINT_URL="{{ S3_ENDPOINT_URL }}"
+export IMMUTABLE_BUCKET_NAME="{{ IMMUTABLE_BUCKET_NAME }}"
+export IMMUTABLE_BUCKET_DOMAIN_NAME="{{ IMMUTABLE_BUCKET_DOMAIN_NAME }}"
+export ARTIFACT_BUCKET_NAME="{{ ARTIFACT_BUCKET_NAME }}"
+
+# The CHILLBOX_SERVER_NAME should be set via 'hostname' command. Typically the
+# server will have already set a hostname, but if that needs to change, it could
+# be set in the user-data script.
+#export CHILLBOX_SERVER_NAME="{{ CHILLBOX_SERVER_NAME }}"
+CHILLBOX_SERVER_NAME="$(hostname)"
+export CHILLBOX_SERVER_NAME
+
+export ACME_SERVER="{{ ACME_SERVER }}"
+export ENABLE_CERTBOT="{{ ENABLE_CERTBOT }}"
+export MANAGE_HOSTNAME_DNS_RECORDS="{{ MANAGE_HOSTNAME_DNS_RECORDS }}"
+export MANAGE_DNS_RECORDS="{{ MANAGE_DNS_RECORDS }}"
+
+# TODO Should use an ENVIRONMENT variable for things?
+export ENVIRONMENT="{{ ENVIRONMENT }}"

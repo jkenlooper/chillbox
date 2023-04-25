@@ -5,7 +5,30 @@ archive-directory = ".chillbox"
 [[user]]
 name = "bob"
 
+# The env variables are commonly set with the chillbox-env.sh.jinja template.
 [env]
+TECH_EMAIL = ""
+
+SITES_ARTIFACT = ""
+
+AWS_PROFILE = "chillbox_object_storage"
+S3_ENDPOINT_URL = ""
+IMMUTABLE_BUCKET_NAME = ""
+IMMUTABLE_BUCKET_DOMAIN_NAME = ""
+ARTIFACT_BUCKET_NAME = ""
+
+# The CHILLBOX_SERVER_NAME should be set via the 'hostname' command on the server.
+#CHILLBOX_SERVER_NAME = ""
+
+ACME_SERVER = "https://acme-staging-v02.api.letsencrypt.org/directory"
+#ACME_SERVER = "https://acme-v02.api.letsencrypt.org/directory"
+# ENABLE_CERTBOT is used by bin/update.sh
+ENABLE_CERTBOT = "true"
+# MANAGE_HOSTNAME_DNS_RECORDS and MANAGE_DNS_RECORDS are used by bin/issue-and-install-certs.sh
+MANAGE_HOSTNAME_DNS_RECORDS = "false"
+MANAGE_DNS_RECORDS = "false"
+
+# TODO Should use an ENVIRONMENT variable for things?
 ENVIRONMENT = "development"
 
 [[secret]]
@@ -58,6 +81,11 @@ dest = "/home/bob/bin/init-certbot.sh"
 render = true
 sensitive = true
 
+[[path]]
+id = "profile-d-chillbox-env-sh"
+src = "chillbox-server:chillbox-env.sh.jinja"
+dest = "/etc/profile.d/chillbox-env.sh"
+render = true
 
 [[path]]
 id = "chillbox-nginx-templates"
@@ -106,6 +134,7 @@ secrets = [ "access_key_id", "secret_access_key" ]
 remote-files = [
   "chillbox-s3-credentials",
   "init-certbot-with-pre-registered-account",
+  "profile-d-chillbox-env-sh",
   "chillbox-nginx-templates",
   "chillbox-bin",
   "chillbox-dep",
