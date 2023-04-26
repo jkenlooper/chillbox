@@ -95,22 +95,7 @@ check_args_and_environment_vars() {
 }
 
 check_for_required_commands() {
-  for required_command in \
-    realpath \
-    docker \
-    jq \
-    make \
-    md5sum \
-    tar \
-    ; do
-    command -v "$required_command" > /dev/null || (echo "ERROR $script_name: Requires '$required_command' command." && exit 1)
-  done
-
-  has_wget="$(command -v wget || echo "")"
-  has_curl="$(command -v curl || echo "")"
-  if [ -z "$has_wget" ] && [ -z "$has_curl" ]; then
-    echo "WARNING $script_name: Downloading site artifact files require 'wget' or 'curl' commands. Neither were found on this system."
-  fi
+# Moved to build-sites-artifact.sh
 }
 
 init_and_source_chillbox_config() {
@@ -232,63 +217,8 @@ HERE
   fi
 }
 
-download_file() {
-  has_wget="$(command -v wget || echo "")"
-  has_curl="$(command -v curl || echo "")"
-  remote_file_url="$1"
-  output_file="$2"
-  test -n "$remote_file_url" || (echo "ERROR $script_name: no remote file URL arg (first arg)" && exit 1)
-  test -n "$output_file" || (echo "ERROR $script_name: no output file arg (second arg)" && exit 1)
-  test ! -e "$output_file" || (echo "ERROR $script_name: output file already exists: $output_file" && exit 1)
-  output_file_dir="$(dirname "$output_file")"
-  mkdir -p "$output_file_dir"
-  if [ -n "$has_wget" ]; then
-    wget -q -O "$output_file" "$remote_file_url" \
-      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
-  elif [ -n "$has_curl" ]; then
-    curl --location --output "$output_file" --silent --show-error --fail "$remote_file_url" \
-      || (rm -f "$output_file" && echo "ERROR $script_name: Failed to download from URL $remote_file_url" && exit 1)
-  else
-    echo "ERROR $script_name: No wget or curl commands found."
-    exit 1
-  fi
-}
-
 create_example_site_tar_gz() {
-  # UPKEEP due: "2023-05-09" label: "chillbox example site (site1)" interval: "+4 months"
-  # https://github.com/jkenlooper/chillbox-example-site1/releases
-  example_site_version="0.1.0-alpha.13"
-
-  printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
-  printf '%s\n' "Deploy using the example sites artifact? [y/n]"
-  read -r confirm_using_example_sites_artifact
-  if [ "${confirm_using_example_sites_artifact}" != "y" ]; then
-    echo "Update the SITES_ARTIFACT_URL variable in $env_config to not be set to 'example'."
-    echo "Exiting"
-    exit 2
-  fi
-  echo "INFO $script_name: Continuing to use example sites artifact."
-  tmp_example_sites_dir="$(mktemp -d)"
-  trap 'rm -rf "$tmp_example_sites_dir"' EXIT
-  example_sites_version="$(make --silent --directory="$project_dir" --no-print-directory inspect.VERSION)"
-  echo "example_sites_version ($example_sites_version)"
-  export SITES_ARTIFACT_URL="$tmp_example_sites_dir/chillbox-example-sites-$example_sites_version.tar.gz"
-  # Copy and modify the site json release field for this example site so it can
-  # be a file path instead of the https://example.test/ URL.
-  cp -R "$project_dir/example/sites" "$tmp_example_sites_dir/"
-  if [ ! -e "$chillbox_state_home/site1-$example_site_version.tar.gz" ]; then
-    echo "INFO $script_name: No local cached copy of example site1. Downloading new one from https://github.com/jkenlooper/chillbox-example-site1/releases"
-    download_file \
-      "https://github.com/jkenlooper/chillbox-example-site1/releases/download/$example_site_version/site1.tar.gz" \
-      "$chillbox_state_home/site1-$example_site_version.tar.gz"
-  fi
-  echo "INFO $script_name: Updating example site1.site.json to use $chillbox_state_home/site1-$example_site_version.tar.gz"
-  jq \
-    --arg jq_release_file_path "$chillbox_state_home/site1-$example_site_version.tar.gz" \
-    '.release |= $jq_release_file_path' \
-    < "$project_dir/example/sites/site1.site.json" \
-    > "$tmp_example_sites_dir/sites/site1.site.json"
-  tar c -z -f "$SITES_ARTIFACT_URL" -C "$tmp_example_sites_dir" sites
+# Moved to build-sites-artifact.sh
 }
 
 validate_environment_vars() {
