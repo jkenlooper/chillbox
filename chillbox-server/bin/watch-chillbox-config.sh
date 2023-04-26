@@ -2,6 +2,6 @@
 
 set -o errexit
 
-echo "Starting watch process on /etc/chillbox/chillbox.config file."
+echo "Starting watch process on /etc/profile.d/chillbox-config.sh file."
 
-printf '/etc/chillbox/chillbox.config' | entr -n -p -r /etc/chillbox/bin/update.sh
+printf '/etc/profile.d/chillbox-config.sh' | entr -n -p -r /etc/chillbox/bin/update.sh

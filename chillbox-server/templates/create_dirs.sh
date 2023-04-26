@@ -25,3 +25,5 @@ chmod -R ug+w /srv/chillbox/.well-known/acme-challenge
 # Support setting env variables for all users.
 touch /etc/profile.d/chillbox-env.sh
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-env.sh
+touch /etc/profile.d/chillbox-config.sh
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-config.sh

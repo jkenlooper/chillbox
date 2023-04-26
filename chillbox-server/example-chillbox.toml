@@ -9,6 +9,11 @@ name = "bob"
 [env]
 TECH_EMAIL = ""
 
+# Updating SITES_ARTIFACT and uploading profile-d-chillbox-config-sh path will
+# trigger the update.sh script.
+# TODO the SITES_ARTIFACT should be in s3
+# ARTIFACT_BUCKET_NAME/_sites/SITES_ARTIFACT since a process needs to 'build'
+# that artifact file.
 SITES_ARTIFACT = ""
 
 AWS_PROFILE = "chillbox_object_storage"
@@ -88,6 +93,12 @@ dest = "/etc/profile.d/chillbox-env.sh"
 render = true
 
 [[path]]
+id = "profile-d-chillbox-config-sh"
+src = "chillbox-server:chillbox-config.sh.jinja"
+dest = "/etc/profile.d/chillbox-config.sh"
+render = true
+
+[[path]]
 id = "chillbox-nginx-templates"
 src = "chillbox-server/nginx/templates"
 dest = "/etc/chillbox/nginx/templates"
@@ -135,6 +146,7 @@ remote-files = [
   "chillbox-s3-credentials",
   "init-certbot-with-pre-registered-account",
   "profile-d-chillbox-env-sh",
+  "profile-d-chillbox-config-sh",
   "chillbox-nginx-templates",
   "chillbox-bin",
   "chillbox-dep",
