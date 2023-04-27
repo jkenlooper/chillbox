@@ -1,5 +1,5 @@
---- redis.conf
-+++ chillbox.redis.conf
+--- non-patched-redis-7_0.conf
++++ redis.conf
 @@ -135,7 +135,7 @@
  
  # Accept connections on the specified port, default is 6379 (IANA #815344).

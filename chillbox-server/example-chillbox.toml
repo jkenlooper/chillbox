@@ -114,9 +114,9 @@ src = "chillbox-server/dep"
 dest = "/var/lib/chillbox/python"
 
 [[path]]
-id = "chillbox-redis"
-src = "chillbox-server/redis"
-dest = "/etc/chillbox/redis"
+id = "chillbox-redis-conf"
+src = "chillbox-server/redis/redis.conf"
+dest = "/etc/chillbox/redis/redis.conf"
 
 [[path]]
 id = "chillbox-nginx-conf"
@@ -150,7 +150,7 @@ remote-files = [
   "chillbox-nginx-templates",
   "chillbox-bin",
   "chillbox-dep",
-  "chillbox-redis",
+  "chillbox-redis-conf",
   "chillbox-nginx-conf",
   "chillbox-nginx-default-conf",
   "chillbox-nginx-ssl_cert_include",
