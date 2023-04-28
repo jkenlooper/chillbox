@@ -142,7 +142,7 @@ create_dirs() {
 ## This is to support upload of path objects defined in the chillbox config toml.
 #}
 cat <<'CHILLBOXUSERDATACREATEDIRS' > "$work_dir/chillbox-user-data-create_dirs.sh"
-{%- include [create_dirs_script, 'create_dirs.sh', 'local:create_dirs.sh', 'chillbox-server:create_dirs.sh'] ignore missing -%}
+{% include [create_dirs_script, 'create_dirs.sh', 'local:create_dirs.sh', 'chillbox-server:create_dirs.sh'] ignore missing %}
 CHILLBOXUSERDATACREATEDIRS
 #{#-
 ## Only need to execute the create_dirs.sh script if it was defined.

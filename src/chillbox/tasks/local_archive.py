@@ -164,13 +164,9 @@ def encrypt_secrets_to_archive(c, state):
                 )
 
         if secret.get("type") == "file":
-            secret_file_path = input(f"{secret.get('prompt', 'file path: ')}\n")
-            if not secret_file_path:
-                logger.warning(f"No file path entered. Continuing.")
-                continue
-            secret_file = Path(secret_file_path).resolve()
-            if not secret_file.exists():
-                logger.warning(f"No file found at {secret_file_path}")
+            secret_file = Path(input(f"{secret.get('prompt', 'file path: ')}\n"))
+            if not secret_file.is_file():
+                logger.warning(f"No file at path entered. Continuing.")
                 continue
             tmp_secret_file = mkstemp(text=True)[1]
             with open(secret_file, "rb") as fin:
@@ -280,7 +276,7 @@ def process_path_to_archive(c):
             elif src_path.is_dir():
                 # Create tar file
                 with tarfile.open(secure_temp_file, "w:gz") as tar:
-                    tar.add(src_path.resolve(), arcname=path["src"])
+                    tar.add(src_path.resolve(), arcname=src_path.name)
 
         encrypt_file(c, secure_temp_file, id_path.resolve())
         shred_file(secure_temp_file)

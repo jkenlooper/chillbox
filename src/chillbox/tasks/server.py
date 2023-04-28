@@ -253,6 +253,7 @@ def upload(c):
                         logger.info(f"Unzipping and extracting tar file {tmp_upload_path} to {target_path}")
                         target_dir = Path(target_path).resolve(strict=False)
                         rc.run(f"mkdir -p {target_dir}")
+                        rc.run(f"chmod u+w {target_dir}")
                         rc.run(f"tar x -z -f {tmp_upload_path} -C {target_dir} --strip-components 1")
                     else:
                         logger.info(f"Unzipping file {tmp_upload_path} to {target_path}")
