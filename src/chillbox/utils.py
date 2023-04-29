@@ -121,7 +121,7 @@ def get_user_server_list(server_list, current_user):
         if server.get("owner") and server.get("owner") == current_user:
             return True
         login_users = server.get("login-users", [])
-        return any(map(lambda x: x.startswith(current_user), login_users))
+        return any(map(lambda x: x == current_user, login_users))
 
     user_server_list = list(filter(user_has_access, server_list))
     return user_server_list

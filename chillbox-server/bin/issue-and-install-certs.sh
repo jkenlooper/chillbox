@@ -90,6 +90,9 @@ get_cert() {
       && [ -e "/etc/letsencrypt/live/$cert_name/privkey.pem" ]; then
         has_cert="yes"
     fi
+
+    # The crontab for certbot renew is set in chillbox-init.sh.
+
   fi
 
   if [ "$has_cert" = "yes" ]; then

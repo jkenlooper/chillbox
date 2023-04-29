@@ -141,7 +141,7 @@ ip = "127.0.0.1"
 ssh_port = 10022
 name = "local"
 owner = "bob"
-login-users = [ "alice:dev", "bob:dev" ]
+login-users = [ "alice", "bob" ]
 secrets = [ "access_key_id", "secret_access_key" ]
 remote-files = [
   "chillbox-s3-credentials",

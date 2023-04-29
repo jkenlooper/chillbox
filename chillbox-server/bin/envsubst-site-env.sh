@@ -4,12 +4,10 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
-# The .env file is created from chillbox-init.sh script. Using sed here to avoid
-# duplicating that list of env variable names here.
-env_file="${ENV_FILE-/home/dev/.env}"
-chillbox_config_file="${CHILLBOX_CONFIG_FILE-/etc/chillbox/chillbox.config}"
+env_file="${ENV_FILE-/etc/profile.d/chillbox-env.sh}"
+chillbox_config_file="${CHILLBOX_CONFIG_FILE-/etc/profile.d/chillbox-config.sh}"
 
-env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\)=.*/\1/p' "$env_file" "$chillbox_config_file")"
+env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\).*/\1/p' "$env_file" "$chillbox_config_file")"
 env_names="$(printf "%s" "$env_names_to_expand" | sed 's/./$&/; /\S/!d' | xargs)"
 
 usage() {

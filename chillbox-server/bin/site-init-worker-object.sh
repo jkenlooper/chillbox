@@ -8,6 +8,8 @@ worker_obj="$1"
 tmp_artifact="$2"
 slugdir="$3"
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
 test -n "${worker_obj}" || (echo "ERROR $script_name: worker_obj variable is empty" && exit 1)
 echo "INFO $script_name: Using worker_obj '${worker_obj}'"
 
@@ -63,7 +65,7 @@ if [ -n "$worker_secrets_config" ]; then
   worker_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$worker_name/$worker_secrets_config"
   worker_secrets_config_dir="$(dirname "$worker_secrets_config_file")"
   mkdir -p "$worker_secrets_config_dir"
-  chown -R "$SLUGNAME":dev "$worker_secrets_config_dir"
+  chown -R "$SLUGNAME":"$chillbox_owner" "$worker_secrets_config_dir"
   chmod -R 770 "$worker_secrets_config_dir"
 
   "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$worker_name/$worker_secrets_config"
@@ -105,7 +107,7 @@ if [ "${worker_lang_template}" = "python-worker" ]; then
   "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    -r /etc/chillbox/pip-requirements.txt"
+    -r /etc/chillbox/pip-requirements.txt
   # The requirements.txt file should include find-links that are relative to the
   # worker_name directory. Ideally, this is where the deps/ directory is
   # used.

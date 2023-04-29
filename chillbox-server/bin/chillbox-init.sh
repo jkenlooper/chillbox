@@ -8,6 +8,8 @@ if [ -e /etc/chillbox/init-date.txt ]; then
   exit 1
 fi
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
 tech_email="${TECH_EMAIL:-}"
 immutable_bucket_name="${IMMUTABLE_BUCKET_NAME:-}"
 immutable_bucket_domain_name="${IMMUTABLE_BUCKET_DOMAIN_NAME:-}"
@@ -143,14 +145,14 @@ rc-service nginx start
 
 if [ "$enable_certbot" = "true" ]; then
   mkdir -p /etc/chillbox/sites/.has-certs
-  chown -R dev:dev /etc/chillbox/sites/.has-certs
-  su dev -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
+  chown -R "$chillbox_owner" /etc/chillbox/sites/.has-certs
+  su "$chillbox_owner" -c '/etc/chillbox/bin/issue-and-install-certs.sh' || echo "WARNING: Failed to run issue-and-install-certs.sh"
   /etc/chillbox/bin/reload-templates.sh
 
   # Renew after issue-and-install-certs.sh in case it downloaded an almost expired
   # cert from s3 object storage. This helps prevent a gap from happening if the
   # cron job to renew doesn't happen in time.
-  su dev -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
+  su "$chillbox_owner" -c "certbot renew --user-agent-comment 'chillbox/0.0' --server '$ACME_SERVER'"
 
   # TODO Set a certbot renew hook to upload the renewed certs to s3 and set
   # life-cycle rule to expire them in 30 days. Add the s3 upload script to the
@@ -163,10 +165,10 @@ if [ "$enable_certbot" = "true" ]; then
   # https://letsencrypt.org/docs/integration-guide/#when-to-renew
 
   # Set a random time that the certbot renew happens to avoid hitting limits with
-  # letsencrypt ACME server. The dev user is used to run certbot renew commands.
+  # letsencrypt ACME server. The user is used to run certbot renew commands.
   random_day_of_week="$(awk 'BEGIN{srand(); print int(rand()*7)}')"
   random_start_hour="$(awk 'BEGIN{srand(); print int(rand()*11)}')"
-  echo "0 $random_start_hour * * $random_day_of_week su dev -c \"awk 'BEGIN{srand(); print int(rand()*((60*60*12)+1))}' | xargs sleep && certbot renew --server '$acme_server' --user-agent-comment 'chillbox/0.0' -q\" && nginx -t && rc-service nginx reload" \
+  echo "0 $random_start_hour * * $random_day_of_week su "$chillbox_owner" -c \"awk 'BEGIN{srand(); print int(rand()*((60*60*12)+1))}' | xargs sleep && certbot renew --server '$acme_server' --user-agent-comment 'chillbox/0.0' -q\" && nginx -t && rc-service nginx reload" \
     | tee -a /etc/crontabs/root
 fi
 

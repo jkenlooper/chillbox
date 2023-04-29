@@ -6,6 +6,8 @@ script_name="$(basename "$0")"
 tmp_artifact="$1"
 slugdir="$2"
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
 test -n "${tmp_artifact}" || (echo "ERROR $script_name: tmp_artifact variable is empty" && exit 1)
 test -f "${tmp_artifact}" || (echo "ERROR $script_name: The $tmp_artifact is not a file" && exit 1)
 
@@ -34,12 +36,12 @@ chmod 0770 "/var/lib/redis/$SLUGNAME"
 mkdir -p "/etc/chillbox/redis/$SLUGNAME/"
 # The users.acl file should be extracted from the tar file.
 tar x -z -C "/etc/chillbox/redis/$SLUGNAME/" -f "$tmp_artifact" --strip-components=2 "$SLUGNAME/redis"
-# Generate a random password that can be manually used by the dev user.
-dev_redis_pass="$(openssl rand 1111 | base64 -w 0 | tr -d '[:punct:]')"
-# The 'dev' user is meant to only be used when troubleshooting or investigating.
-cat <<APPEND_DEV_USER >> "/etc/chillbox/redis/$SLUGNAME/users.acl"
-user dev on >$dev_redis_pass allchannels allkeys +@all
-APPEND_DEV_USER
+# Generate a random password that can be manually used by the chillbox owner.
+cb_owner_redis_pass="$(openssl rand 1111 | base64 -w 0 | tr -d '[:punct:]')"
+# The chillbox owner is meant to only be used when troubleshooting or investigating.
+cat <<APPEND_CB_OWNER_USER >> "/etc/chillbox/redis/$SLUGNAME/users.acl"
+user $chillbox_owner on >$cb_owner_redis_pass allchannels allkeys +@all
+APPEND_CB_OWNER_USER
 cp /etc/chillbox/redis/redis.conf "/etc/chillbox/redis/$SLUGNAME/"
 chown -R "$SLUGNAME":"$SLUGNAME" "/etc/chillbox/redis/$SLUGNAME/"
 chmod -R 0700 "/etc/chillbox/redis/$SLUGNAME/"

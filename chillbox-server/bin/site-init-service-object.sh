@@ -8,6 +8,8 @@ service_obj="$1"
 tmp_artifact="$2"
 slugdir="$3"
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
 test -n "${service_obj}" || (echo "ERROR $script_name: service_obj variable is empty" && exit 1)
 echo "INFO $script_name: Using service_obj '${service_obj}'"
 
@@ -69,7 +71,7 @@ if [ -n "$service_secrets_config" ]; then
   service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config"
   service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
   mkdir -p "$service_secrets_config_dir"
-  chown -R "$SLUGNAME":dev "$service_secrets_config_dir"
+  chown -R "$SLUGNAME":"$chillbox_owner" "$service_secrets_config_dir"
   chmod -R 770 "$service_secrets_config_dir"
 
   "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_name/$service_secrets_config"

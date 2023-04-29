@@ -4,6 +4,8 @@ set -o errexit
 
 script_name="$(basename "$0")"
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
 sites_artifact_file=${1:-""}
 
 export SITES_ARTIFACT="${SITES_ARTIFACT}"

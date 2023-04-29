@@ -5,6 +5,11 @@ set -o errexit
 bin_dir="$(dirname "$0")"
 script_name="$(basename "$0")"
 
+chillbox_owner="$(cat /var/lib/chillbox/owner)"
+
+echo"TODO: Change how secrets are managed"
+exit 1
+
 test -n "${SLUGNAME}" || (echo "ERROR $script_name: SLUGNAME variable is empty" && exit 1)
 echo "INFO $script_name: Using slugname '${SLUGNAME}'"
 
@@ -45,8 +50,8 @@ decrypted_file="/run/tmp/chillbox_secrets/$secrets_config_path"
 decrypted_file_dir="$(dirname "$decrypted_file")"
 mkdir -p "$decrypted_file_dir"
 chmod 770 "$decrypted_file_dir"
-chown -R "$SLUGNAME":dev "$decrypted_file_dir"
-chown dev:dev "$tmp_encrypted_secret_config"
+chown -R "$SLUGNAME":"$chillbox_owner" "$decrypted_file_dir"
+chown "$chillbox_owner":"$chillbox_owner" "$tmp_encrypted_secret_config"
 echo "INFO $script_name: Decrypting file at s3://$ARTIFACT_BUCKET_NAME/chillbox/encrypted-secrets/$secrets_config_dir/$hostname/$secrets_config_file_name to $decrypted_file"
 
 su dev -c "$bin_dir/decrypt-file -k '/home/dev/.local/share/chillbox/keys/$key_name.private.pem' -i '$tmp_encrypted_secret_config' '$decrypted_file'"

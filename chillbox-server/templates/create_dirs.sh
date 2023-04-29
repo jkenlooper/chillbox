@@ -5,11 +5,27 @@ set -o errexit
 
 mkdir -p /etc/chillbox
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/chillbox
-chmod 0775 /etc/chillbox
+chmod 0755 /etc/chillbox
 
+# Support chillbox scripts that will execute with root privileges, but need to
+# drop to the owner of the server when executing other commands.
 mkdir -p /var/lib/chillbox
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox
-chmod 0775 /var/lib/chillbox
+printf "%s" '{{ chillbox_user.name }}' > /var/lib/chillbox/owner
+chmod 0444 /var/lib/chillbox/owner
+
+# Support PATH_SENSITIVE from chillbox upload commands.
+mkdir -p /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
+chmod 0700 /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
+
+# Support PATH_SECRETS from chillbox upload commands.
+mkdir -p /var/lib/chillbox/secrets/{{ chillbox_user.name }}
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/secrets/{{ chillbox_user.name }}
+chmod 0700 /var/lib/chillbox/secrets/{{ chillbox_user.name }}
+
+mkdir -p /var/lib/chillbox/python
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/python
+chmod 0755 /var/lib/chillbox/python
 
 mkdir -p /etc/nginx
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/nginx.conf

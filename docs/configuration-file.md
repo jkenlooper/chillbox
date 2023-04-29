@@ -121,7 +121,7 @@ dest = "/example/sub/docs.tar.gz"
 ip = "122.33.44.55"
 name = "example-stream-server"
 # For this example, 'bob' would not have access to this server.
-login-users = [ "alice:dev" ]
+login-users = [ "alice" ]
 secrets = [ "example_secret" ]
 remote-files = [ "stream-nginx-conf", "bootstrap-stream-nginx-server.sh" ]
 [server.user-data]
@@ -140,7 +140,7 @@ nft_script = "example.nft"
 [[server]]
 ip = "122.3.4.5"
 name = "example-web-server-for-bob"
-login-users = [ "alice:dev", "bob:dev" ]
+login-users = [ "alice", "bob" ]
 secrets = [ "example_secret" ]
 remote-files = [ "chillbox-nginx-conf", "bootstrap-chillbox-server.sh" ]
 ```
