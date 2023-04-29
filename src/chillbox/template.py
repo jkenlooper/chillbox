@@ -18,7 +18,6 @@ from chillbox.errors import (
 )
 
 
-
 class Renderer:
     """
     Provides a template renderer that loads templates from multiple locations on the file system.

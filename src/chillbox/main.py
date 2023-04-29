@@ -60,7 +60,6 @@ class ChillboxProgram(Program):
         # tasks.
         self.config["chillbox-config"] = self.args["chillbox-config"].value
 
-
     def cleanup(self):
         """
         Clean up the temporary chillbox asymmetric private key that was
@@ -74,10 +73,14 @@ class ChillboxProgram(Program):
         with open(statefile_json, "r") as f:
             state = json.load(f)
 
-        local_chillbox_asymmetric_key_private = state.get("local_chillbox_asymmetric_key_private")
+        local_chillbox_asymmetric_key_private = state.get(
+            "local_chillbox_asymmetric_key_private"
+        )
 
         if local_chillbox_asymmetric_key_private:
-            logger.info(f"Removing temp private key {local_chillbox_asymmetric_key_private=}")
+            logger.info(
+                f"Removing temp private key {local_chillbox_asymmetric_key_private=}"
+            )
             temp_private_key = Path(local_chillbox_asymmetric_key_private)
             remove_temp_files(paths=[temp_private_key])
 

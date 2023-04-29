@@ -30,7 +30,9 @@ def ssh_unlock(c):
     # here.
     remove_temp_files(paths=[ssh_config])
 
-    ssh_config = generate_ssh_config_temp(c, current_user=state.current_user, identity_file=state.identity_file_temp)
+    ssh_config = generate_ssh_config_temp(
+        c, current_user=state.current_user, identity_file=state.identity_file_temp
+    )
     state.ssh_config_temp = ssh_config
 
     logger.info(

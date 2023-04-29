@@ -10,7 +10,11 @@ except ModuleNotFoundError:
 
 from jinja2.exceptions import TemplateNotFound
 
-from chillbox.errors import ChillboxInvalidConfigError, ChillboxMissingFileError, ChillboxTemplateError
+from chillbox.errors import (
+    ChillboxInvalidConfigError,
+    ChillboxMissingFileError,
+    ChillboxTemplateError,
+)
 from chillbox.local_checks import check_required_commands
 from chillbox.utils import logger, get_file_system_loader
 
@@ -20,6 +24,7 @@ required_keys_path = set(["id", "src", "dest"])
 # TODO: Reference the docs/configuration-file.md file that is hosted at a URL instead?
 chillbox_config_more_info = "Please see documentation at docs/configuration-file.md"
 
+
 def src_path_is_template(src, template_list, working_directory):
     "Return True if src path is a template"
 
@@ -28,6 +33,7 @@ def src_path_is_template(src, template_list, working_directory):
         if len(prefix_split) > 1:
             if prefix_split[0].find("/") == -1:
                 return True
+
     src_path = Path(working_directory).joinpath(src)
     if src.startswith(("/", "./")):
         return False
@@ -57,7 +63,9 @@ def src_path_is_template(src, template_list, working_directory):
             continue
 
         if src_path.exists():
-            logger.warning(f"The src path exists at: {src_path.resolve()} and is a file in the template list. This path can't be used as a template because it is ambiguous.")
+            logger.warning(
+                f"The src path exists at: {src_path.resolve()} and is a file in the template list. This path can't be used as a template because it is ambiguous."
+            )
             return False
 
         # fs_loader was able to load the template file so it must be an actual
@@ -99,7 +107,12 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         )
 
     ## template
-    template_prefixes = list(map(lambda x: x["prefix"], filter(lambda x: x.get("prefix"), data.get("template", []))))
+    template_prefixes = list(
+        map(
+            lambda x: x["prefix"],
+            filter(lambda x: x.get("prefix"), data.get("template", [])),
+        )
+    )
     if len(template_prefixes) != len(set(template_prefixes)):
         raise ChillboxInvalidConfigError(
             "INVALID: Duplicate template prefix found. The prefix used for each template must be unique."
@@ -118,7 +131,9 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             )
 
         # Check if src is a template else check if src exists
-        if path.get("render") and src_path_is_template(path["src"], data.get("template", []), working_directory):
+        if path.get("render") and src_path_is_template(
+            path["src"], data.get("template", []), working_directory
+        ):
             logger.debug(f"src path ({path['src']}) is a template file")
         else:
             src_path = working_directory.joinpath(path["src"]).resolve()
@@ -129,10 +144,14 @@ def validate_and_load_chillbox_config(chillbox_config_file):
                     f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that is outside the working directory: {working_directory.resolve()}"
                 )
             if not src_path.exists():
-                raise ChillboxInvalidConfigError(f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that does not exist.")
+                raise ChillboxInvalidConfigError(
+                    f"INVALID: The path with id of '{path['id']}' has a src ({src_path}) that does not exist."
+                )
 
         if path.get("context") and not path.get("render"):
-            logger.warning(f"The path with id of '{path['id']}' has 'context' value defined, but will not be used since 'render' value is not true.")
+            logger.warning(
+                f"The path with id of '{path['id']}' has 'context' value defined, but will not be used since 'render' value is not true."
+            )
 
         if not Path(path["dest"]).is_absolute():
             raise ChillboxInvalidConfigError(

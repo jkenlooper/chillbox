@@ -41,7 +41,9 @@ def shred_file(file):
         logger.warning(f"The file ({file}) does not exist. Nothing to shred.")
         return
     if Path(file).is_dir():
-        raise ChillboxExit(f"ERROR: The path ({file}) is a directory. Shredding files in a directory is not supported.")
+        raise ChillboxExit(
+            f"ERROR: The path ({file}) is a directory. Shredding files in a directory is not supported."
+        )
 
     try:
         result = subprocess.run(
@@ -104,7 +106,9 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
         # program to keep it safe since it is encrypted with the gpg key. Raise
         # an exception here in case there is code that tries to decrypt
         # something without having the private key available.
-        raise RuntimeError("ERROR: The local chillbox asymmetric private key does not exist. Has it been decrypted?")
+        raise RuntimeError(
+            "ERROR: The local chillbox asymmetric private key does not exist. Has it been decrypted?"
+        )
 
     result = c.run(
         f"{decrypt_file_script} -k {c.local_chillbox_asymmetric_key_private} -i {ciphertext_file} {plaintext_file}",
@@ -115,7 +119,8 @@ def decrypt_file(c, plaintext_file, ciphertext_file):
 
 
 def get_user_server_list(server_list, current_user):
-    ""
+    """"""
+
     def user_has_access(server):
         "The current user has access to a server if they are the owner or in the list of login-users."
         if server.get("owner") and server.get("owner") == current_user:
@@ -125,4 +130,3 @@ def get_user_server_list(server_list, current_user):
 
     user_server_list = list(filter(user_has_access, server_list))
     return user_server_list
-

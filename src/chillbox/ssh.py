@@ -26,19 +26,23 @@ def generate_ssh_config_temp(c, current_user, identity_file):
 
     template = get_template("ssh_config.jinja")
     with open(ssh_config, "w") as f:
-        f.write(template.render({
-            "ssh_config": ssh_config,
-            "current_user": current_user,
-            "known_hosts_file": user_known_hosts_file,
-            "identity_file": identity_file,
-            "user_server_list": user_server_list,
-        }))
+        f.write(
+            template.render(
+                {
+                    "ssh_config": ssh_config,
+                    "current_user": current_user,
+                    "known_hosts_file": user_known_hosts_file,
+                    "identity_file": identity_file,
+                    "user_server_list": user_server_list,
+                }
+            )
+        )
 
     return ssh_config
 
 
 def cleanup_ssh_config_temp(state):
-    ""
+    """"""
     # Always delete any older ones first
     remove_temp_files(paths=[state.ssh_config_temp, state.identity_file_temp])
     state.ssh_config_temp = None

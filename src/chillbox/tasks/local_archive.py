@@ -21,7 +21,13 @@ from chillbox.errors import (
     ChillboxInvalidConfigError,
     ChillboxMissingFileError,
 )
-from chillbox.utils import logger, remove_temp_files, shred_file, encrypt_file, decrypt_file
+from chillbox.utils import (
+    logger,
+    remove_temp_files,
+    shred_file,
+    encrypt_file,
+    decrypt_file,
+)
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
@@ -124,9 +130,10 @@ def init_local_chillbox_asymmetric_key(c, state):
     c.local_chillbox_asymmetric_key_private = decrypt_file_with_gpg(
         c, gpg_encrypted_asymmetric_key_path
     )
-    state.local_chillbox_asymmetric_key_private = c.local_chillbox_asymmetric_key_private
+    state.local_chillbox_asymmetric_key_private = (
+        c.local_chillbox_asymmetric_key_private
+    )
     logger.info("Set the local chillbox asymmetric key")
-
 
 
 def encrypt_secrets_to_archive(c, state):
@@ -208,12 +215,13 @@ def load_secrets(c, state):
                 f"Skipping the secret '{secret.get('id')}' since it is not owned by {state.current_user}."
             )
             continue
-        secret_file_path = archive_directory.joinpath("secrets", secret["id"] + ".aes").resolve()
+        secret_file_path = archive_directory.joinpath(
+            "secrets", secret["id"] + ".aes"
+        ).resolve()
         secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
         secrets[secret["name"]] = secret_in_plaintext
 
     c.secrets = secrets
-
 
 
 def init_template_renderer(c):
@@ -255,18 +263,26 @@ def process_path_to_archive(c):
         id_path = archive_directory.joinpath("path", path["id"])
         id_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if path.get("render") and src_path_is_template(path["src"], template_list, c.working_directory):
+        if path.get("render") and src_path_is_template(
+            path["src"], template_list, c.working_directory
+        ):
             context = {}
             context.update(c.env)
             context.update(c.secrets)
             context.update(path.get("context", {}))
             with gzip.open(secure_temp_file, "wb") as f:
-                f.write(bytes(c.renderer.render(path["src"], context), encoding="utf-8"))
+                f.write(
+                    bytes(c.renderer.render(path["src"], context), encoding="utf-8")
+                )
         else:
             if path.get("render"):
-                logger.warning(f"The path with id '{path['id']}' has 'render' set but path is not being processed as a template")
+                logger.warning(
+                    f"The path with id '{path['id']}' has 'render' set but path is not being processed as a template"
+                )
             if path.get("context"):
-                logger.warning(f"The path with id '{path['id']}' has 'context' set but path is not being processed as a template.")
+                logger.warning(
+                    f"The path with id '{path['id']}' has 'context' set but path is not being processed as a template."
+                )
             src_path = Path(path["src"])
             if src_path.is_file():
                 # Compress the file
@@ -293,21 +309,22 @@ def process_path_to_archive(c):
 
 
 def generate_password_hash(c, user):
-    ""
+    """"""
     print(f"No password_hash set for user '{user}'. Enter new password for this user.")
-    result = c.run(
-        "openssl passwd -6", hide=True
-    )
+    result = c.run("openssl passwd -6", hide=True)
     return result.stdout.strip()
 
+
 def user_password_hash_init(c, state):
-    ""
+    """"""
     if state.current_user_data.get("password_hash"):
         return
 
     password_hash = generate_password_hash(c, state.current_user)
     if not password_hash:
-        raise ChillboxServerUserDataError(f"No password_hash available for '{state.current_user}'")
+        raise ChillboxServerUserDataError(
+            f"No password_hash available for '{state.current_user}'"
+        )
 
     merged_current_user_data = {}
     merged_current_user_data.update(state.current_user_data)
@@ -324,17 +341,20 @@ def generate_and_encrypt_ssh_key(c, user):
     """
     key_file_name = f"{user}.chillbox.pem"
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
+    encrypted_private_key_file = archive_directory.joinpath(
+        "ssh", key_file_name + ".aes"
+    )
 
     if encrypted_private_key_file.exists():
-        raise ChillboxMissingFileError("ERROR: Not implemented. TODO: Handle the case if the statefile was deleted which had the public ssh key.")
+        raise ChillboxMissingFileError(
+            "ERROR: Not implemented. TODO: Handle the case if the statefile was deleted which had the public ssh key."
+        )
         # plaintext_file = Path(mkstemp()[1])
         # decrypt_file(c, encrypted_private_key_file, plaintext_file)
 
         # result = c.run(f"ssh-keygen -f {plaintext_file} -y", hide=True)
         # shredfile(plaintext_file)
         # return result.stdout
-
 
     temp_dir = Path(mkdtemp())
     key_file = temp_dir.joinpath(key_file_name)
@@ -366,11 +386,17 @@ def user_ssh_init(c, state):
 
     key_file_name = f"{state.current_user}.chillbox.pem"
     archive_directory = Path(c.chillbox_config["archive-directory"])
-    encrypted_private_key_file = archive_directory.joinpath("ssh", key_file_name + ".aes")
+    encrypted_private_key_file = archive_directory.joinpath(
+        "ssh", key_file_name + ".aes"
+    )
 
     merged_current_user_data = {}
     logger.debug(f"{c.chillbox_config.get('user')=}")
-    current_user_match_list = list(filter(lambda x: x["name"] == state.current_user, c.chillbox_config.get("user", [])))
+    current_user_match_list = list(
+        filter(
+            lambda x: x["name"] == state.current_user, c.chillbox_config.get("user", [])
+        )
+    )
     if current_user_match_list:
         merged_current_user_data.update(current_user_match_list[0])
     else:
@@ -378,19 +404,24 @@ def user_ssh_init(c, state):
     logger.debug(f"{current_user_match_list=}, {merged_current_user_data=}")
     merged_current_user_data.update(state.current_user_data)
     if not merged_current_user_data.get("public_ssh_key"):
-        logger.warning(f"No public ssh key found for user '{state.current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory.")
+        logger.warning(
+            f"No public ssh key found for user '{state.current_user}'. Generating new private and public ssh keys now and storing them in the chillbox archive directory."
+        )
         public_ssh_key = generate_and_encrypt_ssh_key(c, state.current_user)
         merged_current_user_data["public_ssh_key"] = [public_ssh_key]
     state.current_user_data = merged_current_user_data
 
     identity_file_temp = state.identity_file_temp
-    if encrypted_private_key_file.exists() and not (identity_file_temp and Path(identity_file_temp).exists()):
+    if encrypted_private_key_file.exists() and not (
+        identity_file_temp and Path(identity_file_temp).exists()
+    ):
         remove_temp_files(paths=[state.ssh_config_temp, identity_file_temp])
         private_ssh_key_file = Path(mkstemp()[1])
         decrypt_file(c, private_ssh_key_file, encrypted_private_key_file)
         state.identity_file_temp = str(private_ssh_key_file)
 
     user_password_hash_init(c, state)
+
 
 @task
 def init(c):
@@ -406,10 +437,7 @@ def init(c):
     # An owner needs to be set so this instance of the chillbox archive
     # directory will only create items that this user would need to manage.
     owner = getpass.getuser()
-    if (
-        archive_directory.exists()
-        and not archive_directory.is_dir()
-    ):
+    if archive_directory.exists() and not archive_directory.is_dir():
         raise ChillboxArchiveDirectoryError(
             f"ERROR: The archive path ({archive_directory}) needs to be a directory."
         )
@@ -426,14 +454,20 @@ def init(c):
     state = ChillboxState(archive_directory)
     current_user = state.current_user
     if not current_user:
-        current_user = input(f"No current_user has been set in state file. Set the current_user now or set to '{owner}'.\n  ")
+        current_user = input(
+            f"No current_user has been set in state file. Set the current_user now or set to '{owner}'.\n  "
+        )
         if not current_user:
             current_user = owner
         state.current_user = current_user
     logger.debug(f"{state.current_user=}")
-    result = list(filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", [])))
+    result = list(
+        filter(lambda x: x["name"] == current_user, c.chillbox_config.get("user", []))
+    )
     if not result:
-        raise ChillboxInvalidConfigError(f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}")
+        raise ChillboxInvalidConfigError(
+            f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}"
+        )
 
     # Set this so other tasks that have 'init' as a pre-task can use this value.
     c.archive_directory = archive_directory
