@@ -13,15 +13,9 @@ mkdir -p /var/lib/chillbox
 printf "%s" '{{ chillbox_user.name }}' > /var/lib/chillbox/owner
 chmod 0444 /var/lib/chillbox/owner
 
-# Support PATH_SENSITIVE from chillbox upload commands.
-mkdir -p /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
-chmod 0700 /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
+{% include 'chillbox:create_dirs-PATH_SENSITIVE.jinja' %}
 
-# Support PATH_SECRETS from chillbox upload commands.
-mkdir -p /var/lib/chillbox/secrets/{{ chillbox_user.name }}
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/secrets/{{ chillbox_user.name }}
-chmod 0700 /var/lib/chillbox/secrets/{{ chillbox_user.name }}
+{% include 'chillbox:create_dirs-PATH_SECRETS.jinja' %}
 
 mkdir -p /var/lib/chillbox/python
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/python
