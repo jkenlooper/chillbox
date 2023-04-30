@@ -219,7 +219,7 @@ def load_secrets(c, state):
             "secrets", secret["id"] + ".aes"
         ).resolve()
         secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
-        secrets[secret["name"]] = secret_in_plaintext
+        secrets[secret.get("name", secret["id"])] = secret_in_plaintext
 
     c.secrets = secrets
 

@@ -244,7 +244,7 @@ def upload(c):
                         "secrets", secret["id"] + ".aes"
                     ).resolve()
                     secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
-                    secret_dest_file_mapping[append_dest].append(secret_in_plaintext)
+                    secret_dest_file_mapping[append_dest].append(f"{secret.get('name', secret['id'])}={secret_in_plaintext}")
 
             # Upload the built secrets
             for append_dest, secret_content_list in secret_dest_file_mapping.items():

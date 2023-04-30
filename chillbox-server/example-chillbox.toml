@@ -42,9 +42,6 @@ name = "ACCESS_KEY_ID"
 prompt = "Enter the access key id for the S3 object storage being used."
 expires = 2023-08-16
 owner = "bob"
-[[secret.remote]]
-append-dest = "/home/bob/env-secrets"
-user = "bob"
 
 [[secret]]
 id = "secret_access_key"
@@ -52,9 +49,6 @@ name = "SECRET_ACCESS_KEY"
 prompt = "Enter the secret access key for the S3 object storage being used."
 expires = 2023-08-16
 owner = "bob"
-[[secret.remote]]
-append-dest = "/home/bob/env-secrets"
-user = "bob"
 
 [[secret]]
 id = "certbot_account_directory_tar_b64"
