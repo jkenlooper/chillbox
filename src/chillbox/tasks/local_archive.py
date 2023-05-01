@@ -31,6 +31,8 @@ from chillbox.utils import (
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
+from chillbox.defaults import (CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS)
+
 
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
 
@@ -196,7 +198,13 @@ def load_env_vars(c):
     """
     # TODO: Ensure that values in the 'env' are all strings? Convert them to
     # strings if they are not?
-    c.env = c.chillbox_config.get("env", {})
+
+    env_obj = {
+        "CHILLBOX_PATH_SENSITIVE": CHILLBOX_PATH_SENSITIVE,
+        "CHILLBOX_PATH_SECRETS": CHILLBOX_PATH_SECRETS,
+    }
+    env_obj.update(c.chillbox_config.get("env", {}))
+    c.env = env_obj
 
 
 def load_secrets(c, state):
@@ -227,6 +235,7 @@ def load_secrets(c, state):
 def init_template_renderer(c):
     """"""
     template_list = c.chillbox_config.get("template", [])
+    logger.debug(f"{template_list=}")
     c.renderer = Renderer(template_list, c.working_directory)
 
 
@@ -264,7 +273,7 @@ def process_path_to_archive(c):
         id_path.parent.mkdir(parents=True, exist_ok=True)
 
         if path.get("render") and src_path_is_template(
-            path["src"], template_list, c.working_directory
+            path["src"], c.working_directory
         ):
             context = {}
             context.update(c.env)

@@ -25,7 +25,7 @@ required_keys_path = set(["id", "src", "dest"])
 chillbox_config_more_info = "Please see documentation at docs/configuration-file.md"
 
 
-def src_path_is_template(src, template_list, working_directory):
+def src_path_is_template(src, working_directory):
     "Return True if src path is a template"
 
     def is_prefix_path(src):
@@ -33,6 +33,7 @@ def src_path_is_template(src, template_list, working_directory):
         if len(prefix_split) > 1:
             if prefix_split[0].find("/") == -1:
                 return True
+        return False
 
     src_path = Path(working_directory).joinpath(src)
     if src.startswith(("/", "./")):
@@ -40,36 +41,6 @@ def src_path_is_template(src, template_list, working_directory):
     if src_path.exists() and src_path.is_dir():
         return False
     if is_prefix_path(src):
-        return True
-
-    for template in template_list:
-        if template.get("prefix"):
-            # Skip if prefix since those have already been checked.
-            continue
-        template_src = template.get("src")
-        if not template_src:
-            # The template object is invalid, but not concerned about that here.
-            continue
-        try:
-            fs_loader = get_file_system_loader(template_src, working_directory)
-        except ChillboxTemplateError as err:
-            # Ignore this error here as this is only concerning itself with the
-            # path src value.
-            continue
-        try:
-            fs_loader.get_source(environment=None, template=src)
-        except TemplateNotFound:
-            # Ignore so other templates can be checked.
-            continue
-
-        if src_path.exists():
-            logger.warning(
-                f"The src path exists at: {src_path.resolve()} and is a file in the template list. This path can't be used as a template because it is ambiguous."
-            )
-            return False
-
-        # fs_loader was able to load the template file so it must be an actual
-        # template.
         return True
 
     return False
@@ -107,6 +78,11 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         )
 
     ## template
+    templates_missing_attrs = list(filter(lambda x: not x.get("prefix") or not x.get("src"), data.get("template", [])))
+    if templates_missing_attrs:
+        raise ChillboxInvalidConfigError(
+            f"INVALID: Each template must set a prefix and a src. These are invalid:\n{pformat(templates_missing_attrs)}"
+        )
     template_prefixes = list(
         map(
             lambda x: x["prefix"],
@@ -132,7 +108,7 @@ def validate_and_load_chillbox_config(chillbox_config_file):
 
         # Check if src is a template else check if src exists
         if path.get("render") and src_path_is_template(
-            path["src"], data.get("template", []), working_directory
+            path["src"], working_directory
         ):
             logger.debug(f"src path ({path['src']}) is a template file")
         else:

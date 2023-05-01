@@ -108,7 +108,7 @@ rc-service sshd start || printf ''
 nftables_setup() {
 #{#- Include the nftables script that was defined for this server.  #}
 cat <<'HERE' > "$work_dir/chillbox.nft"
-{% include [nft_script, 'chillbox.nft', 'local:chillbox.nft', 'chillbox:chillbox.nft'] %}
+{% include [nft_script, 'chillbox:chillbox.nft'] %}
 HERE
 chmod u+x "$work_dir/chillbox.nft"
 #{#-
@@ -121,17 +121,17 @@ chmod u+x "$work_dir/chillbox.nft"
 
 create_scripts() {
 cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/decrypt-file"
-{% include [scripts_decrypt_file, 'local:scripts/decrypt-file', 'chillbox-scripts:decrypt-file'] %}
+{% include [scripts_decrypt_file, 'chillbox-scripts:decrypt-file'] %}
 DECRYPT_FILE_HERE
 chmod +x "/usr/local/bin/decrypt-file"
 
 cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/encrypt-file"
-{% include [scripts_encrypt_file, 'local:scripts/encrypt-file', 'chillbox-scripts:encrypt-file'] %}
+{% include [scripts_encrypt_file, 'chillbox-scripts:encrypt-file'] %}
 DECRYPT_FILE_HERE
 chmod +x "/usr/local/bin/encrypt-file"
 
 cat <<'CREATE_ASYMMETRIC_KEY_HERE' > "/usr/local/bin/create-asymmetric-key"
-{% include [scripts_create_asymmetric_key, 'local:scripts/create-asymmetric-key', 'chillbox-scripts:create-asymmetric-key'] %}
+{% include [scripts_create_asymmetric_key, 'chillbox-scripts:create-asymmetric-key'] %}
 CREATE_ASYMMETRIC_KEY_HERE
 chmod +x "/usr/local/bin/create-asymmetric-key"
 }
@@ -142,7 +142,7 @@ create_dirs() {
 ## This is to support upload of path objects defined in the chillbox config toml.
 #}
 cat <<'CHILLBOXUSERDATACREATEDIRS' > "$work_dir/chillbox-user-data-create_dirs.sh"
-{% include [create_dirs_script, 'TODOcreate_dirs.sh', 'local:create_dirs.sh', 'chillbox-server:create_dirs.sh', 'chillbox:create_dirs.sh'] ignore missing %}
+{% include [create_dirs_script, 'chillbox:create_dirs.sh'] %}
 CHILLBOXUSERDATACREATEDIRS
 #{#-
 ## Only need to execute the create_dirs.sh script if it was defined.

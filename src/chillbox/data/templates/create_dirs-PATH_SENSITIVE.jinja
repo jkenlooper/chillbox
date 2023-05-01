@@ -1,4 +1,4 @@
-# Support PATH_SENSITIVE from chillbox upload commands.
-mkdir -p /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
-chmod 0700 /var/lib/chillbox/path_sensitive/{{ chillbox_user.name }}
+# Support CHILLBOX_PATH_SENSITIVE from chillbox upload commands.
+mkdir -p {{ chillbox_env.CHILLBOX_PATH_SENSITIVE }}/{{ chillbox_user.name }}
+chown {{ chillbox_user.name }}:{{ chillbox_user.name }} {{ chillbox_env.CHILLBOX_PATH_SENSITIVE }}/{{ chillbox_user.name }}
+chmod 0700 {{ chillbox_env.CHILLBOX_PATH_SENSITIVE }}/{{ chillbox_user.name }}

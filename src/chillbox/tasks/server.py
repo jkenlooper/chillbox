@@ -37,9 +37,7 @@ from chillbox.errors import (
 from chillbox.local_checks import check_optional_commands
 from chillbox.ssh import generate_ssh_config_temp, cleanup_ssh_config_temp
 from chillbox.state import ChillboxState
-
-PATH_SENSITIVE = "/var/lib/chillbox/path_sensitive/"
-PATH_SECRETS = "/var/lib/chillbox/secrets/"
+from chillbox.defaults import (CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS)
 
 
 def generate_user_data_script(c, state):
@@ -90,6 +88,7 @@ def generate_user_data_script(c, state):
         # is not encrypted.
         server_user_data_context.update(server_user_data.get("context", {}))
 
+        logger.debug(f"{server_user_data_context=}")
         user_data_text = c.renderer.render(
             server_user_data_template, server_user_data_context
         )
@@ -260,7 +259,7 @@ def upload(c):
                     tmp_secret_remote_ciphertext_file,
                     public_asymmetric_key=tmp_server_pub_key,
                 )
-                target_path = f"{PATH_SECRETS}{state.current_user}{append_dest}"
+                target_path = f"{c.env['CHILLBOX_PATH_SECRETS']}/{state.current_user}{append_dest}"
                 logger.info(f"Uploading secret encrypted file to {target_path}")
                 parent_dir = Path(target_path).resolve(strict=False).parent
                 rc.run(f"mkdir -p {parent_dir}")
@@ -281,7 +280,7 @@ def upload(c):
                 target_path = (
                     path["dest"]
                     if not path.get("sensitive")
-                    else f"{PATH_SENSITIVE}{state.current_user}{path['dest']}"
+                    else f"{c.env['CHILLBOX_PATH_SENSITIVE']}/{state.current_user}{path['dest']}"
                 )
                 parent_dir = Path(target_path).resolve(strict=False).parent
                 rc.run(f"mkdir -p {parent_dir}")
@@ -325,7 +324,7 @@ upload.__doc__ = f"""
 
 - The path objects that are set as 'sensitive' are encrypted to the server's
   public asymmetric key. The actual destination on the server will be:
-  {PATH_SENSITIVE}$CURRENT_USER$DEST where
+  {CHILLBOX_PATH_SENSITIVE}/$CURRENT_USER$DEST where
   '$CURRENT_USER' and '$DEST' are replaced.
 
 - Path objects that are files and are not sensitive are uploaded to the set
@@ -337,6 +336,6 @@ upload.__doc__ = f"""
   'dest'.
 
 - The secrets are encrypted to the server's public asymmetric key. The actual
-  destination on the server will be: {PATH_SECRETS}$CURRENT_USER$APPEND_DEST
+  destination on the server will be: {CHILLBOX_PATH_SECRETS}/$CURRENT_USER$APPEND_DEST
   where '$CURRENT_USER' and '$APPEND_DEST' are replaced.
 """

@@ -115,7 +115,9 @@ owner = "alice"
 [[template]]
 # Create the example-templates directory first.
 src = "example-templates"
-# The prefix is optional. Use the 'local' one here like this when rendering a path: 'local:'
+# The prefix is used in front when rendering a path
+# (example-templates/example-file.jinja) from the src directory:
+# 'local:example-file.jinja'
 prefix = "local"
 
 [[path]]
@@ -133,13 +135,13 @@ src = "README.md"
 dest = "/example/sub/README.md"
 
 # A path can set the 'sensitive' attribute to 'true' to encrypt that file when
-# uploading it. The 'dest' path will then be appended to the PATH_SENSITIVE
-# value which is /var/lib/chillbox/path_sensitive/. This example shows a typical
+# uploading it. The 'dest' path will then be appended to the CHILLBOX_PATH_SENSITIVE
+# value which defaults to /var/lib/chillbox/path_sensitive/. This example shows a typical
 # use case where the s3 credentials are being encrypted after they are rendered
 # from that s3-credentials.jinja template. The template references the
 # ACCESS_KEY_ID and SECRET_ACCESS_KEY secrets. The encrypted file will be
 # written to /var/lib/chillbox/path_sensitive/alice/home/alice/.aws/credentials
-# (path joined from PATH_SENSITIVE, OWNER, and DEST).
+# (path joined from CHILLBOX_PATH_SENSITIVE, OWNER, and DEST).
 [[path]]
 id = "s3-credentials-example"
 src = "chillbox:s3-credentials.jinja"

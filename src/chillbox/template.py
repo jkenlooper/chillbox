@@ -3,7 +3,6 @@ from pathlib import Path
 from jinja2 import (
     Environment,
     PrefixLoader,
-    ChoiceLoader,
     PackageLoader,
     FileSystemLoader,
     select_autoescape,
@@ -27,7 +26,6 @@ class Renderer:
     - 'chillbox-scripts:' contains common scripts that chillbox uses.
     - 'chillbox:' has other general templates like user-data scripts.
     - Other templates are defined by the chillbox configuration that was loaded.
-      These can be set with a prefix or not.
     """
 
     def raise_for_missing_template(self, err):
@@ -60,17 +58,7 @@ class Renderer:
         prefix_loader.update(prefix_templates)
         logger.debug(prefix_loader)
 
-        fs_templates = map(
-            lambda x: get_file_system_loader(x["src"], self.working_directory),
-            filter(lambda x: not x.get("prefix"), template_list),
-        )
-        # Set prefix delimiter to ':' to avoid confusion with relative paths.
-        # Defines the 'chillbox-scripts:', 'chillbox:' and any user defined prefixes.
-        template_loaders = [PrefixLoader(prefix_loader, delimiter=":")]
-        template_loaders.extend(fs_templates)
-        template_loaders.append(chillbox_data_loader)
-
-        self.loader = ChoiceLoader(template_loaders)
+        self.loader = PrefixLoader(prefix_loader, delimiter=":")
         self.env = Environment(loader=self.loader, autoescape=select_autoescape())
 
     def render(self, file, context):
