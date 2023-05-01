@@ -1,27 +1,12 @@
-# Prevent including any Terraform var files like private.auto.tfvars and such.
-# These shouldn't be in the project directory anyway.
-*.tfvars
-# With the exception of these example tfvars files
-!/example/chillbox-config/development/terraform-010-infra/example-private.auto.tfvars
-!/example/chillbox-config/development/terraform-020-chillbox/example-private.auto.tfvars
-!/example/chillbox-config/acceptance/terraform-010-infra/example-private.auto.tfvars
-!/example/chillbox-config/acceptance/terraform-020-chillbox/example-private.auto.tfvars
-!/example/chillbox-config/production/terraform-010-infra/example-private.auto.tfvars
-!/example/chillbox-config/production/terraform-020-chillbox/example-private.auto.tfvars
-!/example/chillbox-config/test/terraform-010-infra/example-private.auto.tfvars
-!/example/chillbox-config/test/terraform-020-chillbox/example-private.auto.tfvars
+/.venv
+__pycache__
+/dist
 
-/dist/*
-!/dist/.gitkeep
-!/dist/README.md
+# TODO: temporary while developing.
+/chillbox.toml
+/.chillbox
 
-/.build-*
-
-# The build/MANIFEST file is generated, but commit it anyway to be more aware
-# when files are added or removed.
-#/build/MANIFEST
-
-/src/chillbox/dep/*
-!/src/chillbox/dep/pip-requirements.txt
-!/src/chillbox/dep/requirements.txt
-
+# Output from ./update-dep.sh
+/dep/*
+/security-issues-from-bandit.txt
+/vulnerabilities-pip-audit.txt

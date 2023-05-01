@@ -1,0 +1,26 @@
+# Generated from chillbox template ssh_config.jinja for temporary use.
+# Use the '-F' ssh option when using this file.
+{%- for server in user_server_list %}
+# ssh -F {{ ssh_config }} {{ server.name }}
+{%- endfor %}
+
+User {{ current_user }}
+
+# Use a chillbox managed known_hosts file.
+StrictHostKeyChecking ask
+UserKnownHostsFile {{ known_hosts_file }}
+
+{%- if identity_file %}
+# Temporary identity file decrypted from {{ current_user }}.chillbox.pem.aes
+IdentityFile {{ identity_file }}
+{%- endif %}
+
+# The current user ({{ current_user }}) only has access to these servers.
+{% for server in user_server_list %}
+Host {{ server.ip }} {{ server.name }}
+  Hostname {{ server.ip }}
+  HostKeyAlias {{ server.name }}
+  {%- if server.ssh_port %}
+  Port {{ server.ssh_port }}
+  {%- endif %}
+{% endfor %}

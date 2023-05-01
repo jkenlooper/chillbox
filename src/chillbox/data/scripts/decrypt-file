@@ -1,0 +1,106 @@
+#!/usr/bin/env -S sh -o errexit -o nounset
+
+script_name="$(basename "$0")"
+
+usage() {
+  cat <<HERE
+
+Decrypt a file using a provided private key file in PEM format. The encrypted
+file needs to have the first 512 bytes be the encrypted symmetric key that was
+used when the rest of the file was encrypted.
+
+Usage:
+  decrypt_file -h
+  decrypt_file <options> <file>
+
+Options:
+  -h        Show this help message.
+
+  -k        A private key file in PEM format
+
+  -i        Path to the encrypted file
+
+Args:
+  <file>    Output to file, use '-' to send to stdout
+
+HERE
+}
+
+#{#-
+# UPKEEP due: "2024-01-28" label: "Security review of envelope encryption" interval: "+1 year"
+#}
+decrypt_file() {
+#{#-
+  # Reference:
+  # man openssl-pkeyutl https://www.openssl.org/docs/man3.0/man1/openssl-pkeyutl.html
+  # man openssl-enc https://www.openssl.org/docs/man3.0/man1/openssl-enc.html
+  #}
+
+  umask 0077
+
+#{#-
+  # Split the input_ciphertext_file to get the encrypted symmetric_key and the
+  # ciphertext_file that was encrypted with it. The encrypted symmetric key will
+  # be the first 512 bytes.
+  #}
+  symmetric_key_ciphertext="$(mktemp)"
+  ciphertext_file="$(mktemp)"
+  dd if="$input_ciphertext_file" ibs=512 count=1 of="$symmetric_key_ciphertext" 2> /dev/null
+  dd if="$input_ciphertext_file" ibs=512 skip=1 of="$ciphertext_file" 2> /dev/null
+
+#{#-
+  # Use the private_pem_file to decrypt the symmetric_key_ciphertext.
+#}
+  symmetric_key="$(mktemp)"
+  openssl pkeyutl \
+    -decrypt \
+    -inkey "$private_pem_file" \
+    -keyform "PEM" \
+    -pkeyopt rsa_padding_mode:oaep \
+    -pkeyopt rsa_oaep_md:sha512 \
+    -in "$symmetric_key_ciphertext" \
+    -out "$symmetric_key"
+
+#{#-
+  # Decrypt the ciphertext_file with symmetric key
+  # Note that this 310000 iterations or above are the recommended by OWASP best
+  # practices for the algorithm PBKDF2-HMAC-SHA256. It has to match the exact
+  # number of iterations that was used when it was encrypted.
+  #}
+  openssl enc \
+    -aes-256-cbc \
+    -d \
+    -md sha512 \
+    -pbkdf2 \
+    -iter 313131 \
+    -salt \
+    -pass "file:$symmetric_key" \
+    -in "$ciphertext_file" \
+    -out "$output_plaintext_file"
+
+  shred -fuz "$symmetric_key"
+  rm -f "$symmetric_key_ciphertext"
+  rm -f "$ciphertext_file"
+}
+
+while getopts "hk:i:" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    k) private_pem_file=$OPTARG ;;
+    i) input_ciphertext_file=$OPTARG ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+output_plaintext_file="${1:--}"
+
+test -e "$input_ciphertext_file" || (echo "ERROR $script_name: The ciphertext file doesn't exist. $input_ciphertext_file" && exit 1)
+
+if [ ! -e "$private_pem_file" ]; then
+  echo "ERROR $script_name: The private key doesn't exist. $private_pem_file"
+  exit 4
+fi
+
+decrypt_file

@@ -1,0 +1,122 @@
+# Provide more details about the different commands used by chillbox.
+#
+
+[gpg]
+required = true
+"full-name" = "GnuPG"
+"website" = "https://www.gnupg.org/"
+"download" = "https://www.gnupg.org/download/index.html"
+"use-case" = "To encrypt and decrypt the chillbox asymmetric keys that are generated."
+"description" = """
+GnuPG is a complete and free implementation of the OpenPGP standard as defined \
+by RFC4880 (also known as PGP). GnuPG allows you to encrypt and sign your data \
+and communications; it features a versatile key management system, along with \
+access modules for all kinds of public key directories.  \
+"""
+
+[openssl]
+required = true
+full-name = "OpenSSL"
+website = "https://www.openssl.org/"
+download = "https://www.openssl.org/source/"
+use-case = "To create asymmetric and symmetric keys used for encrypting and decrypting sensitive data like secrets."
+description = """
+OpenSSL software - a robust, commercial-grade, full-featured toolkit for \
+general-purpose cryptography and secure communication. \
+"""
+
+[mktemp]
+required = true
+full-name = "mktemp"
+website = "https://www.gnu.org/software/coreutils/mktemp"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox to create temporary files only readable and writable by the owner."
+description = """
+Create a temporary file or directory, safely, and print its name.
+"""
+
+[shred]
+required = true
+full-name = "shred"
+website = "https://www.gnu.org/software/coreutils/shred/"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox to securely delete files by overwriting them before removing them."
+description = """
+Overwrite a file to hide its contents, and optionally delete it
+"""
+
+[dd]
+required = true
+full-name = "dd"
+website = "https://www.gnu.org/software/coreutils/dd/"
+download = "https://www.gnu.org/software/coreutils/"
+use-case = "Used by various shell scripts included with chillbox when encrypting and decrypting files."
+description = """
+Convert and copy a file
+"""
+
+[python]
+required = true
+full-name = "Python 3"
+website = "https://www.python.org/"
+download = "https://www.python.org/downloads/"
+use-case = "To better support cross platform use of running the chillbox scripts."
+description = """
+Python is a programming language that lets you work quickly and integrate \
+systems more effectively. \
+"""
+
+### Optional Commands
+
+[ssh-keygen]
+required = false
+full-name = "OpenSSH"
+website = "https://www.openssh.com/"
+download = "https://www.openssh.com/"
+description = "OpenSSH authentication key utility"
+use-case = """
+Create private and public ssh keys for the current user.
+"""
+
+
+[wget]
+required = false
+full-name = "wget"
+website = "https://www.gnu.org/software/wget/"
+download = "http://wget.addictivecode.org/FrequentlyAskedQuestions.html#download"
+description = "Wget - The non-interactive network downloader."
+use-case = """
+To download other files from the internet when running shell scripts.
+"""
+
+[sha512sum]
+required = false
+full-name = "sha512sum"
+website = "https://www.gnu.org/software/coreutils/sha512sum"
+download = "https://www.gnu.org/software/coreutils/"
+description = "Compute and check SHA512 message digest."
+use-case = """
+To verify checksums of downloaded files before using them.
+"""
+
+[terraform]
+required = false
+full-name = "Terraform"
+website = "https://developer.hashicorp.com/terraform/intro"
+download = "https://developer.hashicorp.com/terraform/downloads"
+use-case = "Automate provisioning of resources for different cloud hosts like DigitalOcean, Vultr, and AWS if you want to burn lots of money."
+description = """
+Terraform is an infrastructure as code tool that lets you build, change, and \
+version cloud and on-prem resources safely and efficiently. \
+"""
+
+[make]
+required = false
+full-name = "make"
+website = "https://www.gnu.org/software/make/"
+download = "https://www.gnu.org/software/make/#download"
+description = "GNU make utility to maintain groups of programs"
+use-case = """
+Commonly used to run build scripts, but not directly used by chillbox.
+"""
+

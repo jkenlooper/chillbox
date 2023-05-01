@@ -1,0 +1,95 @@
+#!/usr/bin/env -S sh -o errexit -o nounset
+
+script_name="$(basename "$0")"
+
+usage() {
+  cat <<HERE
+
+Generate a private and public key pair to encrypt and decrypt content that is
+less than 382 bytes. These keys should only be used when performing envelope
+encryption since the encrypted symmetric key that was used to encrypt a file
+would be the first 512 bytes of that file.
+
+Usage:
+  $script_name -h
+  $script_name <options>
+
+Options:
+  -h        Show this help message.
+
+  -n        Set a key name to use, defaults to hostname.
+
+  -d        Path to a directory to store the keys in.
+
+HERE
+}
+
+key_name="$(hostname -s | xargs)"
+keys_data_dir=""
+while getopts "hn:d:" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    n) key_name=$OPTARG ;;
+    d) keys_data_dir=$OPTARG ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+test -n "$keys_data_dir" || (echo "ERROR $script_name: No keys directory provided." && exit 1)
+test -d "$keys_data_dir" || (echo "ERROR $script_name: The path to the keys directory doesn't exist. $keys_data_dir" && exit 1)
+
+
+
+public_pem_file="$keys_data_dir/$key_name.public.pem"
+private_pem_file="$keys_data_dir/$key_name.private.pem"
+
+mkdir -p "$(dirname "$public_pem_file")"
+mkdir -p "$(dirname "$private_pem_file")"
+
+create_private_and_public_keys() {
+  #{#-
+  # UPKEEP due: "2024-01-28" label: "Security review of creating asymmetric key with RSA algorithm" interval: "+1 year"
+  # References:
+  # https://www.feistyduck.com/library/openssl-cookbook/online/openssl-command-line/key-generation.html
+  # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
+  # man openssl-genpkey https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html
+  # man openssl-pkey https://www.openssl.org/docs/man3.0/man1/openssl-pkey.html
+  #}
+
+  umask 0077
+
+  #{#-
+  # Set the pkeyopt to be explicit about the defaults. Use rsa_keygen_bits:4096
+  # for encrypting up to 382 bytes when using a rsa_oaep_md:sha512 hash.
+  #}
+  openssl genpkey \
+  -out "$private_pem_file" \
+  -outform "PEM" \
+  -algorithm RSA \
+  -pkeyopt "rsa_keygen_bits:4096" \
+  -pkeyopt "rsa_keygen_pubexp:65537" \
+  -pkeyopt "rsa_keygen_primes:2"
+
+  #{#-
+  # The opensssl-pkey uses the more secure PKCS#8 format instead of the older
+  # traditional format that openssl-rsa did.
+  #}
+  openssl pkey \
+  -pubout \
+  -inform "PEM" \
+  -outform "PEM" \
+  -in "$private_pem_file" \
+  -out "$public_pem_file"
+
+  #{#-
+  # Only allow reading it after it is written to prevent chance of overwriting the
+  # generated key files. Double tap here in case umask wasn't set.
+  #}
+  chmod 0400 "$private_pem_file"
+  chmod 0444 "$public_pem_file"
+}
+
+create_private_and_public_keys

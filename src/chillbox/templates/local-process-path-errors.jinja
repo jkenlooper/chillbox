@@ -1,0 +1,5 @@
+{% for err in errors %}
+path id: {{ err.path.id }}
+{% for msg in err.msg %}  {{ msg }}
+{% endfor %}
+{% endfor -%}

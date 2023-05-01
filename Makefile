@@ -7,15 +7,7 @@ SHELL := bash
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 project_dir := $(dir $(mkfile_path))
 
-# The version string includes the build metadata
-VERSION := $(shell cat $(project_dir)/src/chillbox/VERSION)+$(shell ./build/list-manifest-files.sh | xargs -n1 md5sum | md5sum - | cut -d' ' -f1)
-
-objects := dist/chillbox-cli-$(VERSION).tar.gz build/MANIFEST
-
-# Verify version string compiles with semver.org, output it for chillbox to use.
-inspect.VERSION: ## Show the version string along with build metadata
-	@printf "%s" '$(VERSION)' | grep -q -P '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$$' - || (printf "\n%s\n" "ERROR Invalid version string '$(VERSION)' See https://semver.org" >&2 && exit 1)
-	@printf "%s" '$(VERSION)'
+objects := dep/*
 
 # For debugging what is set in variables.
 inspect.%:
@@ -26,7 +18,7 @@ inspect.%:
 FORCE:
 
 .PHONY: all
-all: $(objects) ## Default is to create the dist file
+all: $(objects) ## Default is to create the dep/* files
 
 .PHONY: help
 help: ## Show this help
@@ -35,25 +27,6 @@ help: ## Show this help
 .PHONY: clean
 clean: ## Remove any created files which were created by the `make all` recipe.
 	printf '%s\0' $(objects) | xargs -0 rm -f
-
-.PHONY: dist
-dist: dist/chillbox-cli-$(VERSION).tar.gz ## Create the dist file
-
-dist/chillbox-cli-$(VERSION).tar.gz: build/dist.sh build/MANIFEST
-	./$< $(abspath $@)
-
-.PHONY: manifest
-manifest: build/MANIFEST ## Create just build/MANIFEST file
-
-.build-$(VERSION):
-	@touch $@
-
-build/MANIFEST: build/create-manifest.sh .build-$(VERSION)
-	./$<
-
-.PHONY: test
-test: ## Run the test script
-	INTERACTIVE=n ./tests/test.sh
 
 .PHONY: upkeep
 upkeep: ## Send to stderr any upkeep comments that have a past due date

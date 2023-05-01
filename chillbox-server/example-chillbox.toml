@@ -1,0 +1,156 @@
+instance = "example"
+gpg-key = "example"
+archive-directory = ".chillbox"
+
+[[user]]
+name = "bob"
+
+# The env variables are commonly set with the chillbox-env.sh.jinja template.
+[env]
+TECH_EMAIL = ""
+
+# Updating SITES_ARTIFACT and uploading profile-d-chillbox-config-sh path will
+# trigger the update.sh script.
+# TODO the SITES_ARTIFACT should be in s3
+# ARTIFACT_BUCKET_NAME/_sites/SITES_ARTIFACT since a process needs to 'build'
+# that artifact file.
+SITES_ARTIFACT = ""
+
+AWS_PROFILE = "chillbox_object_storage"
+S3_ENDPOINT_URL = ""
+IMMUTABLE_BUCKET_NAME = ""
+IMMUTABLE_BUCKET_DOMAIN_NAME = ""
+ARTIFACT_BUCKET_NAME = ""
+
+# The CHILLBOX_SERVER_NAME should be set via the 'hostname' command on the server.
+#CHILLBOX_SERVER_NAME = ""
+
+ACME_SERVER = "https://acme-staging-v02.api.letsencrypt.org/directory"
+#ACME_SERVER = "https://acme-v02.api.letsencrypt.org/directory"
+# ENABLE_CERTBOT is used by bin/update.sh
+ENABLE_CERTBOT = "true"
+# MANAGE_HOSTNAME_DNS_RECORDS and MANAGE_DNS_RECORDS are used by bin/issue-and-install-certs.sh
+MANAGE_HOSTNAME_DNS_RECORDS = "false"
+MANAGE_DNS_RECORDS = "false"
+
+# TODO Should use an ENVIRONMENT variable for things?
+ENVIRONMENT = "development"
+
+[[secret]]
+id = "access_key_id"
+name = "ACCESS_KEY_ID"
+prompt = "Enter the access key id for the S3 object storage being used."
+expires = 2023-08-16
+owner = "bob"
+
+[[secret]]
+id = "secret_access_key"
+name = "SECRET_ACCESS_KEY"
+prompt = "Enter the secret access key for the S3 object storage being used."
+expires = 2023-08-16
+owner = "bob"
+
+[[secret]]
+id = "certbot_account_directory_tar_b64"
+name = "CERTBOT_ACCOUNT_DIRECTORY_TAR_B64"
+type = "file"
+prompt = "Enter the file path for the certbot account that was registered (output from running ./register-certbot-account.sh)."
+expires = 2023-08-16
+owner = "bob"
+
+[[template]]
+src = "chillbox-server/templates"
+prefix = "chillbox-server"
+
+### Files ###
+
+[[path]]
+id = "chillbox-s3-credentials"
+src = "chillbox-server:s3-credentials.jinja"
+dest = "/home/bob/.aws/credentials"
+render = true
+sensitive = true
+# TODO Should be set with only read/write for user if sensitive
+# chmod 0600 /home/bob/.aws/credentials
+# chown bob:bob /home/bob/.aws/credentials
+
+[[path]]
+id = "init-certbot-with-pre-registered-account"
+src = "chillbox-server:init-certbot.sh.jinja"
+dest = "/home/bob/bin/init-certbot.sh"
+render = true
+sensitive = true
+
+[[path]]
+id = "profile-d-chillbox-env-sh"
+src = "chillbox-server:chillbox-env.sh.jinja"
+dest = "/etc/profile.d/chillbox-env.sh"
+render = true
+
+[[path]]
+id = "profile-d-chillbox-config-sh"
+src = "chillbox-server:chillbox-config.sh.jinja"
+dest = "/etc/profile.d/chillbox-config.sh"
+render = true
+
+[[path]]
+id = "chillbox-nginx-templates"
+src = "chillbox-server/nginx/templates"
+dest = "/etc/chillbox/nginx/templates"
+
+[[path]]
+id = "chillbox-bin"
+src = "chillbox-server/bin"
+dest = "/etc/chillbox/bin"
+
+[[path]]
+id = "chillbox-dep"
+src = "chillbox-server/dep"
+dest = "/var/lib/chillbox/python"
+
+[[path]]
+id = "chillbox-redis-conf"
+src = "chillbox-server/redis/redis.conf"
+dest = "/etc/chillbox/redis/redis.conf"
+
+[[path]]
+id = "chillbox-nginx-conf"
+src = "chillbox-server/nginx/nginx.conf"
+dest = "/etc/nginx/nginx.conf"
+
+[[path]]
+id = "chillbox-nginx-default-conf"
+src = "chillbox-server/nginx/default.nginx.conf"
+dest = "/etc/nginx/conf.d/default.nginx.conf"
+
+[[path]]
+id = "chillbox-nginx-ssl_cert_include"
+src = "chillbox-server/nginx/chillbox.ssl_cert.include"
+dest = "/etc/nginx/conf.d/chillbox.ssl_cert.include"
+
+
+
+[[server]]
+ip = "127.0.0.1"
+ssh_port = 10022
+name = "local"
+owner = "bob"
+login-users = [ "alice", "bob" ]
+secrets = [ "access_key_id", "secret_access_key" ]
+remote-files = [
+  "chillbox-s3-credentials",
+  "init-certbot-with-pre-registered-account",
+  "profile-d-chillbox-env-sh",
+  "profile-d-chillbox-config-sh",
+  "chillbox-nginx-templates",
+  "chillbox-bin",
+  "chillbox-dep",
+  "chillbox-redis-conf",
+  "chillbox-nginx-conf",
+  "chillbox-nginx-default-conf",
+  "chillbox-nginx-ssl_cert_include",
+  ]
+[server.user-data]
+template = "chillbox:user-data.sh.jinja"
+[server.user-data.context]
+something = "example"

@@ -1,0 +1,126 @@
+#!/usr/bin/env -S sh -o errexit
+
+script_name="$(basename "$0")"
+
+usage() {
+  cat <<HERE
+
+Encrypt a file using a provided public key file in PEM format. This performs
+envelope encryption by generating and encrypting a symmetric key that is
+prepended as the first 512 bytes of the encrypted file.
+
+Usage:
+  $script_name -h
+  $script_name <options> -
+  $script_name <options> <file>
+
+Options:
+  -h        Show this help message.
+
+  -k        A public key file in PEM format
+
+  -o        Path to output the encrypted file
+
+Args:
+  -         Encrypt what is passed to stdin
+
+  <file>    Encrypt the provided file
+
+HERE
+}
+
+#{#-
+# UPKEEP due: "2024-01-28" label: "Security review of envelope encryption" interval: "+1 year"
+#}
+encrypt_file() {
+#{#-
+  # Reference:
+  # man openssl-rand https://www.openssl.org/docs/man3.0/man1/openssl-rand.html
+  # man openssl-enc https://www.openssl.org/docs/man3.0/man1/openssl-enc.html
+  # man openssl-pkeyutl https://www.openssl.org/docs/man3.0/man1/openssl-pkeyutl.html
+  # https://crypto.stackexchange.com/questions/42097/what-is-the-maximum-size-of-the-plaintext-message-for-rsa-oaep/42100#42100
+  #}
+
+  umask 0077
+
+  input_plaintext_file="$1"
+
+  symmetric_key="$(mktemp)"
+#{#-
+  # Generate a symmetric key file that is less than 382 bytes. After base64
+  # encoding to a single line; the file is 380 bytes.
+  #}
+  openssl rand 284 | base64 -w 0 > "$symmetric_key"
+  symmetric_key_filesize="$(stat -c '%s' "$symmetric_key")"
+  test -n "$symmetric_key_filesize" || (echo "ERROR $script_name: Failed to get size of generated symmetric key file." && exit 1)
+  test "$symmetric_key_filesize" -le "382" || (echo "ERROR $script_name: The generated symmetric key file byte length is over the 382 byte limit allowed for the public key." && exit 1)
+
+#{#-
+  # Encrypt file with symmetric key
+  # Note that this 310000 iterations or above are the recommended by OWASP best
+  # practices for the algorithm PBKDF2-HMAC-SHA256. When decrypting this it has
+  # to use the same number of iterations.
+  #}
+  ciphertext_file="$(mktemp)"
+  openssl enc \
+    -aes-256-cbc \
+    -e \
+    -md sha512 \
+    -pbkdf2 \
+    -iter 313131 \
+    -salt \
+    -pass "file:$symmetric_key" \
+    -in "$input_plaintext_file" \
+    -out "$ciphertext_file"
+
+#{#-
+  # Use the public key to encrypt the symmetric key
+  #}
+  ciphertext_symmetric_key="$(mktemp)"
+  openssl pkeyutl \
+    -encrypt \
+    -inkey "$public_pem_file" \
+    -keyform "PEM" \
+    -pubin \
+    -pkeyopt rsa_padding_mode:oaep \
+    -pkeyopt rsa_oaep_md:sha512 \
+    -in "$symmetric_key" \
+    -out "$ciphertext_symmetric_key"
+
+  shred -fuz "$symmetric_key"
+
+#{#-
+  # Ensure the $ciphertext_symmetric_key file is 512 bytes.
+  #}
+  ciphertext_symmetric_key_filesize="$(stat -c '%s' "$ciphertext_symmetric_key")"
+  test -n "$ciphertext_symmetric_key_filesize" || (echo "ERROR $script_name: Failed to get size of encrypted symmetric key file." && exit 1)
+  test "$ciphertext_symmetric_key_filesize" -eq "512" || (echo "ERROR $script_name: The encrypted symmetric key file needs to be exactly 512 bytes." && exit 1)
+
+#{#-
+  # Concatenate the encrypted symmetric key (which is 512 bytes) with the
+  # encrypted file to the $output_ciphertext_file.
+  #}
+  cat "$ciphertext_symmetric_key" "$ciphertext_file" > "$output_ciphertext_file"
+
+  rm -f "$ciphertext_symmetric_key"
+  rm -f "$ciphertext_file"
+}
+
+while getopts "hk:o:" OPTION ; do
+  case "$OPTION" in
+    h) usage
+       exit 0 ;;
+    k) public_pem_file=$OPTARG ;;
+    o) output_ciphertext_file=$OPTARG ;;
+    ?) usage
+       exit 1 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ ! -e "$public_pem_file" ]; then
+  echo "ERROR $script_name: The public key doesn't exist. $public_pem_file"
+  exit 4
+fi
+
+encrypt_file "${1:--}"
