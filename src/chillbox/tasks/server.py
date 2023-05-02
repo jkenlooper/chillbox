@@ -79,10 +79,10 @@ def generate_user_data_script(c, state):
         # should be encrypted with the gpg key (Already managed by chillbox?).
 
         server_user_data_context = {
-            "chillbox_env": deepcopy(dict(c.env)),
             "chillbox_user": state.current_user_data,
             "chillbox_server": server,
         }
+        server_user_data_context.update(deepcopy(dict(c.env)))
 
         # The server user-data context should not get c.secrets. The user-data
         # is not encrypted.
