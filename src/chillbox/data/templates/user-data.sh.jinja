@@ -153,6 +153,14 @@ if [ -s "$work_dir/chillbox-user-data-create_dirs.sh" ]; then
 fi
 }
 
+init_s6_openrc_path_secret_watcher() {
+#{#-
+## TODO: Opt-in for enabling the CHILLBOX_PATH_SENSITIVE and CHILLBOX_PATH_SECRETS
+## watcher that will automatically decrypt files to the dest path?
+#}
+{% include [scripts_init_s6_openrc_path_secret_watcher, 'chillbox:init-s6-openrc-path-secret-watcher.sh'] %}
+}
+
 install_packages
 nftables_setup
 init_user
@@ -165,3 +173,5 @@ key_name="$(hostname -s | xargs)"
 mkdir -p /usr/local/share/chillbox/key/
 mv "/root/chillbox/key/$key_name.public.pem" /usr/local/share/chillbox/key/
 chmod 644 "/usr/local/share/chillbox/key/$key_name.public.pem"
+
+init_s6_openrc_path_secret_watcher
