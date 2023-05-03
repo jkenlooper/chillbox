@@ -30,14 +30,14 @@ AUTO_DECRYPT_FILE
 chmod u+x "/usr/local/bin/auto-decrypt-file.sh"
 
 mkdir -p "/usr/local/bin"
-cat <<CHILLBOX_WATCH_PATHS_SCRIPT > "/usr/local/bin/watch-chillbox-secrets-and-sensitive-paths.sh"
+cat <<'CHILLBOX_WATCH_PATHS_SCRIPT' > "/usr/local/bin/watch-chillbox-secrets-and-sensitive-paths.sh"
 #!/usr/bin/env sh
-set -o errexit
 echo "INFO $0\n  Starting watch process."
-cat <<'CHILLBOX_PATH_LIST' | entr -a -d -d -n -p -r /usr/local/bin/auto-decrypt-file.sh /_
-{{ CHILLBOX_PATH_SENSITIVE }}
-{{ CHILLBOX_PATH_SECRETS }}
-CHILLBOX_PATH_LIST
+tmp_watch_list="$(mktemp)"
+find {{ CHILLBOX_PATH_SENSITIVE }} -type f >> "$tmp_watch_list"
+find {{ CHILLBOX_PATH_SECRETS }} -type f >> "$tmp_watch_list"
+entr -n -r -d /usr/local/bin/auto-decrypt-file.sh /_ < "$tmp_watch_list"
+rm -f "$tmp_watch_list"
 CHILLBOX_WATCH_PATHS_SCRIPT
 chmod u+x "/usr/local/bin/watch-chillbox-secrets-and-sensitive-paths.sh"
 
