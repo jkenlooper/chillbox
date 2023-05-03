@@ -21,11 +21,39 @@ echo "$ciphertext_file" \
 . "$tmp_export"
 rm -f "$tmp_export"
 
-touch "$dest_path"
-chown "$owner" "$dest_path"
-chmod go-rwx "$dest_path"
-chmod u+r "$dest_path"
-/usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$dest_path"
+is_path_sensitive="$(echo "$ciphertext_file" | grep -e '^{{ CHILLBOX_PATH_SENSITIVE }}' - || echo "no")"
+if [ "$is_path_sensitive" = "no" ]; then
+  dest_path_dir="$(dirname "$dest_path")"
+  mkdir -p "$dest_path_dir"
+  touch "$dest_path"
+  chown "$owner" "$dest_path"
+  chmod go-rwx "$dest_path"
+  chmod u+r "$dest_path"
+  chmod u-w "$dest_path"
+  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$dest_path"
+else
+  tmp_dest_path_gz="$(mktemp)"
+  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$tmp_dest_path_gz"
+  tmp_dest_path="$(mktemp)"
+  gunzip -c -f "$tmp_dest_path_gz" > "$tmp_dest_path"
+  rm -f "$tmp_dest_path_gz"
+  is_tar="$(tar t -f "$tmp_dest_path" > /dev/null 2>&1 || echo "no")"
+  if [ "$is_tar" = "no" ]; then
+    dest_path_dir="$(dirname "$dest_path")"
+    mkdir -p "$dest_path_dir"
+    touch "$dest_path"
+    chown "$owner" "$dest_path"
+    chmod go-rwx "$dest_path"
+    chmod u+r "$dest_path"
+    chmod u-w "$dest_path"
+    dd if="$tmp_dest_path" of="$dest_path" 2> /dev/null
+  else
+    mkdir -p "$dest_path"
+    tar x -f "$tmp_dest_path" -C "$dest_path" --strip-components 1
+  fi
+  rm -f "$tmp_dest_path"
+fi
+
 AUTO_DECRYPT_FILE
 chmod u+x "/usr/local/bin/auto-decrypt-file.sh"
 
