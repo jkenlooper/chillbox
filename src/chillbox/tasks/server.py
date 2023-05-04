@@ -310,6 +310,7 @@ def upload(c):
                         logger.info(
                             f"Unzipping file {tmp_upload_path} to {target_path}"
                         )
+                        rc.run(f"chmod u+w {target_path}")
                         rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
                     rc.run(f"rm -rf {tmp_upload_path}")
         rc.close()

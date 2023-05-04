@@ -30,10 +30,11 @@ if [ "$is_path_sensitive" = "no" ]; then
   chmod go-rwx "$dest_path"
   chmod u+r "$dest_path"
   chmod u-w "$dest_path"
-  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$dest_path"
+  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$dest_path" || (echo "ERROR: Failed decrypt $ciphertext_file" && (test -s "$dest_path" || rm -rf "$dest_path"))
 else
   tmp_dest_path_gz="$(mktemp)"
-  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$tmp_dest_path_gz"
+  /usr/local/bin/decrypt-file -k /root/chillbox/key/${key_name}.private.pem -i "$ciphertext_file" "$tmp_dest_path_gz" || (echo "ERROR: Failed decrypt $ciphertext_file" && (test -s "$tmp_dest_path_gz" || rm -rf "$tmp_dest_path_gz"))
+  test -e "$tmp_dest_path_gz" || exit 0
   tmp_dest_path="$(mktemp)"
   gunzip -c -f "$tmp_dest_path_gz" > "$tmp_dest_path"
   rm -f "$tmp_dest_path_gz"
@@ -60,12 +61,36 @@ chmod u+x "/usr/local/bin/auto-decrypt-file.sh"
 mkdir -p "/usr/local/bin"
 cat <<'CHILLBOX_WATCH_PATHS_SCRIPT' > "/usr/local/bin/watch-chillbox-secrets-and-sensitive-paths.sh"
 #!/usr/bin/env sh
+set -o errexit
+
 echo "INFO $0\n  Starting watch process."
-tmp_watch_list="$(mktemp)"
-find {{ CHILLBOX_PATH_SENSITIVE }} -type f >> "$tmp_watch_list"
-find {{ CHILLBOX_PATH_SECRETS }} -type f >> "$tmp_watch_list"
-entr -n -r -d /usr/local/bin/auto-decrypt-file.sh /_ < "$tmp_watch_list"
-rm -f "$tmp_watch_list"
+tmp_last_checked="$(mktemp)"
+cleanup() {
+  rm -f "$tmp_last_checked"
+}
+trap cleanup EXIT
+
+# Process all files when starting since it is unknown if they have been
+# decrypted yet.
+find {{ CHILLBOX_PATH_SENSITIVE }} -type f -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
+find {{ CHILLBOX_PATH_SECRETS }} -type f -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
+date '+%s' > "$tmp_last_checked"
+
+while sleep 1; do
+  # Only need to process any newer files since the last time it was checked.
+  find {{ CHILLBOX_PATH_SENSITIVE }} -type f -newer "$tmp_last_checked" -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
+  find {{ CHILLBOX_PATH_SECRETS }} -type f -newer "$tmp_last_checked" -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
+  date '+%s' > "$tmp_last_checked"
+
+  # Create a new list of files and their parent directories.  Use entr to wait
+  # for any changes.
+  tmp_watch_list="$(mktemp)"
+  find {{ CHILLBOX_PATH_SENSITIVE }} -type f >> "$tmp_watch_list"
+  find {{ CHILLBOX_PATH_SECRETS }} -type f >> "$tmp_watch_list"
+  entr -p -n -z -d -d -s 'echo "watch-chillbox-secrets-and-sensitive-paths.sh paths update"' < "$tmp_watch_list" || echo "Resetting watch list"
+  rm -f "$tmp_watch_list"
+done
+
 CHILLBOX_WATCH_PATHS_SCRIPT
 chmod u+x "/usr/local/bin/watch-chillbox-secrets-and-sensitive-paths.sh"
 
