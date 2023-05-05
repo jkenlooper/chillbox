@@ -22,16 +22,17 @@ chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/python
 chmod 0755 /var/lib/chillbox/python
 
 mkdir -p /etc/nginx
+touch /etc/nginx/nginx.conf
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/nginx.conf
-chmod 0755 /etc/nginx/nginx.conf
+chmod 0644 /etc/nginx/nginx.conf
 
 mkdir -p /etc/nginx/conf.d
 touch /etc/nginx/conf.d/default.nginx.conf
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/conf.d/default.nginx.conf
-chmod 0755 /etc/nginx/conf.d/default.nginx.conf
+chmod 0644 /etc/nginx/conf.d/default.nginx.conf
 touch /etc/nginx/conf.d/chillbox.ssl_cert.include
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/conf.d/chillbox.ssl_cert.include
-chmod 0755 /etc/nginx/conf.d/chillbox.ssl_cert.include
+chmod 0644 /etc/nginx/conf.d/chillbox.ssl_cert.include
 
 mkdir -p /home/{{ chillbox_user.name }}/.aws
 chown -R {{ chillbox_user.name }}:{{ chillbox_user.name }} /home/{{ chillbox_user.name }}/.aws
@@ -51,6 +52,8 @@ chmod -R ug+w /srv/chillbox/.well-known/acme-challenge
 # Support setting env variables for all users.
 touch /etc/profile.d/chillbox-env.sh
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-env.sh
+chmod 0755 /etc/profile.d/chillbox-env.sh
 touch /etc/profile.d/chillbox-config.sh
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-config.sh
+chmod 0755 /etc/profile.d/chillbox-config.sh
 

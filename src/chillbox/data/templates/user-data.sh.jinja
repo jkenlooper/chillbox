@@ -1,9 +1,10 @@
 #!/usr/bin/env sh
 set -o errexit
 
+#{% if ENVIRONMENT == "development" %}
 set -x
-# TODO use a debug mode flag.
-# cp "$0" /root/debug-user-data.sh
+cp "$0" /root/debug-user-data.sh
+#{% endif %}
 
 work_dir="$(dirname "$0")"
 
@@ -20,6 +21,7 @@ install_packages() {
     attr \
     coreutils \
     doas \
+    entr \
     nftables \
     openssh \
     openssl \
@@ -51,6 +53,7 @@ init_user() {
   # private key and the private key stays in a tmpfs mount which will be lost if
   # the server reboots.
   #}
+# shellcheck disable=SC2016
 useradd -m -U -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 #{#-
@@ -154,11 +157,7 @@ fi
 }
 
 init_s6_openrc_path_secret_watcher() {
-#{#-
-## TODO: Opt-in for enabling the CHILLBOX_PATH_SENSITIVE and CHILLBOX_PATH_SECRETS
-## watcher that will automatically decrypt files to the dest path?
-#}
-{% include [scripts_init_s6_openrc_path_secret_watcher, 'chillbox:init-s6-openrc-path-secret-watcher.sh'] %}
+{% include [scripts_init_s6_openrc_path_secret_watcher, 'chillbox-scripts:init-s6-openrc-path-secret-watcher.sh'] %}
 }
 
 install_packages
