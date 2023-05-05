@@ -25,8 +25,8 @@ cffi==1.15.1 \
 cryptography==40.0.2 \
     --hash=sha256:a95f4802d49faa6a674242e25bfeea6fc2acd915b5e5e29ac90a32b1139cae1c
     # via paramiko
-fabric==3.0.0 \
-    --hash=sha256:2a05508854ddef5a020a0be9aa7787e5397b528deb5936bbd2493c0b8eaaefa3
+fabric==3.0.1 \
+    --hash=sha256:a616a47b0e929c46c0c85619634a8a7522aa03378e1aea275c0a548385653ddf
     # via chillbox (pyproject.toml)
 h11==0.14.0 \
     --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
@@ -42,8 +42,8 @@ idna==3.4 \
     # via
     #   anyio
     #   httpx
-invoke==2.0.0 \
-    --hash=sha256:a860582bcf7a4b336fe18ef53937f0f28cec1c0053ffa767c2fcf7ba0b850f59
+invoke==2.1.1 \
+    --hash=sha256:e86a53046eca453d3e609e7017f65db5f66b947d4d337b60658859eb8c8a80e3
     # via
     #   chillbox (pyproject.toml)
     #   fabric

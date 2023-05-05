@@ -78,7 +78,11 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         )
 
     ## template
-    templates_missing_attrs = list(filter(lambda x: not x.get("prefix") or not x.get("src"), data.get("template", [])))
+    templates_missing_attrs = list(
+        filter(
+            lambda x: not x.get("prefix") or not x.get("src"), data.get("template", [])
+        )
+    )
     if templates_missing_attrs:
         raise ChillboxInvalidConfigError(
             f"INVALID: Each template must set a prefix and a src. These are invalid:\n{pformat(templates_missing_attrs)}"
@@ -107,9 +111,7 @@ def validate_and_load_chillbox_config(chillbox_config_file):
             )
 
         # Check if src is a template else check if src exists
-        if path.get("render") and src_path_is_template(
-            path["src"], working_directory
-        ):
+        if path.get("render") and src_path_is_template(path["src"], working_directory):
             logger.debug(f"src path ({path['src']}) is a template file")
         else:
             src_path = working_directory.joinpath(path["src"]).resolve()

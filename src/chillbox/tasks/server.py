@@ -37,7 +37,7 @@ from chillbox.errors import (
 from chillbox.local_checks import check_optional_commands
 from chillbox.ssh import generate_ssh_config_temp, cleanup_ssh_config_temp
 from chillbox.state import ChillboxState
-from chillbox.defaults import (CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS)
+from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS
 
 
 def generate_user_data_script(c, state):
@@ -243,7 +243,9 @@ def upload(c):
                         "secrets", secret["id"] + ".aes"
                     ).resolve()
                     secret_in_plaintext = decrypt_file(c, "-", secret_file_path)
-                    secret_dest_file_mapping[append_dest].append(f"{secret.get('name', secret['id'])}={secret_in_plaintext}")
+                    secret_dest_file_mapping[append_dest].append(
+                        f"{secret.get('name', secret['id'])}={secret_in_plaintext}"
+                    )
 
             # Upload the built secrets
             for append_dest, secret_content_list in secret_dest_file_mapping.items():

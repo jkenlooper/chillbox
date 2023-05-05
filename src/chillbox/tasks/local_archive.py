@@ -31,7 +31,7 @@ from chillbox.utils import (
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
-from chillbox.defaults import (CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS)
+from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS
 
 
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
