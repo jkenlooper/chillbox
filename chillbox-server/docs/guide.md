@@ -1,3 +1,6 @@
+**_Work in Progress_. Documentation is outdated since the original
+implementation.**
+
 ## Updates
 
 Change the SITES_ARTIFACT_URL export in the environment config file:

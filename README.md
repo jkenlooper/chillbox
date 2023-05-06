@@ -5,27 +5,42 @@
 
 **_Work in Progress_. This is under active development and is not complete.**
 
-Deployment scripts for websites that use [Chill] and custom Python WSGI services
-that are on an [Alpine Linux] server and backed by s3 object storage.
-Supports deployments to [DigitalOcean] with [Terraform] and plans to
-support other cloud hosting providers like [Linode], and [Vultr].
+Deployment scripts for websites that use [Chill] and Python services
+that are on an [Alpine Linux] server and backed by S3 object storage.
 
 ## Goals
 
 - Infrastructure has **minimal cost**
 - Minimize attack surface by using _less_ software
-- **Faultless deployments** from a single local machine
+- **Faultless deployments** from a local machine are secure
 - Server maintenance shouldn't be hard
 - Well written documentation
 
 ## Overview
 
-**Tech stack is:** [Alpine Linux], [Terraform], [Ansible], container runtime for local development, and [POSIX] compatible shell scripts.
+**Tech stack is:** [Alpine Linux], [Python], and [POSIX] compatible shell scripts.
 
-Please see the [Feature Roadmap](./docs/features.md) for a list of implemented and upcoming
-features.
+Chillbox was initially implemented as a very opinionated solution to provision
+and maintain a [DigitalOcean] droplet server and surrounding infrastructure.
+That initial solution is on this other git branch:
+[initial-shell-implementation](https://github.com/jkenlooper/chillbox/tree/initial-shell-implementation).
+It was restructured since then to not focus on provisioning infrastructure with
+[Terraform] and [DigitalOcean]. It is now split into two separate pieces;
+a Python package ([chillbox]) and shell scripts ([chillbox-server]). The
+chillbox-server scripts are mostly specific for running on an [Alpine Linux]
+server and are designed around the original website deployment configured by
+JSON files. The [chillbox] Python command _can_ be used with [chillbox-server]
+files, or could be used with a custom set of files to deploy and maintain
+servers with different Linux distributions.
 
-[Chillbox Overview Flowchart](./docs/diagrams/overview.mmd)
+### *Outdated Information* 
+
+**TODO:** Update feature roadmap and overview graphic with the new implementation.
+
+See the [Feature Roadmap](./chillbox-server/docs/features.md) for a list
+of implemented and upcoming features.
+
+[Chillbox Overview Flowchart](./chillbox-server/docs/diagrams/overview.mmd)
 
 ### Why?
 
@@ -43,9 +58,7 @@ needs to be able to scale out automatically when it gets a traffic spike. Having
 that capability comes with a high cost. A server can handle a lot of traffic
 (depending on the custom website code) and can be scaled up and down manually as
 needed. A company that does need to automatically scale out would probably also
-have their own infrastructure team that manages and maintains that. Chillbox is
-not designed ([Out of Scope Features](./docs/features.md#out-of-scope-features))
-for that capability on purpose.
+have their own infrastructure team that manages and maintains that.
 
 **Chillbox is designed for Web Developers that want to develop websites.**
 
@@ -59,12 +72,6 @@ Please contact me or create an issue.
 
 Checkout the project source code at [https://github.com/jkenlooper/chillbox]()
 which includes all the files and further documentation.
-
-Tests and [shellcheck] can be performed via the [tests/test.sh](./tests/test.sh) shell script. This
-uses [Bats-core] for running the shell testing where that works. Most of the
-shell scripts are also checked for any issues with [shellcheck]. An optional
-integration test is done at the end of the test which will deploy to
-[DigitalOcean] a temporary Test workspace using [Terraform].
 
 ## Maintenance
 
@@ -116,3 +123,6 @@ make upkeep
 [Go]: https://go.dev/
 [Bats-core]: https://github.com/bats-core/bats-core#readme
 [shellcheck]: https://www.shellcheck.net/
+[Python]: https://www.python.org/
+[chillbox]: https://pypi.org/project/chillbox/
+[chillbox-server]: https://github.com/jkenlooper/chillbox/tree/main/chillbox-server

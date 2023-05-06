@@ -1,3 +1,5 @@
+**_Work in Progress_. Documentation is outdated since the original
+implementation.**
 
 ## Quickstart Deployment to [DigitalOcean] with [Terraform]
 

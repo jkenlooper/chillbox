@@ -1,6 +1,7 @@
 # Feature Roadmap
 
-
+**_Work in Progress_. List of features may be outdated since the original
+implementation.**
 
 ## Implemented Features
 
