@@ -174,3 +174,7 @@ mv "/root/chillbox/key/$key_name.public.pem" /usr/local/share/chillbox/key/
 chmod 644 "/usr/local/share/chillbox/key/$key_name.public.pem"
 
 init_s6_openrc_path_secret_watcher
+
+# Reset openrc and zap do-init from
+openrc
+rc-service do-init zap

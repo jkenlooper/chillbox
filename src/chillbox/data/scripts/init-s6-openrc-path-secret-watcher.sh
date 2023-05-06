@@ -125,4 +125,6 @@ fdmove -c 2 1
 PURR
 chmod +x "/etc/services.d/chillbox-trigger-watch-secrets-and-sensitive-paths/run"
 rc-update add "chillbox-trigger-watch-secrets-and-sensitive-paths" default
-rc-service "chillbox-trigger-watch-secrets-and-sensitive-paths" start || echo "This script is usually part of the user-data init. May not be able to start the service yet."
+#{#-
+#rc-service "chillbox-trigger-watch-secrets-and-sensitive-paths" start || echo "This script is usually part of the user-data init. May not be able to start the service yet."
+#}
