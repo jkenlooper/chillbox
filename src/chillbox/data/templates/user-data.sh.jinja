@@ -175,6 +175,8 @@ chmod 644 "/usr/local/share/chillbox/key/$key_name.public.pem"
 
 init_s6_openrc_path_secret_watcher
 
-# Reset openrc and zap do-init from
-openrc
-rc-service do-init zap
+#{#-
+# Reset openrc and zap do-init if fails to start.
+# openrc
+# rc-service do-init zap
+#}

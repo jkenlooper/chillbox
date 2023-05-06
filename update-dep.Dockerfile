@@ -1,11 +1,11 @@
-# syntax=docker/dockerfile:1.4.3
+# syntax=docker/dockerfile:1.5.2
 
 # Modified from the original in python-worker directory in https://github.com/jkenlooper/cookiecutters .
 
-# UPKEEP due: "2023-04-21" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.17.1
+# UPKEEP due: "2023-08-06" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.17.3
 # docker image ls --digests alpine
-FROM alpine:3.17.1@sha256:f271e74b17ced29b915d351685fd4644785c6d1559dd1f2d4189a5e851ef753a
+FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
 
 RUN <<DEV_USER
 addgroup -g 44444 dev

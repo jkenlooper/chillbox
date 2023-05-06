@@ -1,6 +1,7 @@
 # Chillbox Documentation
 
-_Work in progress_
+**_Work in Progress_. Documentation is outdated since the original
+implementation.**
 
 
 - [Tutorials]()

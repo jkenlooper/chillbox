@@ -44,11 +44,11 @@ INSTALL
 
 RUN <<WGET_ALPINE_CUSTOM_IMAGE
 set -o errexit
-# UPKEEP due: "2023-04-21" label: "Alpine Linux custom image" interval: "+3 months"
+# UPKEEP due: "2023-08-06" label: "Alpine Linux custom image" interval: "+3 months"
 # Create this file by following instructions at jkenlooper/alpine-droplet
-alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2023-01-21-2310/alpine-virt-image-2023-01-21-2310.qcow2.bz2"
+alpine_custom_image="https://github.com/jkenlooper/alpine-droplet/releases/download/alpine-virt-image-2023-05-06-1534/alpine-virt-image-2023-05-06-1534.qcow2.bz2"
 echo "INFO: Using alpine custom image $alpine_custom_image"
-alpine_custom_image_checksum="6a70d976cc9d140c0c3f3a2f0bbe8307aa94786b2771f8cf68954e9810b6444b56b917cfc8b5aa7f6341934c2a17792c2d1093455690acc94f1e7bb2e86509b0"
+alpine_custom_image_checksum="ef0350a8ccf0239f53758b619aec5c59c841ecae438a7dada07f92d6ee6dec97b365476249771d5efcb1b37412e4f2c8fd3b7a96df8c53c2cd7a44feed4fbd69"
 echo "INFO: Using alpine custom image checksum ${alpine_custom_image_checksum}"
 
 set -o errexit
