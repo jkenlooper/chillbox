@@ -3,9 +3,17 @@
 set -o errexit
 
 
-mkdir -p /etc/chillbox
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/chillbox
-chmod 0755 /etc/chillbox
+for d in \
+  /etc/chillbox \
+  /etc/chillbox/nginx/templates \
+  /etc/chillbox/bin \
+  /var/lib/chillbox/python \
+  /etc/nginx/conf.d \
+  ; do
+  mkdir -p "$d"
+  chown {{ chillbox_user.name }}:{{ chillbox_user.name }} "$d"
+  chmod 0755 "$d"
+done
 
 # Support chillbox scripts that will execute with root privileges, but need to
 # drop to the owner of the server when executing other commands.
@@ -17,22 +25,10 @@ chmod 0444 /var/lib/chillbox/owner
 
 {% include 'chillbox:create_dirs-PATH_SECRETS.jinja' %}
 
-mkdir -p /var/lib/chillbox/python
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /var/lib/chillbox/python
-chmod 0755 /var/lib/chillbox/python
-
 mkdir -p /etc/nginx
 touch /etc/nginx/nginx.conf
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/nginx.conf
 chmod 0644 /etc/nginx/nginx.conf
-
-mkdir -p /etc/nginx/conf.d
-touch /etc/nginx/conf.d/default.nginx.conf
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/conf.d/default.nginx.conf
-chmod 0644 /etc/nginx/conf.d/default.nginx.conf
-touch /etc/nginx/conf.d/chillbox.ssl_cert.include
-chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/nginx/conf.d/chillbox.ssl_cert.include
-chmod 0644 /etc/nginx/conf.d/chillbox.ssl_cert.include
 
 mkdir -p /home/{{ chillbox_user.name }}/.aws
 chown -R {{ chillbox_user.name }}:{{ chillbox_user.name }} /home/{{ chillbox_user.name }}/.aws
@@ -56,4 +52,3 @@ chmod 0755 /etc/profile.d/chillbox-env.sh
 touch /etc/profile.d/chillbox-config.sh
 chown {{ chillbox_user.name }}:{{ chillbox_user.name }} /etc/profile.d/chillbox-config.sh
 chmod 0755 /etc/profile.d/chillbox-config.sh
-
