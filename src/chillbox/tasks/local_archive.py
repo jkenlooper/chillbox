@@ -31,7 +31,7 @@ from chillbox.utils import (
 import chillbox.data.scripts
 from chillbox.template import Renderer
 from chillbox.state import ChillboxState
-from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS
+from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS, CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE
 
 
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
@@ -202,6 +202,8 @@ def load_env_vars(c):
     env_obj = {
         "CHILLBOX_PATH_SENSITIVE": CHILLBOX_PATH_SENSITIVE,
         "CHILLBOX_PATH_SECRETS": CHILLBOX_PATH_SECRETS,
+        "CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE": CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE,
+
     }
     env_obj.update(c.chillbox_config.get("env", {}))
     c.env = env_obj

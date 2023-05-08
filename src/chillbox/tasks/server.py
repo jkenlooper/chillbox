@@ -316,6 +316,7 @@ def upload(c):
                         rc.run(f"chmod u+w {target_path}")
                         rc.run(f"gunzip -c -f {tmp_upload_path} > {target_path}")
                     rc.run(f"rm -rf {tmp_upload_path}")
+            rc.run(f"touch {c.env['CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE']} || echo \"can't touch this\"")
         rc.close()
 
     # Clean up

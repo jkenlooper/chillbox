@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+#{#-
+# Somewhat complex logic puzzle to handle auto-decrypting uploaded files and
+# moving them to their destination paths. This has not been optimized and will
+# be a pain to maintain, sorry about that.
+#}
+
 cat <<'AUTO_DECRYPT_FILE' > "/usr/local/bin/auto-decrypt-file.sh"
 #!/usr/bin/env sh
 set -o errexit
@@ -23,7 +29,7 @@ echo "$ciphertext_file" \
 . "$tmp_export"
 rm -f "$tmp_export"
 
-id -u "$owner"
+id -u "$owner" > /dev/null
 echo "INFO: Auto-decrypt $ciphertext_file file to destination path $dest_path for $owner."
 
 is_path_sensitive="$(echo "$ciphertext_file" | grep -e "^${CHILLBOX_PATH_SENSITIVE}" - || echo "no")"
@@ -70,6 +76,11 @@ set -o errexit
 
 CHILLBOX_PATH_SENSITIVE="${CHILLBOX_PATH_SENSITIVE:-{{ CHILLBOX_PATH_SENSITIVE }}}"
 CHILLBOX_PATH_SECRETS="${CHILLBOX_PATH_SECRETS:-{{ CHILLBOX_PATH_SECRETS }}}"
+CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE="${CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE:-{{ CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE }}}"
+
+mkdir -p "$(dirname "$CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE")"
+touch "$CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE"
+chmod 0666 "$CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE"
 
 echo "INFO $0 Starting watch process."
 tmp_last_checked="$(mktemp)"
@@ -84,19 +95,34 @@ find "${CHILLBOX_PATH_SENSITIVE}" -type f -exec /usr/local/bin/auto-decrypt-file
 find "${CHILLBOX_PATH_SECRETS}" -type f -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
 date '+%s' > "$tmp_last_checked"
 
-while sleep 1; do
+while sleep 0.1; do
+  tmp_start_list="$(mktemp)"
+  find "${CHILLBOX_PATH_SENSITIVE}" -type f | sort >> "$tmp_start_list"
+  find "${CHILLBOX_PATH_SECRETS}" -type f | sort >> "$tmp_start_list"
+  if [ ! -s "$tmp_start_list" ]; then
+    echo "No files to watch for. Sleeping."
+    sleep 10
+    rm -f "$tmp_start_list"
+    continue
+  fi
+
   # Only need to process any newer files since the last time it was checked.
   find "${CHILLBOX_PATH_SENSITIVE}" -type f -newer "$tmp_last_checked" -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
   find "${CHILLBOX_PATH_SECRETS}" -type f -newer "$tmp_last_checked" -exec /usr/local/bin/auto-decrypt-file.sh '{}' \;
   date '+%s' > "$tmp_last_checked"
+  touch -r "$tmp_start_list" "$tmp_last_checked"
 
   # Create a new list of files and their parent directories.  Use entr to wait
   # for any changes.
   tmp_watch_list="$(mktemp)"
-  find "${CHILLBOX_PATH_SENSITIVE}" -type f >> "$tmp_watch_list"
-  find "${CHILLBOX_PATH_SECRETS}" -type f >> "$tmp_watch_list"
-  entr -p -n -z -d -d -s 'echo "watch-chillbox-secrets-and-sensitive-paths.sh paths update"' < "$tmp_watch_list" || echo "Resetting watch list"
-  rm -f "$tmp_watch_list"
+  find "${CHILLBOX_PATH_SENSITIVE}" -type f | sort >> "$tmp_watch_list"
+  find "${CHILLBOX_PATH_SECRETS}" -type f | sort >> "$tmp_watch_list"
+  changes_since_start="$(diff -q -w "$tmp_start_list" "$tmp_watch_list" > /dev/null || printf "yes")"
+  if [ "$changes_since_start" != "yes" ] && [ "$CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE" -ot "$tmp_last_checked" ]; then
+    echo "$CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE" >> "$tmp_watch_list"
+    entr -p -n -z -d -d -s 'echo "watch-chillbox-secrets-and-sensitive-paths.sh paths update"' < "$tmp_watch_list" || echo "Resetting watch list"
+  fi
+  rm -f "$tmp_watch_list" "$tmp_start_list"
 done
 
 CHILLBOX_WATCH_PATHS_SCRIPT
