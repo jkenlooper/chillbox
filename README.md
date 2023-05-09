@@ -6,13 +6,13 @@
 **_Work in Progress_. This is under active development and is not complete.**
 
 Deployment scripts for websites that use [Chill] and Python services
-that are on an [Alpine Linux] server and backed by S3 object storage.
+that are on an [Alpine Linux] server.
 
 ## Goals
 
 - Infrastructure has **minimal cost**
 - Minimize attack surface by using _less_ software
-- **Faultless deployments** from a local machine are secure
+- **Faultless deployments** from a local machine are _secure_
 - Server maintenance shouldn't be hard
 - Well written documentation
 
@@ -20,29 +20,22 @@ that are on an [Alpine Linux] server and backed by S3 object storage.
 
 **Tech stack is:** [Alpine Linux], [Python], and [POSIX] compatible shell scripts.
 
-Chillbox was initially implemented as a very opinionated solution to provision
-and maintain a [DigitalOcean] droplet server and surrounding infrastructure.
-That initial solution is on this other git branch:
-[initial-shell-implementation](https://github.com/jkenlooper/chillbox/tree/initial-shell-implementation).
-It was restructured since then to not focus on provisioning infrastructure with
-[Terraform] and [DigitalOcean]. It is now split into two separate pieces;
-a Python package ([chillbox]) and shell scripts ([chillbox-server]). The
-chillbox-server scripts are mostly specific for running on an [Alpine Linux]
-server and are designed around the original website deployment configured by
-JSON files. The [chillbox] Python command _can_ be used with [chillbox-server]
-files, or could be used with a custom set of files to deploy and maintain
-servers with different Linux distributions.
+The Chillbox project contains multiple pieces:
 
-### *Outdated Information* 
+- A Python package ([chillbox]) that is installed as a CLI script. This script
+    is used to secure and render the local files needed to work with multiple
+    servers.
+- Shell scripts and template files ([chillbox-server]) that are mostly specific
+    for running on an [Alpine Linux] server.
+- An opinionated website deployment setup
+    ([chillbox-init.sh](https://github.com/jkenlooper/chillbox/tree/main/chillbox-server/bin/chillbox-init.sh)).
+- [Terraform] templates for server infrastructure on [DigitalOcean], which is a
+    cloud hosting provider. Still a _Work in Progress_.
 
-**TODO:** Update feature roadmap and overview graphic with the new implementation.
-
-See the [Feature Roadmap](./chillbox-server/docs/features.md) for a list
-of implemented and upcoming features.
-
-[Chillbox Overview Flowchart](./chillbox-server/docs/diagrams/overview.mmd)
 
 ### Why?
+
+**Chillbox is designed for Web Developers that want to develop websites.**
 
 Hosting a website is becoming more and more complex. Complexity can come
 with a cost in a number of areas and some of those are not easily simplified.
@@ -60,7 +53,22 @@ that capability comes with a high cost. A server can handle a lot of traffic
 needed. A company that does need to automatically scale out would probably also
 have their own infrastructure team that manages and maintains that.
 
-**Chillbox is designed for Web Developers that want to develop websites.**
+---
+
+### *Outdated Information* 
+
+This project is still in transition from the original implementation; see git
+branch
+[initial-shell-implementation](https://github.com/jkenlooper/chillbox/tree/initial-shell-implementation).
+It is being restructured to be less opinionated in some areas, so it can be more
+usable as well as easier to understand.
+
+**TODO:** Update feature roadmap and overview graphic with the new implementation.
+
+See the [Feature Roadmap](./chillbox-server/docs/features.md) for a list
+of implemented and upcoming features.
+
+[Chillbox Overview Flowchart](./chillbox-server/docs/diagrams/overview.mmd)
 
 ---
 

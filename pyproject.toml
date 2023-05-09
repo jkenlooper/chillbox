@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "chillbox"
 dynamic = ['version']
 description = "Deployment scripts for websites that use Chill and custom Python services. Work in Progress "
-readme = "README.md"
+readme = "README-cli.md"
 license.text = "AGPLv3+"
 requires-python = ">=3.9, <4"
 authors = [

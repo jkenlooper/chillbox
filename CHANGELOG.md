@@ -35,9 +35,20 @@ Types of changes
 
 -->
 
+## [initial-shell-implementation]
+
+Chillbox was initially implemented as a very opinionated solution to provision
+and maintain a [DigitalOcean] droplet server and surrounding infrastructure. It
+was tightly coupled with the deployment of websites, which used custom
+configuration in JSON files. That initial solution is on this other git branch:
+[initial-shell-implementation].
+It was restructured since then to be more maintainable and easier to understand
+by breaking it up into individual pieces that could be used together.
 
 <!-- TODO
 [Unreleased]: https://github.com/jkenlooper/chillbox/compare/0.0.1...HEAD
 [0.0.2]: https://github.com/jkenlooper/chillbox/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/jkenlooper/chillbox/releases/tag/0.0.1
 -->
+
+[initial-shell-implementation]: https://github.com/jkenlooper/chillbox/tree/initial-shell-implementation
