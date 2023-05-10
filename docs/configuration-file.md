@@ -28,15 +28,18 @@ instance = "example"
 # exist.
 gpg-key = "example"
 
-# The directory to use to store the state files among other things.
+# The directory to use to store the state files among other things.  This
+# directory should not be included in source control. It is only useful to the
+# current user.
 archive-directory = ".chillbox"
 
 ### User ###
 # Define the users that will have access to the servers listed. The
 # public_ssh_key is optional.
 #
-# Removing a user here does not automatically remove them from the servers.
-# A remote task would need to do that.
+# Adding or removing a user here does not automatically add or remove them from
+# the servers. However, it is common to add a user to a server via the user-data
+# script and reference user details specified in this configuration file.
 #
 # Use the public GitHub API if the user has an account on GitHub. Copy and paste
 # the response from chillbox sub-command (replace USERNAME):
@@ -60,25 +63,31 @@ name = "bob"
 # For example, use them with jinja: {{ ENVIRONMENT }}
 ENVIRONMENT = "development"
 
-# Default env settings; uncomment to change.
+# Variables can be overridden by setting a 'context' when rendering (path and
+# server.user-data does this).  The default for this example is set here. See
+# the example path with id 's3-credentials-example' to see how the AWS_PROFILE
+# value is overridden.
+AWS_PROFILE = "default-example-s3-profile"
+
+# Default env settings; uncomment to change. All defaults will be prefixed with
+# 'CHILLBOX_'
 #
-# The chillbox path sensitive and secrets are used when secrets and files that
-# need to remain encrypted when uploaded to the server will be sent to these
-# paths.
+# The paths defined here are used when encrypted secrets, and files that need to
+# remain encrypted, are uploaded to the server. It is not recommended to change
+# these.
 # CHILLBOX_PATH_SENSITIVE = "/var/lib/chillbox/path_sensitive"
 # CHILLBOX_PATH_SECRETS = "/var/lib/chillbox/secrets"
+# CHILLBOX_PATH_SECRETS_AND_SENSITIVE_LAST_UPDATE = "/var/lib/chillbox/.watch-chillbox-secrets-and-sensitive-paths/last-update"
 
 
 ### Secrets ###
-# The secret is encrypted to each server's public key before being uploaded to
-# append-dest. The append-dest file will have two other sibling files:
-# - .sha512 For storing a hash of the secrets before encryption.
-# - .aes For storing the encrypted data key (first 512 bytes) and the encrypted
-#   file.
-# The append-dest file is only unencrypted at the location with the server's
-# private key.
-# It is recommended to mount a tmpfs file system at the directory that secrets
-# are placed in to be more secure.
+# The secret is encrypted to each server's public key before being uploaded. The
+# secrets are encrypted to the local private key and stored in the local
+# chillbox archive directory.  The append-dest file is only unencrypted at the
+# location with the server's private key.
+#
+# It is recommended to mount a tmpfs file system at the directory that the
+# unencrypted secrets are placed in to be more secure.
 #
 # The 'name' attribute is used to assign the secret value. Secrets can be used
 # in rendered template files. It is recommended to set the 'sensitive' attribute
@@ -113,29 +122,42 @@ append-dest = "/home/alice/example-secrets.txt"
 
 # Secret can be shared to other users by including a 'user' attribute. 
 [[secret.remote]]
-append-dest = "/usr/lib/share/weboftomorrow/secret.cfg"
-user = "weboftomorrow"
+append-dest = "/usr/lib/share/example1/secret.cfg"
+user = "example1"
 [[secret.remote]]
 append-dest = "/usr/lib/share/site1/secret.cfg"
 user = "site1"
 
-# The 'access_key_id' and 'secret_access_key' secrets are common to set up if
+# The 'ACCESS_KEY_ID' and 'SECRET_ACCESS_KEY' secrets are common to set up if
 # the server needs to access S3 object storage and is not an EC2 instance (an
 # EC2 instance would just use the instance profile role for S3 permissions).
 # These secrets can be referred to in the 'chillbox:s3-credentials.jinja'
 # template and rendered with the 's3-credentials-example' example path below.
 [[secret]]
-id = "access_key_id"
+id = "access_key_id__alice"
 name = "ACCESS_KEY_ID"
 prompt = "Enter the access key id for the S3 object storage being used."
 expires = 2023-08-16
 owner = "alice"
 [[secret]]
-id = "secret_access_key"
+id = "secret_access_key__alice"
 name = "SECRET_ACCESS_KEY"
 prompt = "Enter the secret access key for the S3 object storage being used."
 expires = 2023-08-16
 owner = "alice"
+
+[[secret]]
+id = "access_key_id__bob"
+name = "ACCESS_KEY_ID"
+prompt = "Enter the access key id for the S3 object storage being used."
+expires = 2023-08-16
+owner = "bob"
+[[secret]]
+id = "secret_access_key__bob"
+name = "SECRET_ACCESS_KEY"
+prompt = "Enter the secret access key for the S3 object storage being used."
+expires = 2023-08-16
+owner = "bob"
 
 # Can also load files as secrets by setting the 'type' attribute to 'file'. The
 # prompt will be for a file path which will store the content of that file as
@@ -173,6 +195,9 @@ prefix = "local"
 # configuration file. It can also be set to a template if it has a prefix.
 # Use the 'dest' attribute to set the destination where it will be uploaded to
 # on the server.
+# The 'owner' attribute is only required when the 'sensitive' attribute is true.
+# If the owner is defined; the file will only be uploaded if the owner matches
+# the current user.
 # The 'context' can be set to provide more variables other than the 'env' and
 # 'secret' values.
 
@@ -198,14 +223,29 @@ domains = ["abc.example.com"]
 # ACCESS_KEY_ID and SECRET_ACCESS_KEY secrets. The encrypted file will be
 # written to /var/lib/chillbox/path_sensitive/alice/home/alice/.aws/credentials
 # (path joined from CHILLBOX_PATH_SENSITIVE, OWNER, and DEST).
+# 
+# The 'owner' attribute is required if setting 'sensitive' to true. The file
+# will not be uploaded if the current user does not match the owner.
 [[path]]
-id = "s3-credentials-example"
+id = "s3-credentials-example-for-alice"
 src = "chillbox:s3-credentials.jinja"
 dest = "/home/alice/.aws/credentials"
 sensitive = true
+owner = "alice"
 render = true
 [path.context]
 AWS_PROFILE = "example-profile"
+
+[[path]]
+id = "s3-credentials-example-for-bob"
+src = "chillbox:s3-credentials.jinja"
+dest = "/home/bob/.aws/credentials"
+sensitive = true
+owner = "bob"
+render = true
+[path.context]
+AWS_PROFILE = "example-profile"
+
 
 # When the 'src' attribute is a directory; it will upload it as an archive file,
 # and extract it to the 'dest' directory.
@@ -223,13 +263,27 @@ dest = "/example/sub/docs"
 [[server]]
 ip = "122.33.44.55"
 name = "example-stream-server"
-# For this example, 'bob' would not have access to this server.
+
+# Set the owner of the server. The owner should always have access.
+owner = "alice"
+
+# An optional 'login-users' list can be set to allow other users access to the
+# server. For this example, bob is not on the list. Poor bob.
 login-users = [ "alice" ]
+
+# Specify which secrets will be included by their id. Each secret will be
+# encrypted and uploaded to the set 'append-dest' location
+# (CHILLBOX_PATH_SECRETS/USER/APPEND_DEST).
 secrets = [ "example_secret", "example_secret_file" ]
+
+# Specify which paths will be included by their id. Any path that does not have
+# 'sensitive' attribute set to true will be directly uploaded to the set 'dest'
+# location. Any sensitive paths will be encrypted and uploaded to
+# CHILLBOX_PATH_SENSITIVE/OWNER/DEST location.
 remote-files = [
   "stream-nginx-conf",
   "bootstrap-stream-nginx-server.sh",
-  "chillbox-s3-credentials",
+  "s3-credentials-example-for-alice",
 ]
 [server.user-data]
 template = "chillbox:user-data.sh.jinja"
@@ -261,7 +315,12 @@ ENVIRONMENT = "development"
 [[server]]
 ip = "122.3.4.5"
 name = "example-web-server-for-bob"
+owner = "alice"
 login-users = [ "alice", "bob" ]
 secrets = [ "example_secret" ]
-remote-files = [ "chillbox-nginx-conf", "bootstrap-chillbox-server.sh", "s3-credentials-example" ]
+remote-files = [ 
+  "chillbox-nginx-conf",
+  "s3-credentials-example-for-alice",
+  "s3-credentials-example-for-bob",
+]
 ```

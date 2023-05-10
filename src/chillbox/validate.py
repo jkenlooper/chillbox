@@ -110,6 +110,11 @@ def validate_and_load_chillbox_config(chillbox_config_file):
                 f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required for path:\n  - {lines}\n    {chillbox_config_more_info}"
             )
 
+        if path.get("sensitive") and not path.get("owner"):
+            raise ChillboxInvalidConfigError(
+                f"INVALID: The path with id of '{path['id']}' is marked as 'sensitive', but has no 'owner' set. All sensitive paths must have an owner."
+            )
+
         # Check if src is a template else check if src exists
         if path.get("render") and src_path_is_template(path["src"], working_directory):
             logger.debug(f"src path ({path['src']}) is a template file")

@@ -279,6 +279,12 @@ def upload(c):
                     logger.warning(f"No path with id '{remote_file_id}'")
                     continue
 
+                if path.get("owner") and path.get("owner") != state.current_user:
+                    logger.info(
+                        f"Skipping upload of path '{remote_file_id}' because it is not owned by '{state.current_user}'."
+                    )
+                    continue
+
                 target_path = (
                     path["dest"]
                     if not path.get("sensitive")
