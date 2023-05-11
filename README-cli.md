@@ -44,9 +44,14 @@ commands and show which were not found. The whole list of these are listed in
 the [commands-info.toml] file. Any missing commands that are required will cause
 an error to be shown when running a chillbox subcommand.
 
+## Documentation
+
+See further documentation for Chillbox at [docs/README.md]
+
 [Chillbox]: https://github.com/jkenlooper/chillbox#readme
 [chillbox CLI]: https://pypi.org/project/chillbox/
 [commands-info.toml]: https://github.com/jkenlooper/chillbox/blob/main/src/chillbox/data/commands-info.toml
 [docs/configuration-file.md]: https://github.com/jkenlooper/chillbox/blob/main/docs/configuration-file.md
+[docs/README.md]: https://github.com/jkenlooper/chillbox/blob/main/docs/README.md
 [Invoke]: https://www.pyinvoke.org/
 [Fabric]: https://www.fabfile.org/
