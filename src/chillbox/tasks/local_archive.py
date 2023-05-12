@@ -8,6 +8,7 @@ from tempfile import mkstemp, mkdtemp
 from datetime import date
 import tarfile
 import gzip
+import shutil
 
 from invoke import task
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -69,27 +70,69 @@ def generate_gpg_key_or_use_existing(c):
             f"ERROR: The gpg command failed:\n  {result.command}\n  {result.stderr}"
         )
 
+    # Check and trust key first since it is the first time using this gpg key.
+    secure_temp_file_in = Path(mkstemp(text=True)[1])
+    secure_temp_file_out = Path(mkstemp(text=True)[1])
+    secure_temp_file_in.write_text("llama")
+    try:
+        result = c.run(
+            f"gpg --yes --encrypt --recipient {gpg_key_name} --output {secure_temp_file_out} {secure_temp_file_in}",
+            hide=True,
+            warn=True,
+        )
+        logger.debug(result)
+        if result.exited == 2:
+            # This can show a message if it is the first time using this key.
+            logger.warning(f"Initial test of encrypting a file with newly generated gpg key '{gpg_key_name}' exited with error code 2.")
+            logger.warning(result.stderr)
+        elif result.exited == 0:
+            logger.info(f"Initial test of encrypting a file with newly generated gpg key '{gpg_key_name}' worked.")
+        else:
+            raise ChillboxGPGError(
+                f"ERROR: The gpg command failed:\n  {result.command}\n  {result.stderr}"
+            )
+    finally:
+        # No llama here.
+        shred_file(secure_temp_file_in)
+
 
 def create_and_encrypt_new_asymmetric_key(c, directory, name):
     """"""
+    temp_dir = Path(mkdtemp())
     gen_new_asymmetric_keys_script = pkg_resources.path(
         chillbox.data.scripts, "create-asymmetric-key"
     )
     result = c.run(
-        f"{gen_new_asymmetric_keys_script} -n {name} -d {directory}", hide=True
+        f"{gen_new_asymmetric_keys_script} -n {name} -d {temp_dir}", hide=True
     )
     logger.debug(result)
 
-    private_key_cleartext = Path(directory).joinpath(f"{name}.private.pem").resolve()
+    private_key_cleartext = temp_dir.joinpath(f"{name}.private.pem").resolve()
     private_key_ciphertext = f"{private_key_cleartext}.gpg"
-    result = c.run(
-        f"gpg --encrypt --recipient {name} --output {private_key_ciphertext} {private_key_cleartext}",
-        hide=True,
-    )
-    logger.debug(result)
+    try:
+        result = c.run(
+            f"gpg --yes --encrypt --recipient {name} --output {private_key_ciphertext} {private_key_cleartext}",
+            hide=True,
+            warn=True,
+        )
+        logger.debug(result)
+        if result.exited == 2:
+            logger.warning("TODO: An error at this point is not expected.")
+            raise ChillboxGPGError(
+                f"ERROR: The gpg command failed:\n  {result.command}\n  {result.stderr}"
+            )
+        elif result.exited == 0:
+            logger.info(f"Encrypted the generated asymmetric key")
+        else:
+            raise ChillboxGPGError(
+                f"ERROR: The gpg command failed:\n  {result.command}\n  {result.stderr}"
+            )
+    finally:
+        shred_file(private_key_cleartext)
 
-    # TODO Secure delete the cleartext file with shred, srm, or some other solution.
-    Path(private_key_cleartext).unlink()
+    public_key_file = temp_dir.joinpath(f"{name}.public.pem").resolve()
+    shutil.move(public_key_file, directory)
+    shutil.move(private_key_ciphertext, directory)
 
 
 def decrypt_file_with_gpg(c, ciphertext_gpg_file):
