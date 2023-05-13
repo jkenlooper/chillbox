@@ -168,7 +168,7 @@ def validate_and_load_chillbox_config(chillbox_config_file):
     today = date.today()
     for secret in data.get("secret", []):
         expires_date = secret.get("expires")
-        if today > expires_date:
+        if expires_date and today > expires_date:
             logger.warning(
                 f"The secret '{secret.get('id')}' exists, but it has expired."
             )
