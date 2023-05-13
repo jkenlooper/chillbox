@@ -50,6 +50,9 @@ name = "alice"
 public_ssh_key = [
   "public-ssh-key-that-is-manually-added-here"
 ]
+# The password_hash is optional. A prompt to set one will only happen if the
+# current user doesn't have one defined.
+password_hash = "$6$P5HfG8ffOtULVU4Z$A5kCOky7sjaDVhrvNyXd4aFoAQgdOdNxN.PTsWMhszHQ7JMj29tgYIPnMrg7OdqPhZgzFUdTUpSRrSjJk0vR8."
 
 [[user]]
 name = "bob"
