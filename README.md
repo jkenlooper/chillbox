@@ -1,7 +1,7 @@
 # Chillbox
 
 [![Keep a Changelog v1.1.0 badge][changelog-badge]][changelog]
-[![AGPL-3.0 license][license-badge]][license]
+[![ISCL license][license-badge]][license]
 
 **_Work in Progress_. This is under active development and is not complete.**
 
@@ -114,7 +114,7 @@ make upkeep
 [changelog]: ./CHANGELOG.md
 [changelog-badge]: https://img.shields.io/badge/changelog-Keep%20a%20Changelog%20v1.1.0-%23E05735
 [license]: ./LICENSE
-[license-badge]: https://img.shields.io/badge/license-AGPL%20V3-blue
+[license-badge]: https://img.shields.io/badge/license-ISCL-blue
 [Alpine Linux]: https://alpinelinux.org/
 [DigitalOcean]: https://www.digitalocean.com/
 [DigitalOcean Spaces]: https://www.digitalocean.com/products/spaces

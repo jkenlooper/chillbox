@@ -7,7 +7,7 @@ name = "chillbox"
 dynamic = ['version']
 description = "Deployment scripts for websites that use Chill and custom Python services. Work in Progress "
 readme = "README-cli.md"
-license.text = "AGPLv3+"
+license.text = "ISCL"
 requires-python = ">=3.9, <4"
 authors = [
     { name = "Jake Hickenlooper", email = "jake@weboftomorrow.com" },
@@ -17,7 +17,7 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: OSI Approved :: ISC License (ISCL)",
     "Natural Language :: English",
     "Operating System :: POSIX",
     "Programming Language :: Python :: 3.9",
