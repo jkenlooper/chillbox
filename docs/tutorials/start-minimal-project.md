@@ -155,7 +155,7 @@ chillbox output-env | xargs cat
 chillbox output-env --include-secrets | xargs cat
 ```
 
-   Show the help for more information: `chillbox output-env --help`
+   Show the help for more information: `chillbox --help output-env`
 
 14. Chillbox is mainly for setting up deployment scripts for servers. Define
     a 'server' in the chillbox configuration file with a fake 'ip' address for
@@ -191,7 +191,7 @@ template = "tutorial:hello-chillbox-user-data.sh.jinja"
 
 ## Add user and set the password hash
 # shellcheck disable=SC2016
-useradd -m -U -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 ## Add the user's public ssh key.
 mkdir -p '/home/{{ chillbox_user.name }}/.ssh'
@@ -199,11 +199,9 @@ cat <<'HERE_PUBLIC_SSH_KEYS' > '/home/{{ chillbox_user.name }}/.ssh/authorized_k
 {{ chillbox_user["public_ssh_key"] | join('\n') }}
 HERE_PUBLIC_SSH_KEYS
 
-chown -R '{{ chillbox_user.name }}:{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
+chown -R '{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
 chmod -R 700 '/home/{{ chillbox_user.name }}/.ssh'
 chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
-
-
 
 ```
 
@@ -233,7 +231,65 @@ The rendered user-data script will have the necessary commands to add the
 current user (alice) to the server. This user-data script could be used when
 provisioning a new server.
 
-18. ...WIP 
+18. Now Alice needs a file to be uploaded to the server. The 'path' for it can
+    be defined in the chillbox configuration file. Create a new directory named
+    'server-files' and add a file named 'the-menu.md' with the below content.
+
+Content of file at: `server-files/the-menu.md`
+```md
+# Menu for Server
+
+Donuts are no longer on the menu. Sorry.
+```
+
+Add that file as a 'path' to the configuration file.
+
+```toml
+## Add to chillbox.toml
+
+[[path]]
+id = "server-menu-md"
+src = "server-files/the-menu.md"
+dest = "/srv/files/the-menu.md"
+```
+
+19. Running `chillbox init` again will process any items in 'path' list. Each
+    one will be gzipped and encrypted to the chillbox archive directory under
+    the 'id' attribute. Include the id of the path item to the 'remote-files' of
+    a server for it to be uploaded to that server.
+
+```toml
+## Update chillbox.toml
+[[server]]
+# ... Existing hello-chillbox-example-server 
+remote-files = [
+  "server-menu-md"
+]
+
+```
+
+20. Path items can also be rendered from a template. Add this jinja file with
+    the name 'breakfast-menu.md.jinja' to the 'template-tutorial' directory.
+
+`template-tutorial/breakfast-menu.md.jinja`
+```jinja
+# Breakfast Menu for {{ event_name }}
+
+- Spam
+- Eggs
+```
+
+Add it as a 'path' with the id of 'breakfast-menu'. The 'src' attribute uses the
+'tutorial:' prefix defined for that template entry, so it also needs to set the
+'render' attribute to true.
+```toml
+## Add to chillbox.toml with other 'path' items
+
+[[path]]
+id = "breakfast-menu"
+src = "tutorial:breakfast-menu.md.jinja"
+render = true
+dest = "/srv/files/breakfast-menu.md"
 
 ---
 

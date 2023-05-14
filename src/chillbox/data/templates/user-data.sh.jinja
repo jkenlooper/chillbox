@@ -54,7 +54,7 @@ init_user() {
   # the server reboots.
   #}
 # shellcheck disable=SC2016
-useradd -m -U -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 #{#-
 # Include the user to the chillconf group so login users can
@@ -73,7 +73,7 @@ cat <<'HERE_PUBLIC_SSH_KEYS' > '/home/{{ chillbox_user.name }}/.ssh/authorized_k
 {{ chillbox_user["public_ssh_key"] | join('\n') }}
 HERE_PUBLIC_SSH_KEYS
 
-chown -R '{{ chillbox_user.name }}:{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
+chown -R '{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
 chmod -R 700 '/home/{{ chillbox_user.name }}/.ssh'
 chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
 
