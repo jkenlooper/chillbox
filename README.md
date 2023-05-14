@@ -24,7 +24,7 @@ The Chillbox project contains multiple pieces:
 
 - A Python package ([chillbox]) that is installed as a CLI script. This script
     is used to secure and render the local files needed to work with multiple
-    servers.
+    servers. Documentation can be found at [docs/README.md].
 - Shell scripts and template files ([chillbox-server]) that are mostly specific
     for running on an [Alpine Linux] server.
 - An opinionated website deployment setup
@@ -117,20 +117,10 @@ make upkeep
 [license-badge]: https://img.shields.io/badge/license-ISCL-blue
 [Alpine Linux]: https://alpinelinux.org/
 [DigitalOcean]: https://www.digitalocean.com/
-[DigitalOcean Spaces]: https://www.digitalocean.com/products/spaces
 [Chill]: https://github.com/jkenlooper/chill
-[Flask]: https://flask.palletsprojects.com/en/2.1.x/
-[SQLite]: https://sqlite.org/index.html
 [Terraform]: https://www.terraform.io/
-[Ansible]: https://github.com/ansible/ansible#readme
-[NGINX]: https://nginx.org/
 [POSIX]: https://en.wikipedia.org/wiki/POSIX
-[Linode]: https://www.linode.com/
-[Vultr]: https://www.vultr.com/
-[Rust]: https://rust-lang.org/
-[Go]: https://go.dev/
-[Bats-core]: https://github.com/bats-core/bats-core#readme
-[shellcheck]: https://www.shellcheck.net/
 [Python]: https://www.python.org/
 [chillbox]: https://pypi.org/project/chillbox/
 [chillbox-server]: https://github.com/jkenlooper/chillbox/tree/main/chillbox-server
+[docs/README.md]: https://github.com/jkenlooper/chillbox/tree/main/docs/README.md

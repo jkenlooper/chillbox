@@ -37,6 +37,9 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/jkenlooper/chillbox"
+documentation = "https://github.com/jkenlooper/chillbox/blob/main/docs/README.md"
+repository = "https://github.com/jkenlooper/chillbox/"
+changelog = "https://github.com/jkenlooper/chillbox/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 
