@@ -43,3 +43,6 @@ class ChillboxInvalidStateFileError(ChillboxExit):
 
 class ChillboxTemplateError(ChillboxExit):
     """"""
+
+class ChillboxShowFileError(ChillboxExit):
+    """"""
