@@ -1,4 +1,11 @@
-# Start a minimal project
+# Start a minimal project (hello-chillbox)
+
+Follow the below steps after installing `chillbox` on a local machine. This
+tutorial will not require access to a server. It is only focused on running some
+local chillbox commands to render some files and show how some chillbox
+configuration works.
+
+## Tutorial Steps
 
 1. Create an empty directory on the local machine where `chillbox` has been
 installed. Name this empty project directory 'hello-chillbox' for this tutorial.
@@ -28,8 +35,8 @@ archive-directory = ".chillbox"
 ```
 
 5. Run the `chillbox init` command again. Note that this time it will prompt for
-   the 'current_user' to be set. For this tutorial; enter 'alice' as the current
-   user.  After hitting enter it will show another message stating that the
+   the 'current_user' to be set. Enter 'alice' as the current user for this
+   tutorial.  After hitting enter it will show another message stating that the
    current_user has not been added to the chillbox configuration. Do that now by
    appending the below to the configuration file.
 
@@ -152,7 +159,7 @@ THEME = "funny hats"
 chillbox output-env | xargs cat
 
 # Show the environment variables and secrets set with chillbox.
-chillbox output-env --include-secrets | xargs cat
+chillbox output-env --sensitive | xargs cat
 ```
 
    Show the help for more information: `chillbox --help output-env`
@@ -253,10 +260,11 @@ src = "server-files/the-menu.md"
 dest = "/srv/files/the-menu.md"
 ```
 
-19. Running `chillbox init` again will process any items in 'path' list. Each
+19. Running `chillbox init` again will process all items in 'path' list. Each
     one will be gzipped and encrypted to the chillbox archive directory under
     the 'id' attribute. Include the id of the path item to the 'remote-files' of
-    a server for it to be uploaded to that server.
+    a server for it to be uploaded to that server. This step is not necessary
+    for this tutorial since the server being used doesn't need to exist.
 
 ```toml
 ## Update chillbox.toml
@@ -275,6 +283,9 @@ remote-files = [
 ```jinja
 # Breakfast Menu for {{ event_name }}
 
+Our theme for today is: {{ THEME }}.
+
+## The Specials
 - Spam
 - Eggs
 ```
@@ -290,6 +301,88 @@ id = "breakfast-menu"
 src = "tutorial:breakfast-menu.md.jinja"
 render = true
 dest = "/srv/files/breakfast-menu.md"
+
+```
+
+21. Run the `chillbox show breakfast-menu` command to see the rendered file.
+    This will print out the temporary directory that has the rendered file in
+    it. Using `chillbox show` is useful to view the rendered file by the path id
+    before uploading them to a server. These files are always stored in the
+    chillbox archive directory as encrypted gzipped files.
+
+```bash
+# Show the rendered files for 'breakfast-menu' path id.
+chillbox show breakfast-menu | xargs ls -R
+```
+
+The rendered breakfast-menu.md file will have the `THEME` variable expanded, but
+not the `event_name`. This is because the `THEME` was set as an 'env' variable
+which is available to all paths if render is true.
+
+22. Fix the breakfast-menu path to include `event_name` variable. This can be
+    done for just this path by adding a 'context' to it. Update the chillbox
+    configuration for the breakfast-menu path.
+
+```toml
+## Update 'breakfast-menu' path in chillbox.toml to match this.
+
+[[path]]
+id = "breakfast-menu"
+src = "tutorial:breakfast-menu.md.jinja"
+render = true
+dest = "/srv/files/breakfast-menu.md"
+# Add a context with a set event_name so it will expand that variable.
+[path.context]
+event_name = "Alice and Bob"
+
+```
+
+Now running the `chillbox show breakfast-menu` again will show a new temporary
+directory with the rendered file. This time it will have all variables expanded.
+
+23. To create a file with a secret value; add the 'sensitive' and 'owner'
+    attributes. Create a new file that Alice will include her 'FAVORITE_COLOR'
+    color secret in.
+
+`template-tutorial/answers.txt.jinja`
+```jinja
+Favorite color for {{ chillbox_user.name | title }} is: {{ FAVORITE_COLOR }}.
+```
+
+And create a new 'path' item:
+
+```toml
+## Add 'alice-answers' path to chillbox.toml.
+
+[[path]]
+id = "alice-answers"
+src = "tutorial:answers.txt.jinja"
+render = true
+owner = "alice"
+sensitive = true
+dest = "/srv/files/alice/answers.txt"
+
+```
+
+Preview it by using the `chillbox show alice-answers --sensitive` command.
+
+The 'alice-answers' could also be included in the 'remote-files' list for the
+server. This would then be included when upload files to the server. This step
+is being skipped since this tutorial isn't requiring a remote server.
+
+## Summary
+
+This tutorial was a somewhat contrived example to create some files for
+a server. Although what was actually accomplished could have easily been done
+without using the `chillbox` commands; the benefits of generating these files
+and securely storing them can be seen. Chillbox can be used in this way to work
+with other tools and users.
+
+To further understand how to effectively use chillbox, try simulating how Bob
+would use this 'hello-chillbox' project if it was checked into version control
+(git). Make sure to not include the chillbox archive directory ('.chillbox/')
+to version control; that is only useful for the current user.
+
 
 ---
 
