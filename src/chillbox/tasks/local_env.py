@@ -13,12 +13,12 @@ from chillbox.utils import (
 
 
 @task(pre=[init])
-def output_env(c, include_secrets=False):
+def output_env(c, sensitive=False):
     """
     Output environment variables and secrets to a temporary file.
 
     The format of the output is VARIABLE_NAME='value' per line. Only the secrets
-    that the current owner has will be included if the --include-secrets flag is
+    that the current owner has will be included if the --sensitive flag is
     used.
 
     Example use case:
@@ -52,7 +52,7 @@ def output_env(c, include_secrets=False):
 
     export_env_vars.update(c.env)
 
-    if include_secrets:
+    if sensitive:
         export_env_vars.update(c.secrets)
 
     env_var_list = list(map(lambda x: f"{x[0]}='{x[1]}'", export_env_vars.items()))

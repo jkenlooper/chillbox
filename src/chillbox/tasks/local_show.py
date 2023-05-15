@@ -23,7 +23,7 @@ from chillbox.errors import (
 
 
 @task(pre=[init])
-def show(c, path_id):
+def show(c, path_id, sensitive=False):
     """
     Show a path by 'id' from the chillbox archive path directory.
 
@@ -57,28 +57,33 @@ def show(c, path_id):
     path_mapping = dict(map(lambda x: (x["id"], x), c.chillbox_config.get("path", [])))
     path = path_mapping.get(path_id)
     if not path:
-        ChillboxArchiveDirectoryError(f"ERROR: No path with id '{path_id}'")
-    if path.get("owner") and path.get("owner") != state.current_user:
-        ChillboxShowFileError(
+        raise ChillboxArchiveDirectoryError(f"ERROR: No path with id '{path_id}'")
+    logger.debug(f"{path.get('owner')} == {state.current_user}")
+    if path.get("owner") and (path.get("owner") != state.current_user):
+        raise ChillboxShowFileError(
             f"Can't show path '{path_id}' because it is not owned by '{state.current_user}'."
         )
+    if path.get("sensitive"):
+        if sensitive:
+            logger.warning(f"Saving sensitive content to a temporary directory. Be sure to properly remove files afterwards.")
+        else:
+            raise ChillboxShowFileError(
+                f"Can't show path '{path_id}' because it is marked as sensitive and the '--include-sensitve' option was not used."
+            )
+
 
     tmp_output_dir = Path(mkdtemp())
-    if path.get("sensitive"):
-        ""
+    tmp_plaintext_file = mkstemp()[1]
+    decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
 
+    target_path = tmp_output_dir.joinpath(Path(path['dest']).name)
+    if Path(path["src"]).is_dir():
+        target_dir = target_path.resolve(strict=False)
+        c.run(f"mkdir -p {target_dir}")
+        c.run(
+            f"tar x -z -f {tmp_plaintext_file} -C {target_dir} --strip-components 1"
+        )
     else:
-        tmp_plaintext_file = mkstemp()[1]
-        decrypt_file(c, tmp_plaintext_file, local_ciphertext_file)
-        target_path = tmp_output_dir.joinpath(Path(path['dest']).name)
-        if Path(path["src"]).is_dir():
-            ""
-            target_dir = target_path.resolve(strict=False)
-            c.run(f"mkdir -p {target_dir}")
-            c.run(
-                f"tar x -z -f {tmp_plaintext_file} -C {target_dir} --strip-components 1"
-            )
-        else:
-            c.run(f"gunzip -c -f {tmp_plaintext_file} > {target_path}")
+        c.run(f"gunzip -c -f {tmp_plaintext_file} > {target_path}")
 
     print(tmp_output_dir)
