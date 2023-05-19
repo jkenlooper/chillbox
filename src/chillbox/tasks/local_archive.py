@@ -38,9 +38,7 @@ from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS, CH
 env = Environment(loader=PackageLoader("chillbox"), autoescape=select_autoescape())
 
 
-def generate_gpg_key_or_use_existing(c):
-    gpg_key_name = c.chillbox_config["gpg-key"]
-
+def generate_gpg_key_or_use_existing(c, gpg_key_name):
     result = c.run(
         f"gpg --textmode --list-secret-keys '{gpg_key_name}'", warn=True, hide=True
     )
@@ -96,7 +94,7 @@ def generate_gpg_key_or_use_existing(c):
         shred_file(secure_temp_file_in)
 
 
-def create_and_encrypt_new_asymmetric_key(c, directory, name):
+def create_and_encrypt_new_asymmetric_key(c, directory, name, gpg_key_name):
     """"""
     temp_dir = Path(mkdtemp())
     gen_new_asymmetric_keys_script = pkg_resources.path(
@@ -111,7 +109,7 @@ def create_and_encrypt_new_asymmetric_key(c, directory, name):
     private_key_ciphertext = f"{private_key_cleartext}.gpg"
     try:
         result = c.run(
-            f"gpg --yes --encrypt --recipient {name} --output {private_key_ciphertext} {private_key_cleartext}",
+            f"gpg --yes --encrypt --recipient {gpg_key_name} --output {private_key_ciphertext} {private_key_cleartext}",
             hide=True,
             warn=True,
         )
@@ -146,7 +144,7 @@ def decrypt_file_with_gpg(c, ciphertext_gpg_file):
     return secure_temp_file
 
 
-def init_local_chillbox_asymmetric_key(c, state):
+def init_local_chillbox_asymmetric_key(c, state, gpg_key_name):
     "Initialize the local chillbox asymmetric key"
     instance = c.chillbox_config["instance"]
 
@@ -167,7 +165,7 @@ def init_local_chillbox_asymmetric_key(c, state):
 
     if not Path(gpg_encrypted_asymmetric_key_path).exists():
         create_and_encrypt_new_asymmetric_key(
-            c, directory=local_chillbox_asymmetric_key_dir, name=instance
+            c, directory=local_chillbox_asymmetric_key_dir, name=instance, gpg_key_name=gpg_key_name,
         )
 
     # Allow other tasks to use this key when decrypting other content. This way
@@ -522,12 +520,13 @@ def init(c):
         raise ChillboxInvalidConfigError(
             f"The current_user ({current_user}) has not been added to chillbox configuration file: {c.config['chillbox-config']}"
         )
+    gpg_key_name = result[0]["gpg-key"]
 
     # Set this so other tasks that have 'init' as a pre-task can use this value.
     c.archive_directory = archive_directory
 
-    generate_gpg_key_or_use_existing(c)
-    init_local_chillbox_asymmetric_key(c, state)
+    generate_gpg_key_or_use_existing(c, gpg_key_name)
+    init_local_chillbox_asymmetric_key(c, state, gpg_key_name)
     encrypt_secrets_to_archive(c, state)
     load_env_vars(c)
     load_secrets(c, state)

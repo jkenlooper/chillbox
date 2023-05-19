@@ -18,7 +18,7 @@ from chillbox.errors import (
 from chillbox.local_checks import check_required_commands
 from chillbox.utils import logger, get_file_system_loader
 
-required_keys = set(["instance", "gpg-key", "archive-directory"])
+required_keys = set(["instance", "archive-directory"])
 required_keys_path = set(["id", "src", "dest"])
 
 # TODO: Reference the docs/configuration-file.md file that is hosted at a URL instead?
@@ -75,6 +75,17 @@ def validate_and_load_chillbox_config(chillbox_config_file):
         lines = "\n  - ".join(sorted(missing_keys))
         raise ChillboxInvalidConfigError(
             f"INVALID: Missing required keys in the {f.name} file.\nThe following keys are required:\n  - {lines}\n    {chillbox_config_more_info}"
+        )
+
+    ## user
+    user_missing_gpg_key = list(
+        filter(
+            lambda x: not x.get("gpg-key"), data.get("user", [])
+        )
+    )
+    if user_missing_gpg_key:
+        raise ChillboxInvalidConfigError(
+            f"INVALID: Each user must set a gpg-key name. These are invalid:\n{pformat(user_missing_gpg_key)}"
         )
 
     ## template

@@ -18,15 +18,13 @@ Perform the rest of the commands within this project directory (`cd hello-chillb
    project directory. This configuration file will be in the [TOML] format.
 
 4. Not all settings are required for the chillbox configuration file. Add only
-   the required ones:  "instance", "gpg-key", and "archive-directory". Copy and
+   the required ones:  "instance", and "archive-directory". Copy and
    paste the below TOML snippet to the 'chillbox.toml' file.
 
 ```toml
 ## chillbox.toml
 
 instance = "hello-chillbox"
-
-gpg-key = "hello-chillbox"
 
 # The directory to use to store the state files among other things.  This
 # directory should not be included in source control. It is only useful to the
@@ -48,6 +46,7 @@ Add the current user to the bottom of chillbox.toml.
 [[user]]
 # Alice is the current user for this tutorial.
 name = "alice"
+gpg-key = "alice@hello-chillbox.example"
 
 ```
 
@@ -55,8 +54,8 @@ name = "alice"
    been defined and the current user matches it (alice is the current user at
    this step in the tutorial). Chillbox uses [GnuPG] to encrypt the private
    asymmetric key that chillbox will generate. Since your local machine most
-   likely doesn't already have a GPG key named 'hello-chillbox'; it will prompt
-   you to create a new GPG key and set a password on it.
+   likely doesn't already have a GPG key named 'alice@hello-chillbox.example';
+   it will prompt you to create a new GPG key and set a password on it.
 
    It will also automatically create a private and public ssh key for this user.
    This is because no 'public_ssh_key' was set for 'alice' in the chillbox

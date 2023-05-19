@@ -5,7 +5,6 @@ In TOML format to allow comments.
 Required top level keys:
 
 - "instance"
-- "gpg-key"
 - "archive-directory"
 
 Optional:
@@ -24,18 +23,15 @@ Optional:
 # The instance is used to identify this chillbox.
 instance = "example"
 
-# Set the name of the GPG key to use. This will create a new one if it doesn't
-# exist.
-gpg-key = "example"
-
 # The directory to use to store the state files among other things.  This
 # directory should not be included in source control. It is only useful to the
 # current user.
 archive-directory = ".chillbox"
 
 ### User ###
-# Define the users that will have access to the servers listed. The
-# public_ssh_key is optional.
+# Define the users that will have access to the servers listed. The 'name' and
+# 'gpg-key' are both required. If the GPG key doesn't exist on the system for
+# the current user; then it will prompt to create a new one.
 #
 # Adding or removing a user here does not automatically add or remove them from
 # the servers. However, it is common to add a user to a server via the user-data
@@ -47,6 +43,8 @@ archive-directory = ".chillbox"
 
 [[user]]
 name = "alice"
+gpg-key = "alice@example"
+
 public_ssh_key = [
   "public-ssh-key-that-is-manually-added-here"
 ]
@@ -56,6 +54,7 @@ password_hash = "$6$P5HfG8ffOtULVU4Z$A5kCOky7sjaDVhrvNyXd4aFoAQgdOdNxN.PTsWMhszH
 
 [[user]]
 name = "bob"
+gpg-key = "bob@example"
 # Not setting a public_ssh_key will trigger auto creation of one along with
 # a private key that is encrypted.
 
