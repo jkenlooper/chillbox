@@ -24,6 +24,13 @@ def generate_ssh_config_temp(c, current_user, identity_file):
     ssh_config = tempfile.mkstemp(suffix=".chillbox.ssh_config")[1]
     logger.debug(f"{ssh_config=}")
 
+    # Include a user managed ssh_config file if it was set. Useful for
+    # local development and using a Vagrant managed ssh_config file.
+    user_managed_ssh_config_path = Path(c.chillbox_config.get("ssh_config", ""))
+    user_managed_ssh_config = False
+    if user_managed_ssh_config_path.is_file():
+        user_managed_ssh_config = user_managed_ssh_config_path.read_text()
+
     template = get_template("ssh_config.jinja")
     with open(ssh_config, "w") as f:
         f.write(
@@ -34,6 +41,7 @@ def generate_ssh_config_temp(c, current_user, identity_file):
                     "known_hosts_file": user_known_hosts_file,
                     "identity_file": identity_file,
                     "user_server_list": user_server_list,
+                    "user_managed_ssh_config": user_managed_ssh_config,
                 }
             )
         )

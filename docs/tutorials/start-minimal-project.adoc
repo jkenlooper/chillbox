@@ -4,6 +4,7 @@
 :sectanchors:
 :sectnums:
 :toc:
+:source-highlighter: pygments
 
 Follow the below steps after installing `chillbox` on a local machine. This
 tutorial will not require access to a server. It is only focused on running some

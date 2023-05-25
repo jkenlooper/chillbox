@@ -28,6 +28,11 @@ instance = "example"
 # current user.
 archive-directory = ".chillbox"
 
+# Optionally set a user managed ssh_config file to be included. The file will be
+# included at the top of the generated ssh_config that chillbox uses (with an
+# 'Include' directive).
+ssh_config = "example.ssh_config"
+
 ### User ###
 # Define the users that will have access to the servers listed. The 'name' and
 # 'gpg-key' are both required. If the GPG key doesn't exist on the system for
@@ -265,6 +270,10 @@ dest = "/example/sub/docs"
 [[server]]
 ip = "122.33.44.55"
 name = "example-stream-server"
+
+# The ssh port to use defaults to 22. Optionally set it to something different
+# if needed.
+# ssh_port = 22
 
 # Set the owner of the server. The owner should always have access.
 owner = "alice"

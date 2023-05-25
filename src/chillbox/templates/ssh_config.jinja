@@ -4,6 +4,16 @@
 # ssh -F {{ ssh_config }} {{ server.name }}
 {%- endfor %}
 
+{% if user_managed_ssh_config %}
+# Inline the user managed ssh_config file instead of using 'Include' since
+# Python package paramiko only supports some ssh_config settings.
+# https://docs.paramiko.org/en/stable/api/config.html
+#
+## Start of user managed ssh_config file ##
+{{ user_managed_ssh_config }}
+## End of user managed ssh_config file ##
+{%- endif %}
+
 User {{ current_user }}
 
 # Use a chillbox managed known_hosts file.

@@ -35,7 +35,11 @@ Please ensure that these are available on the local machine.
 
 ## Tutorials
 
-1. [Start a _minimal_ project](./tutorials/start-minimal-project.md)
+Each tutorial builds on the next and so it is recommended to follow them in
+order. Project files for each one (if applicable) are available as a zip file.
+
+1. [Start a _minimal_ project](./tutorials/start-minimal-project.adoc)
+2. [Setup a Virtual Machine (VM) on your local computer](./tutorials/setup-a-virtual-machine.adoc)
 
 
 ## How-to guides
