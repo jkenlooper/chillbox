@@ -1,0 +1,14 @@
+cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/decrypt-file"
+{% include [scripts_decrypt_file, 'chillbox-scripts:decrypt-file'] %}
+DECRYPT_FILE_HERE
+chmod +x "/usr/local/bin/decrypt-file"
+
+cat <<'DECRYPT_FILE_HERE' > "/usr/local/bin/encrypt-file"
+{% include [scripts_encrypt_file, 'chillbox-scripts:encrypt-file'] %}
+DECRYPT_FILE_HERE
+chmod +x "/usr/local/bin/encrypt-file"
+
+cat <<'CREATE_ASYMMETRIC_KEY_HERE' > "/usr/local/bin/create-asymmetric-key"
+{% include [scripts_create_asymmetric_key, 'chillbox-scripts:create-asymmetric-key'] %}
+CREATE_ASYMMETRIC_KEY_HERE
+chmod +x "/usr/local/bin/create-asymmetric-key"

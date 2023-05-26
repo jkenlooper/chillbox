@@ -1,0 +1,45 @@
+#!/usr/bin/env sh
+set -o errexit
+
+#{#-
+# Static user-data script for Alpine Linux.
+# No encryption keys or ssh hostkeys should be included. Suitable for a public
+# base image.
+#}
+
+#{% if ENVIRONMENT == "development" %}
+set -x
+cp "$0" /root/debug-user-data.sh
+#{% endif %}
+
+install_packages() {
+#{#-
+# Don't upgrade the kernel in a user-data script (no 'apk upgrade' here).
+# Use of 'apk update' is okay.
+# An upgrade of the kernel should only be done if it can reboot afterwards before
+# trying to run other commands.
+#}
+  apk update
+  apk add \
+    -q --no-progress \
+    attr \
+    coreutils \
+    doas \
+    entr \
+    nftables \
+    openssh \
+    openssl \
+    s6 \
+    s6-portable-utils \
+    shadow
+
+  rc-update add s6-svscan boot
+
+  # A restart of sshd will generate hostkeys. Not doing that here since this is
+  # designed to be used as a base image.
+  #rc-service sshd restart
+}
+
+install_packages
+
+{% include 'chillbox:user-data/static/snippet-create_scripts.sh.jinja' %}
