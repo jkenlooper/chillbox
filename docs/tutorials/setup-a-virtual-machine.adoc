@@ -10,11 +10,23 @@ A virtual machine that can be used on your local computer is useful when
 developing scripts for a server that is managed with Chillbox. This guide will
 use two tools to accomplish this: Vagrant, and VirtualBox as they have binaries
 available for multiple platforms. At the end of this tutorial you'll have an
-Alpine Linux server that can be used for the rest of the tutorials.
+Ubuntu server that can be used for the rest of the tutorials.
+
+.Vagrantfile
+[,ruby]
+----
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "bento/ubuntu-22.04"
+
+  config.vm.define "hello-chillbox"
+  config.vm.provision "shell", path: ".chillbox/server/hello-chillbox/user-data"
+
+end
+----
 
 [,bash]
 ----
-vagrant init --minimal bento/ubuntu-22.04
 vagrant up
 vagrant ssh-config > vagrant-ssh_config
 ----
@@ -33,8 +45,5 @@ ssh_config = "vagrant-ssh_config"
 
 [,bash]
 ----
-chillbox ssh-unlock
-
-# TODO
-#ssh -F ...
+ssh -F "$(chillbox ssh-unlock)" hello-chillbox
 ----
