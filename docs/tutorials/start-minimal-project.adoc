@@ -1,5 +1,6 @@
 = Start a minimal project (hello-chillbox)
 :description: Tutorial focused on initial chillbox configuration without access to a server.
+:icons: font
 :sectlinks:
 :sectanchors:
 :sectnums:
@@ -29,17 +30,16 @@ project directory. This configuration file will be in the https://toml.io/en/[TO
 the required ones:  "instance", and "archive-directory". Copy and
 paste the below TOML snippet to the 'chillbox.toml' file.
 +
+.Create file: chillbox.toml
 [,toml]
 ----
-## chillbox.toml
-
 instance = "hello-chillbox"
 
-# The directory to use to store the state files among other things.  This
-# directory should not be included in source control. It is only useful to the
-# current user.
-archive-directory = ".chillbox"
+archive-directory = ".chillbox" # <1>
 ----
+<1> The directory to use to store the state files among other things.  This
+directory should not be included in source control. It is only useful to the
+current user.
 
 === Add 'alice' as current user
 
@@ -49,17 +49,15 @@ tutorial.  After hitting enter it will show another message stating that the
 current_user has not been added to the chillbox configuration. Do that now by
 appending the below to the configuration file.
 +
-Add the current user to the bottom of chillbox.toml.
-+
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to the bottom of chillbox.toml
-
 [[user]]
-# Alice is the current user for this tutorial.
-name = "alice"
-gpg-key = "alice@hello-chillbox.example"
+name = "alice" # <1>
+gpg-key = "alice@hello-chillbox.example" # <2>
 ----
+<1> The current user is 'alice' for this tutorial.
+<2> The gpg-key doesn't need to exist first.
 
 . Run the `chillbox init` command again. This time it will see that a user has
 been defined and the current user matches it (alice is the current user at
@@ -83,32 +81,34 @@ the `jq` command or just open the statefile.json in a text editor. Copy these
 from .chillbox/statefile.json and include them in the chillbox.toml for the
 'alice' user.
 +
+.Update file: chillbox.toml
 [,toml]
 ----
-## Update just the 'alice' user in chillbox.toml
-
 [[user]]
-# Alice is the current user for this tutorial.
 name = "alice"
-password_hash = "copy/paste the '.current_user_data.password_hash' value from ./chillbox/statefile.json"
+gpg-key = "alice@hello-chillbox.example"
+password_hash = "..." # <1>
 public_ssh_key = [
-   "copy/paste the '.current_user_data.public_ssh_key[0]' value from ./chillbox/statefile.json"
+   "..." # <2>
 ]
 ----
+<1> Copy and paste the '.current_user_data.password_hash' value from ./chillbox/statefile.json
+<2> Copy and paste the '.current_user_data.public_ssh_key[0]' value from ./chillbox/statefile.json
 
 === Add 'bob' User That Has A Public SSH Key
 
 . Add another user named 'bob' to the chillbox.toml. Bob has shared his public
 ssh key with Alice, so it can also be set here.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to the bottom of chillbox.toml after the 'alice' user.
-
 [[user]]
 name = "bob"
-public_ssh_key = "ssh-rsa AAA--not-a-real-public-ssh-key+This-is-just-for-the-tutorial== bob@example.com"
+gpg-key = "bob@hello-chillbox.example"
+public_ssh_key = "ssh-rsa AAAbbbCCCddd== bob@hello-chillbox.example" # <1>
 ----
+<1> Not a real public ssh key.
 
 == Set Secrets Securely
 
@@ -117,10 +117,9 @@ public_ssh_key = "ssh-rsa AAA--not-a-real-public-ssh-key+This-is-just-for-the-tu
 . Alice has access to a secret value that will be needed on the server. Add a secret
 in the chillbox.toml like this.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to the bottom of chillbox.toml
-
 [[secret]]
 id = "favorite_color_for_alice"
 name = "FAVORITE_COLOR"
@@ -140,17 +139,17 @@ encrypted and stored in the chillbox archive directory.
    chillbox.toml. This time the 'owner' will be set to 'bob'. This secret is
    only valid for a short time and so an 'expires' date is set.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to the bottom of chillbox.toml
-
 [[secret]]
 id = "level_3_lunch_code"
 name = "SECRET_LUNCH_CODE"
 prompt = "Enter the lunch code for next week:"
 owner = "bob"
-expires = 2023-11-02
+expires = 2023-11-02 # <1>
 ----
+<1> This is a https://toml.io/en/v1.0.0#local-date[date value] in TOML
 +
 Note that if `chillbox init` is run again it doesn't prompt Alice for that
    secret.
@@ -163,10 +162,9 @@ Note that if `chillbox init` is run again it doesn't prompt Alice for that
 variables. Add some now by adding an 'env' section and key/values to the
 chillbox configuration file.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to chillbox.toml
-
 [env]
 MENU = "breakfast"
 THEME = "funny hats"
@@ -196,19 +194,18 @@ a 'server' in the chillbox configuration file with a fake 'ip' address for
 now.  A 'server.user-data' section is added with a template file defined.
 This will be how a user-data script can be created.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to chillbox.toml
-
 [[server]]
-# Using the localhost for the tutorial.
-ip = "127.0.0.1"
+ip = "127.0.0.1" # <1>
 name = "hello-chillbox-example-server"
 owner = "alice"
 
 [server.user-data]
 template = "tutorial:hello-chillbox-user-data.sh.jinja"
 ----
+<1> Using the localhost for the tutorial.
 
 . Run the `chillbox server-init` command to try creating the user-data script
 for that server. It will show an error since no template file was found.
@@ -216,12 +213,12 @@ Create that template file now by creating a 'template-tutorial' directory
 and including the below contents to a file named
 'hello-chillbox-user-data.sh.jinja' within that directory.
 +
+.Create file: template-tutorial/hello-chillbox-user-data.sh.jinja
 [,jinja]
 ----
 #!/usr/bin/env sh
 
 # Example user-data script for hello-chillbox tutorial.
-# template-tutorial/hello-chillbox-user-data.sh.jinja
 
 ## Add user and set the password hash
 # shellcheck disable=SC2016
@@ -242,10 +239,9 @@ chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
 Add a 'template' for the 'tutorial' prefix that will use the
 'template-tutorial' directory as the 'src' (source).
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to chillbox.toml
-
 [[template]]
 src = "template-tutorial"
 prefix = "tutorial"
@@ -274,8 +270,8 @@ provisioning a new server.
 be defined in the chillbox configuration file. Create a new directory named
 'server-files' and add a file named 'the-menu.md' with the below content.
 +
-Content of file at: `server-files/the-menu.md`
 +
+.Create file: `server-files/the-menu.md`
 [,md]
 ----
 # Menu for Server
@@ -285,10 +281,9 @@ Donuts are no longer on the menu. Sorry.
 
 . Add that file as a 'path' to the configuration file.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to chillbox.toml
-
 [[path]]
 id = "server-menu-md"
 src = "server-files/the-menu.md"
@@ -301,9 +296,9 @@ the 'id' attribute. Include the id of the path item to the 'remote-files' of
 a server for it to be uploaded to that server. This step is not necessary
 for this tutorial since the server being used doesn't need to exist.
 +
+.Update file: chillbox.toml
 [,toml]
 ----
-## Update chillbox.toml
 [[server]]
 # ... Existing hello-chillbox-example-server
 remote-files = [
@@ -316,7 +311,7 @@ remote-files = [
 . Path items can also be rendered from a template. Add this jinja file with
 the name 'breakfast-menu.md.jinja' to the 'template-tutorial' directory.
 +
-.template-tutorial/breakfast-menu.md.jinja
+.Create file: template-tutorial/breakfast-menu.md.jinja
 [,jinja]
 ----
 # Breakfast Menu for {{ event_name }}
@@ -332,9 +327,10 @@ Our theme for today is: {{ THEME }}.
 'tutorial:' prefix defined for that template entry, so it also needs to set the
 'render' attribute to true.
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add to chillbox.toml with other 'path' items
+## ... other 'path' items
 
 [[path]]
 id = "breakfast-menu"
@@ -363,19 +359,19 @@ which is available to all paths if render is true.
 done for just this path by adding a 'context' to it. Update the chillbox
 configuration for the breakfast-menu path.
 +
-[,toml]
+.Update file: chillbox.toml
+[,toml,highlight=6..7]
 ----
-## Update 'breakfast-menu' path in chillbox.toml to match this.
-
 [[path]]
 id = "breakfast-menu"
 src = "tutorial:breakfast-menu.md.jinja"
 render = true
 dest = "/srv/files/breakfast-menu.md"
-# Add a context with a set event_name so it will expand that variable.
-[path.context]
-event_name = "Alice and Bob"
+[path.context] # <1>
+event_name = "Alice and Bob" # <2>
 ----
+<1> Add a context to the 'breakfast-menu' path.
+<2> Set event_name so it will expand that variable.
 +
 Now running the `chillbox show breakfast-menu` again will show a new temporary
 directory with the rendered file. This time it will have all variables expanded.
@@ -386,32 +382,34 @@ directory with the rendered file. This time it will have all variables expanded.
 attributes. Create a new file that Alice will include her 'FAVORITE_COLOR'
 color secret in.
 +
-.template-tutorial/answers.txt.jinja
+.Create file: template-tutorial/answers.txt.jinja
 [,jinja]
 ----
-Favorite color for {{ chillbox_user.name | title }} is: {{ FAVORITE_COLOR }}.
+Favorite color for {{ chillbox_path.owner | title }} is: {{ FAVORITE_COLOR }}.
 ----
 
 . And create a new 'path' item:
 +
+.Add to file: chillbox.toml
 [,toml]
 ----
-## Add 'alice-answers' path to chillbox.toml.
-
 [[path]]
 id = "alice-answers"
 src = "tutorial:answers.txt.jinja"
 render = true
-owner = "alice"
-sensitive = true
+owner = "alice" # <1>
+sensitive = true # <2>
 dest = "/srv/files/alice/answers.txt"
 ----
+<1> Only the owner will be prompted for this secret.
+<2> The sensitive attribute will ensure that the rendered file is encrypted.
 
-. Preview it by using the `chillbox show alice-answers --sensitive` command.
+. Preview it by using the `chillbox show alice-answers --sensitive` command. The
+output will be a temporary directory with the rendered answers.txt file in it.
 
-The 'alice-answers' could also be included in the 'remote-files' list for the
-server. This would then be included when upload files to the server. This step
-is being skipped since this tutorial isn't requiring a remote server.
+[sidebar]
+*Continue to the next tutorial to xref:setup-a-virtual-machine.adoc[Setup
+a Virtual Machine (VM) on your local computer].*
 
 ***
 [discrete]

@@ -1,5 +1,6 @@
 = Setup a Virtual Machine (VM) on your local computer
 :description: Guide to create a virtual machine using Vagrant and VirtualBox.
+:icons: font
 :sectlinks:
 :sectanchors:
 :sectnums:
@@ -12,7 +13,34 @@ use two tools to accomplish this: Vagrant, and VirtualBox as they have binaries
 available for multiple platforms. At the end of this tutorial you'll have an
 Ubuntu server that can be used for the rest of the tutorials.
 
-.Vagrantfile
+.Prerequisites
+****
+This tutorial builds on the previous tutorial:
+xref:start-minimal-project.adoc[Start a minimal project]. Follow the below steps if skipping the previous tutorial.
+
+. Extract the link:01-start-minimal-project.end.tar[] and run `chillbox init` inside the 'hello-chillbox' directory.
+. The current user (alice) will also need to be updated:
+
+.Update chillbox.toml
+[,toml]
+----
+[[user]]
+name = "alice" # <1>
+password_hash = "..." # <2>
+public_ssh_key = [
+   "..." # <3>
+]
+----
+<1> Alice is the current user for this tutorial.
+<2> Copy and paste the '.current_user_data.password_hash' value from ./chillbox/statefile.json
+<3> Copy and paste the '.current_user_data.public_ssh_key[0]' value from ./chillbox/statefile.json
+****
+
+== Initialize a vagrant project in hello-chillbox
+
+. Add the below Vagrantfile to the project directory.
++
+.Create a Vagrantfile
 [,ruby]
 ----
 Vagrant.configure("2") do |config|
@@ -25,25 +53,36 @@ Vagrant.configure("2") do |config|
 end
 ----
 
+. Initialize the virtual machine by running the `vagrant` commands. A new file
+(vagrant-ssh_config) is created.
++
 [,bash]
 ----
 vagrant up
 vagrant ssh-config > vagrant-ssh_config
 ----
 
-update chillbox.toml
-
-.chillbox.toml
-[,toml]
+. Set the 'ssh_config' attribute to define a custom ssh-config that will be
+included when chillbox uses `ssh` and `scp` commands. This custom one is
+specific for use with Vagrant.
++
+.Update file: chillbox.toml
+[,toml,highlight=4]
 ----
-# ...
+instance = "hello-chillbox"
+archive-directory = ".chillbox"
 
 ssh_config = "vagrant-ssh_config"
-
-# ...
 ----
 
+. Verify that this way of logging into the virtual machine works. The `chillbox
+ssh-unlock` command generates a ssh config file at a temporary location and
+outputs it. The '-F' option refers to a ssh-config file.
++
 [,bash]
 ----
 ssh -F "$(chillbox ssh-unlock)" hello-chillbox
 ----
+
+
+{% include 'chillbox:user-data/static/snippet-create_scripts.sh.jinja' %}
