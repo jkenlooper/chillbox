@@ -321,6 +321,7 @@ def process_path_to_archive(c):
             context = {}
             context.update(c.env)
             context.update(c.secrets)
+            context.update({"chillbox_path": path})
             context.update(path.get("context", {}))
             with gzip.open(secure_temp_file, "wb") as f:
                 f.write(
