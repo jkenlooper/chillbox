@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -o errexit
 
+work_dir="$(dirname "$0")"
+
 #{% if ENVIRONMENT == "development" %}
 set -x
 cp "$0" /root/debug-user-data.sh
@@ -27,13 +29,14 @@ init_user() {
   # the server reboots.
   #}
 # shellcheck disable=SC2016
-useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+id '{{ chillbox_user.name }}' > /dev/null 2> /dev/null \
+    || useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 #{#-
 # Include the user to the chillconf group so login users can
 # modify the /etc/chillbox/chillbox.config file.
 #}
-groupadd --system chillconf
+groupadd -f --system chillconf
 usermod -a -G chillconf '{{ chillbox_user.name }}'
 
 #{#-

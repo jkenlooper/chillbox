@@ -222,7 +222,8 @@ and including the below contents to a file named
 
 ## Add user and set the password hash
 # shellcheck disable=SC2016
-useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+id '{{ chillbox_user.name }}' > /dev/null 2> /dev/null \
+    || useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 ## Add the user's public ssh key.
 mkdir -p '/home/{{ chillbox_user.name }}/.ssh'

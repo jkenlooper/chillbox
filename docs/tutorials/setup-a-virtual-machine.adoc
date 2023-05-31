@@ -18,7 +18,7 @@ Ubuntu server that can be used for the rest of the tutorials.
 This tutorial builds on the previous tutorial:
 xref:start-minimal-project.adoc[Start a minimal project]. Follow the below steps if skipping the previous tutorial.
 
-. Extract the link:01-start-minimal-project.end.tar[] and run `chillbox init` inside the 'hello-chillbox' directory.
+. Extract the link:01-start-minimal-project.end.tar[] and run `chillbox server-init` inside the 'hello-chillbox' directory.
 . The current user (alice) will also need to be updated:
 
 .Update chillbox.toml
@@ -47,8 +47,9 @@ Vagrant.configure("2") do |config|
 
   config.vm.box = "bento/ubuntu-22.04"
 
-  config.vm.define "hello-chillbox"
-  config.vm.provision "shell", path: ".chillbox/server/hello-chillbox/user-data"
+  config.vm.define "hello-chillbox-example-server"
+  config.vm.hostname "hello-chillbox-example-server"
+  config.vm.provision "shell", path: ".chillbox/server/hello-chillbox-example-server/user-data"
 
 end
 ----
@@ -81,8 +82,93 @@ outputs it. The '-F' option refers to a ssh-config file.
 +
 [,bash]
 ----
-ssh -F "$(chillbox ssh-unlock)" hello-chillbox
+ssh -F "$(chillbox ssh-unlock)" alice@hello-chillbox-example-server
+----
+
+NOTE: The command `vagrant ssh` does basically the same as the above command but
+logs in as the 'vagrant' user.
+
+. Update the user-data script to also create the '/srv/files/' directory.
++
+.Update file: template-tutorial/hello-chillbox-user-data.sh.jinja
+[,sh,highlight=19-]
+----
+#!/usr/bin/env sh
+set -o errexit
+
+# Example user-data script for hello-chillbox tutorial.
+
+## Add user and set the password hash
+# shellcheck disable=SC2016
+id '{{ chillbox_user.name }}' > /dev/null 2> /dev/null \
+    || useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+
+## Add the user's public ssh key.
+mkdir -p '/home/{{ chillbox_user.name }}/.ssh'
+cat <<'HERE_PUBLIC_SSH_KEYS' > '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
+{{ chillbox_user["public_ssh_key"] | join('\n') }}
+HERE_PUBLIC_SSH_KEYS
+
+chown -R '{{ chillbox_user.name }}' '/home/{{ chillbox_user.name }}/.ssh'
+chmod -R 700 '/home/{{ chillbox_user.name }}/.ssh'
+chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
+
+groupadd -f --system chillbox-example-group
+usermod -a -G chillbox-example-group '{{ chillbox_user.name }}'
+
+## Add initial /srv/files/ directory for the tutorial.
+mkdir -p /srv/files/
+chown -R '{{ chillbox_user.name }}:chillbox-example-group' /srv/files/
+chmod 0770 /srv/files/
+
+## Add chillbox specific directories for storing sensitive and secret files.
+tmp_dir="$(mktemp -d)"
+cat <<'CHILLBOXUSERDATACREATEDIRS' > "$tmp_dir/chillbox-user-data-create_dirs.sh"
+{% include [create_dirs_script, 'chillbox:create_dirs.sh'] %}
+CHILLBOXUSERDATACREATEDIRS
+chmod u+x "$tmp_dir/chillbox-user-data-create_dirs.sh"
+"$tmp_dir/chillbox-user-data-create_dirs.sh"
+rm -rf "$tmp_dir"
+
+
+## Create the chillbox scripts used for handling uploaded files that are encrypted.
+{% include 'chillbox:user-data/static/snippet-create_scripts.sh.jinja' %}
+mkdir -p /root/chillbox/key
+key_name="$(hostname -s | xargs)"
+/usr/local/bin/create-asymmetric-key -n "$key_name" -d /root/chillbox/key
+mkdir -p /usr/local/share/chillbox/key/
+mv "/root/chillbox/key/$key_name.public.pem" /usr/local/share/chillbox/key/
+chmod 644 "/usr/local/share/chillbox/key/$key_name.public.pem"
+mkdir -p /var/lib/chillbox/.watch-chillbox-secrets-and-sensitive-paths/
+chown -R '{{ chillbox_user.name }}:chillbox-example-group' /var/lib/chillbox/.watch-chillbox-secrets-and-sensitive-paths/
+chmod 0770 /var/lib/chillbox/.watch-chillbox-secrets-and-sensitive-paths/
+
+echo "done"
+----
+
+. Render the updated user-data script that will be at '.chillbox/server/hello-chillbox-example-server/user-data'. Use the '--force' option to overwrite the previously rendered user-data script.
++
+[,bash]
+----
+chillbox server-init --force
+----
+
+. Apply the changed user-data script by provisioning the vagrant virtual machine
+again.  See
+https://developer.hashicorp.com/vagrant/docs/provisioning#when-provisioning-happens[When
+Provisioning Happens] for details.
++
+[,bash]
+----
+vagrant provision
+----
+
+. Upload the files now that there is a /srv/files/ directory and the other chillbox directories.
++
+[,bash]
+----
+chillbox upload
 ----
 
 
-{% include 'chillbox:user-data/static/snippet-create_scripts.sh.jinja' %}
+
