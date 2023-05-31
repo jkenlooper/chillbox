@@ -40,7 +40,7 @@ from chillbox.state import ChillboxState
 from chillbox.defaults import CHILLBOX_PATH_SENSITIVE, CHILLBOX_PATH_SECRETS
 
 
-def generate_user_data_script(c, state):
+def generate_user_data_script(c, state, replace_existing=False):
     """"""
     server_list = c.chillbox_config.get("server", [])
     archive_directory = Path(c.chillbox_config["archive-directory"])
@@ -61,7 +61,7 @@ def generate_user_data_script(c, state):
         user_data_script_file = archive_directory.joinpath(
             "server", server["name"], "user-data"
         )
-        if user_data_script_file.exists():
+        if not replace_existing and user_data_script_file.exists():
             logger.info(
                 f"Skipping replacement of existing user-data file: {user_data_script_file}"
             )
@@ -129,13 +129,17 @@ def output_current_user_public_ssh_key(c, state):
 
 
 @task(pre=[init])
-def server_init(c):
-    "Initialize files that will be needed for the chillbox servers."
+def server_init(c, force=False):
+    """
+    Initialize files that will be needed for the chillbox servers.
+
+    The 'force' option will replace any existing user-data scripts.
+    """
 
     c.chillbox_config = validate_and_load_chillbox_config(c.config["chillbox-config"])
     archive_directory = Path(c.chillbox_config["archive-directory"])
     state = ChillboxState(archive_directory)
-    generate_user_data_script(c, state)
+    generate_user_data_script(c, state, replace_existing=force)
     output_current_user_public_ssh_key(c, state)
 
 
