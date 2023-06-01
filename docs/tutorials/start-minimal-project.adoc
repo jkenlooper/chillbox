@@ -17,20 +17,20 @@ Tutorial Steps
 == Create Initial `chillbox.toml` File
 
 . Create an empty directory on the local machine where `chillbox` has been
-installed. Name this empty project directory 'hello-chillbox' for this tutorial.
+installed. Name this empty project directory `hello-chillbox` for this tutorial.
 Perform the rest of the commands within this project directory (`cd hello-chillbox`).
 
 . Run the `chillbox init` command. Note that this will show an ERROR message
 about a missing configuration file.
 
-. Chillbox needs a configuration file. Create a file named 'chillbox.toml' in the
+. Chillbox needs a configuration file. Create a file named `chillbox.toml` in the
 project directory. This configuration file will be in the https://toml.io/en/[TOML] format.
 
 . Not all settings are required for the chillbox configuration file. Add only
 the required ones:  "instance", and "archive-directory". Copy and
-paste the below TOML snippet to the 'chillbox.toml' file.
+paste the below TOML snippet to the `chillbox.toml` file.
 +
-.Create file: chillbox.toml
+.Create file: `chillbox.toml`
 [,toml]
 ----
 instance = "hello-chillbox"
@@ -41,22 +41,22 @@ archive-directory = ".chillbox" # <1>
 directory should not be included in source control. It is only useful to the
 current user.
 
-=== Add 'alice' as current user
+=== Add _alice_ as current user
 
 . Run the `chillbox init` command again. Note that this time it will prompt for
-the 'current_user' to be set. Enter 'alice' as the current user for this
+the 'current_user' to be set. Enter _alice_ as the current user for this
 tutorial.  After hitting enter it will show another message stating that the
 current_user has not been added to the chillbox configuration. Do that now by
 appending the below to the configuration file.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[user]]
 name = "alice" # <1>
 gpg-key = "alice@hello-chillbox.example" # <2>
 ----
-<1> The current user is 'alice' for this tutorial.
+<1> The current user is _alice_ for this tutorial.
 <2> The gpg-key doesn't need to exist first.
 
 . Run the `chillbox init` command again. This time it will see that a user has
@@ -67,21 +67,21 @@ likely doesn't already have a GPG key named 'alice@hello-chillbox.example';
 it will prompt you to create a new GPG key and set a password on it.
 +
 It will also automatically create a private and public ssh key for this user.
-This is because no 'public_ssh_key' was set for 'alice' in the chillbox
+This is because no 'public_ssh_key' was set for _alice_ in the chillbox
 configuration file. The private ssh key is encrypted in the chillbox archive
 directory.
 +
-A prompt to set a password for 'alice' will also happen at this point. Only
+A prompt to set a password for _alice_ will also happen at this point. Only
 the hash of this password is saved in the chillbox archive directory. It can
-be used when adding 'alice' to a server.
+be used when adding _alice_ to a server.
 
-. Persist the password_hash and public_ssh_key that was created for 'alice'.
+. Persist the password_hash and public_ssh_key that was created for _alice_.
 These are stored in the chillbox archive directory and can be viewed by using
 the `jq` command or just open the statefile.json in a text editor. Copy these
-from .chillbox/statefile.json and include them in the chillbox.toml for the
-'alice' user.
+from .chillbox/statefile.json and include them in the `chillbox.toml` for the
+_alice_ user.
 +
-.Update file: chillbox.toml
+.Update file: `chillbox.toml`
 [,toml]
 ----
 [[user]]
@@ -95,12 +95,12 @@ public_ssh_key = [
 <1> Copy and paste the '.current_user_data.password_hash' value from ./chillbox/statefile.json
 <2> Copy and paste the '.current_user_data.public_ssh_key[0]' value from ./chillbox/statefile.json
 
-=== Add 'bob' User That Has A Public SSH Key
+=== Add _bob_ User That Has A Public SSH Key
 
-. Add another user named 'bob' to the chillbox.toml. Bob has shared his public
+. Add another user named _bob_ to the `chillbox.toml.` Bob has shared his public
 ssh key with Alice, so it can also be set here.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[user]]
@@ -115,9 +115,9 @@ public_ssh_key = "ssh-rsa AAAbbbCCCddd== bob@hello-chillbox.example" # <1>
 === Add Secrets For Alice
 
 . Alice has access to a secret value that will be needed on the server. Add a secret
-in the chillbox.toml like this.
+in the `chillbox.toml` like this.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[secret]]
@@ -128,7 +128,7 @@ owner = "alice"
 ----
 
 . Run the `chillbox init` command again. It will prompt Alice for that secret
-since she is the current user and the 'owner' is set to 'alice'. After
+since she is the current user and the 'owner' is set to _alice_. After
 entering the secret value (no characters will be shown); the secret is
 encrypted and stored in the chillbox archive directory.
 
@@ -136,10 +136,10 @@ encrypted and stored in the chillbox archive directory.
 
 . Bob also has access to a secret that will need to be used on a server. Alice
    will not need to ask Bob for that secret, but can add a prompt for it in the
-   chillbox.toml. This time the 'owner' will be set to 'bob'. This secret is
+   `chillbox.toml`. This time the 'owner' will be set to _bob_. This secret is
    only valid for a short time and so an 'expires' date is set.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[secret]]
@@ -162,7 +162,7 @@ Note that if `chillbox init` is run again it doesn't prompt Alice for that
 variables. Add some now by adding an 'env' section and key/values to the
 chillbox configuration file.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [env]
@@ -194,7 +194,7 @@ a 'server' in the chillbox configuration file with a fake 'ip' address for
 now.  A 'server.user-data' section is added with a template file defined.
 This will be how a user-data script can be created.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[server]]
@@ -209,11 +209,11 @@ template = "tutorial:hello-chillbox-user-data.sh.jinja"
 
 . Run the `chillbox server-init` command to try creating the user-data script
 for that server. It will show an error since no template file was found.
-Create that template file now by creating a 'template-tutorial' directory
+Create that template file now by creating a `template-tutorial/` directory
 and including the below contents to a file named
-'hello-chillbox-user-data.sh.jinja' within that directory.
+`hello-chillbox-user-data.sh.jinja` within that directory.
 +
-.Create file: template-tutorial/hello-chillbox-user-data.sh.jinja
+.Create file: `template-tutorial/hello-chillbox-user-data.sh.jinja`
 [,jinja]
 ----
 #!/usr/bin/env sh
@@ -223,7 +223,7 @@ and including the below contents to a file named
 ## Add user and set the password hash
 # shellcheck disable=SC2016
 id '{{ chillbox_user.name }}' > /dev/null 2> /dev/null \
-    || useradd -m -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
+    || useradd -m -s /usr/bin/bash -p '{{ chillbox_user.password_hash }}' '{{ chillbox_user.name }}'
 
 ## Add the user's public ssh key.
 mkdir -p '/home/{{ chillbox_user.name }}/.ssh'
@@ -238,9 +238,9 @@ chmod -R 644 '/home/{{ chillbox_user.name }}/.ssh/authorized_keys'
 
 . Custom templates need to be defined in the chillbox configuration as well.
 Add a 'template' for the 'tutorial' prefix that will use the
-'template-tutorial' directory as the 'src' (source).
+`template-tutorial/` directory as the 'src' (source).
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[template]]
@@ -269,7 +269,7 @@ provisioning a new server.
 
 . Now Alice needs a file to be uploaded to the server. The 'path' for it can
 be defined in the chillbox configuration file. Create a new directory named
-'server-files' and add a file named 'the-menu.md' with the below content.
+'server-files' and add a file named `the-menu.md` with the below content.
 +
 +
 .Create file: `server-files/the-menu.md`
@@ -282,7 +282,7 @@ Donuts are no longer on the menu. Sorry.
 
 . Add that file as a 'path' to the configuration file.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[path]]
@@ -297,7 +297,7 @@ the 'id' attribute. Include the id of the path item to the 'remote-files' of
 a server for it to be uploaded to that server. This step is not necessary
 for this tutorial since the server being used doesn't need to exist.
 +
-.Update file: chillbox.toml
+.Update file: `chillbox.toml`
 [,toml]
 ----
 [[server]]
@@ -310,9 +310,9 @@ remote-files = [
 === Render a File From a Template
 
 . Path items can also be rendered from a template. Add this jinja file with
-the name 'breakfast-menu.md.jinja' to the 'template-tutorial' directory.
+the name `breakfast-menu.md.jinja` to the `template-tutorial/` directory.
 +
-.Create file: template-tutorial/breakfast-menu.md.jinja
+.Create file: `template-tutorial/breakfast-menu.md.jinja`
 [,jinja]
 ----
 # Breakfast Menu for {{ event_name }}
@@ -328,7 +328,7 @@ Our theme for today is: {{ THEME }}.
 'tutorial:' prefix defined for that template entry, so it also needs to set the
 'render' attribute to true.
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 ## ... other 'path' items
@@ -360,7 +360,7 @@ which is available to all paths if render is true.
 done for just this path by adding a 'context' to it. Update the chillbox
 configuration for the breakfast-menu path.
 +
-.Update file: chillbox.toml
+.Update file: `chillbox.toml`
 [,toml,highlight=6..7]
 ----
 [[path]]
@@ -383,7 +383,7 @@ directory with the rendered file. This time it will have all variables expanded.
 attributes. Create a new file that Alice will include her 'FAVORITE_COLOR'
 color secret in.
 +
-.Create file: template-tutorial/answers.txt.jinja
+.Create file: `template-tutorial/answers.txt.jinja`
 [,jinja]
 ----
 Favorite color for {{ chillbox_path.owner | title }} is: {{ FAVORITE_COLOR }}.
@@ -391,7 +391,7 @@ Favorite color for {{ chillbox_path.owner | title }} is: {{ FAVORITE_COLOR }}.
 
 . And create a new 'path' item:
 +
-.Add to file: chillbox.toml
+.Add to file: `chillbox.toml`
 [,toml]
 ----
 [[path]]
@@ -406,7 +406,7 @@ dest = "/srv/files/alice/answers.txt"
 <2> The sensitive attribute will ensure that the rendered file is encrypted.
 
 . Preview it by using the `chillbox show alice-answers --sensitive` command. The
-output will be a temporary directory with the rendered answers.txt file in it.
+output will be a temporary directory with the rendered `answers.txt` file in it.
 
 [sidebar]
 *Continue to the next tutorial to xref:setup-a-virtual-machine.adoc[Setup
@@ -424,7 +424,7 @@ with other tools and users.
 
 To further understand how to effectively use chillbox, try simulating how Bob
 would use this 'hello-chillbox' project if it was checked into version control
-(git). Make sure to not include the chillbox archive directory ('.chillbox/')
+(git). Make sure to not include the chillbox archive directory (`.chillbox/`)
 to version control; that is only useful for the current user.
 
 ***
