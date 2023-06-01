@@ -202,6 +202,7 @@ def upload(c):
             server["name"],
             config=config,
             connect_kwargs={"password": password_for_user},
+            user=state.current_user,
         )
         rc.open()
         ssh_transport = rc.client.get_transport()
