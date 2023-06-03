@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.5.2
 
-# UPKEEP due: "2023-08-06" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.17.3
+# UPKEEP due: "2023-09-03" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.18.0
 # docker image ls --digests alpine
-FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
+FROM alpine:3.18.0@sha256:02bb6f428431fbc2809c5d1b41eab5a68350194fb508869a33cb1af4444c9b11
 
 RUN <<DEV_USER
 # Create dev user
@@ -14,7 +14,7 @@ DEV_USER
 
 WORKDIR /home/dev/app
 
-ARG EXPECTED_PYTHON_VERSION="Python 3.10.11"
+ARG EXPECTED_PYTHON_VERSION="Python 3.11.3"
 COPY ./bin/install-chillbox-packages.sh /etc/chillbox/bin/install-chillbox-packages.sh
 
 RUN <<SERVICE_DEPENDENCIES

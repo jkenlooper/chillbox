@@ -2,10 +2,10 @@
 
 # Modified from the original in python-worker directory in https://github.com/jkenlooper/cookiecutters .
 
-# UPKEEP due: "2023-08-06" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull alpine:3.17.3
+# UPKEEP due: "2023-09-03" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull alpine:3.18.0
 # docker image ls --digests alpine
-FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126
+FROM alpine:3.18.0@sha256:02bb6f428431fbc2809c5d1b41eab5a68350194fb508869a33cb1af4444c9b11
 
 RUN <<DEV_USER
 addgroup -g 44444 dev
@@ -13,6 +13,8 @@ adduser -u 44444 -G dev -s /bin/sh -D dev
 DEV_USER
 
 WORKDIR /home/dev/app
+
+ARG EXPECTED_PYTHON_VERSION="Python 3.11.3"
 
 RUN <<PACKAGE_DEPENDENCIES
 # apk add package dependencies
@@ -27,6 +29,9 @@ apk add --no-cache \
   python3 \
   python3-dev \
   py3-yaml
+
+actual_python_version="$(python -V)"
+set -x; test "$actual_python_version" = "$EXPECTED_PYTHON_VERSION"; set +x
 PACKAGE_DEPENDENCIES
 
 RUN  <<PYTHON_VIRTUALENV
