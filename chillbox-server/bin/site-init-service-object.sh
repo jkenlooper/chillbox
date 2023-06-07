@@ -108,6 +108,7 @@ cd "$slugdir/${service_name}"
 # TODO change 'python' to 'gunicorn'
 if [ "${service_lang_template}" = "python" ]; then
 
+  # Support an app instance_path (Mostly for Flask).
   mkdir -p "/var/lib/${SLUGNAME}/${service_name}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 

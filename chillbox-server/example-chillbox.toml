@@ -1,9 +1,9 @@
 instance = "example"
-gpg-key = "example"
 archive-directory = ".chillbox"
 
 [[user]]
 name = "bob"
+gpg-key = "bob@example"
 
 # The env variables are commonly set with the chillbox-env.sh.jinja template.
 [env]
@@ -70,9 +70,15 @@ src = "chillbox-server:s3-credentials.jinja"
 dest = "/home/bob/.aws/credentials"
 render = true
 sensitive = true
-# TODO Should be set with only read/write for user if sensitive
-# chmod 0600 /home/bob/.aws/credentials
-# chown bob:bob /home/bob/.aws/credentials
+owner = "bob"
+
+[[path]]
+id = "stream-nginx-conf"
+src = "chillbox:stream.nginx.conf.jinja"
+dest = "/etc/nginx/conf.d/example-stream.nginx.conf"
+render = true
+[path.context]
+domains = ["abc.example.com"]
 
 [[path]]
 id = "init-certbot-with-pre-registered-account"
@@ -80,6 +86,7 @@ src = "chillbox-server:init-certbot.sh.jinja"
 dest = "/home/bob/bin/init-certbot.sh"
 render = true
 sensitive = true
+owner = "bob"
 
 [[path]]
 id = "profile-d-chillbox-env-sh"
@@ -128,6 +135,11 @@ id = "chillbox-nginx-ssl_cert_include"
 src = "chillbox-server/nginx/chillbox.ssl_cert.include"
 dest = "/etc/nginx/conf.d/chillbox.ssl_cert.include"
 
+[[path]]
+id = "init-s6-openrc-path-secret-watcher.sh"
+src = "chillbox-scripts:init-s6-openrc-path-secret-watcher.sh"
+dest = "/home/bob/init-s6-openrc-path-secret-watcher.sh"
+render = true
 
 
 [[server]]
@@ -138,19 +150,22 @@ owner = "bob"
 login-users = [ "alice", "bob" ]
 secrets = [ "access_key_id", "secret_access_key" ]
 remote-files = [
-  "chillbox-s3-credentials",
-  "init-certbot-with-pre-registered-account",
-  "profile-d-chillbox-env-sh",
-  "profile-d-chillbox-config-sh",
-  "chillbox-nginx-templates",
   "chillbox-bin",
   "chillbox-dep",
-  "chillbox-redis-conf",
   "chillbox-nginx-conf",
   "chillbox-nginx-default-conf",
   "chillbox-nginx-ssl_cert_include",
+  "chillbox-nginx-templates",
+  "chillbox-redis-conf",
+  "chillbox-s3-credentials",
+  "init-certbot-with-pre-registered-account",
+  "init-s6-openrc-path-secret-watcher.sh",
+  "profile-d-chillbox-config-sh",
+  "profile-d-chillbox-env-sh",
+  "stream-nginx-conf",
   ]
 [server.user-data]
 template = "chillbox:user-data.sh.jinja"
 [server.user-data.context]
 something = "example"
+create_dirs_script = "chillbox-server:create_dirs.sh"
