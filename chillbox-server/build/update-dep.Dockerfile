@@ -14,7 +14,7 @@ DEV_USER
 
 WORKDIR /home/dev/app
 
-ARG EXPECTED_PYTHON_VERSION="Python 3.11.3"
+ARG EXPECTED_PYTHON_VERSION="Python 3.11.4"
 COPY ./bin/install-chillbox-packages.sh /etc/chillbox/bin/install-chillbox-packages.sh
 
 RUN <<SERVICE_DEPENDENCIES
@@ -97,6 +97,20 @@ mkdir -p /home/dev/app/dep
 cp pip-dep/* /home/dev/app/dep/
 # Change to the app directory so the find-links can be relative.
 cd /home/dev/app
+
+# Support Python services managed by Gunicorn
+# UPKEEP due: "2024-03-11" label: "Python gunicorn and gevent" interval: "+1 years"
+# https://pypi.org/project/gunicorn/
+gunicorn_version="20.1.0"
+# Only download to a directory to allow the pip install to happen later with
+# a set --find-links option.
+python -m pip download \
+  --disable-pip-version-check \
+  --exists-action i \
+  --no-build-isolation \
+  --destination-directory /home/dev/app/dep \
+  'gunicorn[gevent,setproctitle]'=="$gunicorn_version"
+
 python -m pip download --disable-pip-version-check \
     --exists-action i \
     --find-links /home/dev/app/dep/ \

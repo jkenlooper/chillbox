@@ -88,15 +88,3 @@ apk add --no-cache \
   rsvg-convert
 
 mkdir -p /var/lib/chillbox/python
-# Support Python services managed by Gunicorn
-# UPKEEP due: "2024-03-11" label: "Python gunicorn and gevent" interval: "+1 years"
-# https://pypi.org/project/gunicorn/
-gunicorn_version="20.1.0"
-# Only download to a directory to allow the pip install to happen later with
-# a set --find-links option.
-python -m pip download \
-  --disable-pip-version-check \
-  --exists-action i \
-  --no-build-isolation \
-  --destination-directory /var/lib/chillbox/python \
-  'gunicorn[gevent,setproctitle]'=="$gunicorn_version"

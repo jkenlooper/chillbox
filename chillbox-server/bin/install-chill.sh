@@ -27,6 +27,8 @@ apk add \
   python3-dev \
   sqlite
 
+# TODO: Don't install chill as root user.
+
 # Output the python version to verify tests.
 python --version
 # TODO Use a venv and not root when using pip install

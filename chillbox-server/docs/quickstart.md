@@ -13,6 +13,18 @@ Dependencies:
 * A [DigitalOcean] account
 
 ```bash
+./build/update-dep.sh
+chillbox init
+set -a; . "$(chillbox output-env -s)"; set +a
+./build-site-artifact.sh
+# update the chillbox.toml and set SITE_ARTIFACT env var.
+chillbox server-init
+chillbox upload
+ssh -F "$(chillbox ssh-unlock)" local
+doas su
+. /etc/profile.d/chillbox-env.sh
+. /etc/profile.d/chillbox-config.sh
+/etc/chillbox/bin/chillbox-init.sh
 
 ## TODO
 make
