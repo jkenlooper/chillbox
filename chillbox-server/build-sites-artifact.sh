@@ -8,17 +8,24 @@ project_dir="$(dirname "$(realpath "$0")")"
 usage() {
   cat <<HERE
 
-Build the sites artifact file.
+Build the sites artifact file and upload to s3. The SITES_ARTIFACT env variable
+will be shown at the end which can be copied and set in the chillbox.toml.
 
 Usage:
   $script_name -h
-  $script_name [<options>]
+  $script_name
+  $script_name -s <url>
 
 Options:
   -h                  Show this help message.
 
   -s <url>            Sites artifact URL. Can be an absolute path on the file
                       system or URL.
+
+Required environment variables:
+  ARTIFACT_BUCKET_NAME
+
+Project directory: $project_dir
 
 HERE
 }
@@ -34,7 +41,19 @@ while getopts "hs:" OPTION ; do
 done
 shift $((OPTIND - 1))
 
-set -x
+
+sites_artifact_url="${sites_artifact_url:-example}"
+
+# Required env
+test -n "$ARTIFACT_BUCKET_NAME" || (echo "ERROR $script_name: Environment variable ARTIFACT_BUCKET_NAME is required to be set." && exit 1)
+
+# Should be able to connect to s3
+if [ -z "$AWS_PROFILE" ]; then
+  echo "INFO $script_name: Environment variable AWS_PROFILE is not set. Will use default profile."
+else
+  echo "INFO $script_name: Environment variable AWS_PROFILE is '$AWS_PROFILE'."
+fi
+s5cmd ls > /dev/null || (echo "ERROR $script_name: Failed to list buckets. Are the AWS S3 credentials set?" && exit 1)
 
 project_dir_hash="$(echo "$project_dir" | md5sum | cut -f1 -d' ')"
 chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox-server/$project_dir_hash"
@@ -94,15 +113,15 @@ download_file() {
 }
 
 create_example_site_tar_gz() {
-  # UPKEEP due: "2023-05-09" label: "chillbox example site (site1)" interval: "+4 months"
+  # UPKEEP due: "2023-10-09" label: "chillbox example site (site1)" interval: "+4 months"
   # https://github.com/jkenlooper/chillbox-example-site1/releases
-  example_site_version="0.1.0-alpha.13"
+  example_site_version="0.1.0-alpha.15"
 
   printf "\n\n%s\n" "INFO $script_name: Create example sites artifact to use."
   printf '%s\n' "Deploy using the example sites artifact? [y/n]"
   read -r confirm_using_example_sites_artifact
   if [ "${confirm_using_example_sites_artifact}" != "y" ]; then
-    echo "Update the SITES_ARTIFACT_URL variable to not be set to 'example'."
+    echo "Set the sites artifact URL to use via the '-s' option."
     echo "Exiting"
     exit 2
   fi
@@ -333,10 +352,10 @@ generate_site_domains_file() {
 upload_artifacts() {
   # Upload site artifact file
   sites_artifact_exists="$(s5cmd ls \
-    "s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT" || printf "")"
+    "s3://${ARTIFACT_BUCKET_NAME}/_sites/$SITES_ARTIFACT" || printf "")"
   if [ -z "$sites_artifact_exists" ]; then
     s5cmd cp "$chillbox_state_home/$SITES_ARTIFACT" \
-      "s3://${artifact_bucket_name}/_sites/$SITES_ARTIFACT"
+      "s3://${ARTIFACT_BUCKET_NAME}/_sites/$SITES_ARTIFACT"
   else
     echo "INFO $script_name: No changes to existing site artifact: $SITES_ARTIFACT"
   fi
@@ -349,11 +368,11 @@ upload_artifacts() {
       artifact="$(basename "$artifact_file")"
 
       artifact_exists="$(s5cmd ls \
-        "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact" || printf "")"
+        "s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$artifact" || printf "")"
       if [ -z "$artifact_exists" ]; then
         echo "INFO $script_name: Uploading artifact: $artifact_file"
         s5cmd cp "$chillbox_state_home/sites/$artifact_file" \
-          "s3://${artifact_bucket_name}/$slugname/artifacts/$artifact"
+          "s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$artifact"
       else
         echo "INFO $script_name: No changes to existing artifact: $artifact_file"
       fi
@@ -364,7 +383,7 @@ upload_artifacts() {
 check_for_required_commands
 
 if [ "${SITES_ARTIFACT_URL}" = "example" ]; then
-  printf "\n\n%s\n" "WARNING $script_name: Using the example sites artifact."
+  printf "\n\n%s\n" "WARNING $script_name: Using the example sites artifact. Use the option '-s' to set a specific site artifact URL to use."
   create_example_site_tar_gz
 fi
 
