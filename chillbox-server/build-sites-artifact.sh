@@ -8,13 +8,14 @@ project_dir="$(dirname "$(realpath "$0")")"
 usage() {
   cat <<HERE
 
-Build the sites artifact file and upload to s3. The SITES_ARTIFACT env variable
-will be shown at the end which can be copied and set in the chillbox.toml.
+Build the sites artifact file and send to output directory. The SITES_ARTIFACT
+env variable will be shown at the end which can be copied and set in the
+chillbox.toml.
 
 Usage:
   $script_name -h
   $script_name
-  $script_name -s <url>
+  $script_name -s <url> -o <directory>
 
 Options:
   -h                  Show this help message.
@@ -22,19 +23,19 @@ Options:
   -s <url>            Sites artifact URL. Can be an absolute path on the file
                       system or URL.
 
-Required environment variables:
-  ARTIFACT_BUCKET_NAME
+  -o <directory>      Output directory to store artifacts in.
 
 Project directory: $project_dir
 
 HERE
 }
 
-while getopts "hs:" OPTION ; do
+while getopts "hs:o:" OPTION ; do
   case "$OPTION" in
     h) usage
        exit 0 ;;
     s) sites_artifact_url=$OPTARG ;;
+    o) output_dir=$OPTARG ;;
     ?) usage
        exit 1 ;;
   esac
@@ -43,20 +44,11 @@ shift $((OPTIND - 1))
 
 
 sites_artifact_url="${sites_artifact_url:-example}"
+output_dir="${output_dir:-example}"
+output_dir="$(realpath "$output_dir")"
 
-# Required env
-test -n "$ARTIFACT_BUCKET_NAME" || (echo "ERROR $script_name: Environment variable ARTIFACT_BUCKET_NAME is required to be set." && exit 1)
-
-# Should be able to connect to s3
-if [ -z "$AWS_PROFILE" ]; then
-  echo "INFO $script_name: Environment variable AWS_PROFILE is not set. Will use default profile."
-else
-  echo "INFO $script_name: Environment variable AWS_PROFILE is '$AWS_PROFILE'."
-fi
-s5cmd ls > /dev/null || (echo "ERROR $script_name: Failed to list buckets. Are the AWS S3 credentials set?" && exit 1)
-
-project_dir_hash="$(echo "$project_dir" | md5sum | cut -f1 -d' ')"
 chillbox_state_home="${XDG_STATE_HOME:-"$HOME/.local/state"}/chillbox-server/$project_dir_hash"
+mkdir -p "$output_dir"
 mkdir -p "$chillbox_state_home"
 
 export SITES_ARTIFACT_URL="$sites_artifact_url"
@@ -82,7 +74,6 @@ check_for_required_commands() {
     make \
     md5sum \
     tar \
-    s5cmd \
     ; do
     command -v "$required_command" > /dev/null || (echo "ERROR $script_name: Requires '$required_command' command." && exit 1)
   done
@@ -349,30 +340,28 @@ generate_site_domains_file() {
     jq -s '[.[].domain_list] | flatten | {site_domains: .}' {} + > "$site_domains_file"
 }
 
-upload_artifacts() {
-  # Upload site artifact file
-  sites_artifact_exists="$(s5cmd ls \
-    "s3://${ARTIFACT_BUCKET_NAME}/_sites/$SITES_ARTIFACT" || printf "")"
-  if [ -z "$sites_artifact_exists" ]; then
-    s5cmd cp "$chillbox_state_home/$SITES_ARTIFACT" \
-      "s3://${ARTIFACT_BUCKET_NAME}/_sites/$SITES_ARTIFACT"
+output_artifacts() {
+  # Output site artifact file
+  mkdir -p "$output_dir/_sites"
+  if [ ! -e "$output_dir/_sites/$SITES_ARTIFACT" ]; then
+    cp "$chillbox_state_home/$SITES_ARTIFACT" \
+      "$output_dir/_sites/$SITES_ARTIFACT"
   else
     echo "INFO $script_name: No changes to existing site artifact: $SITES_ARTIFACT"
   fi
 
-  # Upload artifacts for each site
+  # Output artifacts for each site
   jq -r '.[]' "$sites_manifest_json_file" \
     | while read -r artifact_file; do
       test -n "${artifact_file}" || continue
       slugname="$(dirname "$artifact_file")"
       artifact="$(basename "$artifact_file")"
+      mkdir -p "$output_dir/$slugname/artifacts"
 
-      artifact_exists="$(s5cmd ls \
-        "s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$artifact" || printf "")"
-      if [ -z "$artifact_exists" ]; then
+      if [ ! -e "$output_dir/$slugname/artifacts/$artifact" ]; then
         echo "INFO $script_name: Uploading artifact: $artifact_file"
-        s5cmd cp "$chillbox_state_home/sites/$artifact_file" \
-          "s3://${ARTIFACT_BUCKET_NAME}/$slugname/artifacts/$artifact"
+        cp "$chillbox_state_home/sites/$artifact_file" \
+          "$output_dir/$slugname/artifacts/$artifact"
       else
         echo "INFO $script_name: No changes to existing artifact: $artifact_file"
       fi
@@ -405,7 +394,7 @@ mkdir -p "$(dirname "$verified_sites_artifact_file")"
 build_artifacts
 verify_built_artifacts
 generate_site_domains_file
-upload_artifacts
+output_artifacts
 
 # Output the SITES_ARTIFACT so the chillbox.toml env var can be set to it.
 # ARTIFACT_BUCKET_NAME/_sites/SITES_ARTIFACT is the location it will be in the

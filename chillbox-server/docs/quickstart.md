@@ -13,10 +13,10 @@ Dependencies:
 * A [DigitalOcean] account
 
 ```bash
-./build/update-dep.sh
+./chillbox-server/build/update-dep.sh
 chillbox init
 set -a; . "$(chillbox output-env -s)"; set +a
-./build-site-artifact.sh
+./chillbox-server/build-sites-artifact.sh
 # update the chillbox.toml and set SITE_ARTIFACT env var.
 chillbox server-init
 chillbox upload
