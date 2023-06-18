@@ -19,8 +19,9 @@ set -a; . "$(chillbox output-env -s)"; set +a
 ./chillbox-server/build-sites-artifact.sh
 # update the chillbox.toml and set SITE_ARTIFACT env var.
 chillbox server-init
-chillbox upload
-ssh -F "$(chillbox ssh-unlock)" local
+ssh -F "$(chillbox ssh-unlock)" alice@local
+chillbox -v upload
+ssh -F "$(chillbox ssh-unlock)" alice@local
 doas su
 . /etc/profile.d/chillbox-env.sh
 . /etc/profile.d/chillbox-config.sh

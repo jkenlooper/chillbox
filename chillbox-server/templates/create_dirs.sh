@@ -8,6 +8,7 @@ for d in \
   /etc/chillbox/nginx/templates \
   /etc/chillbox/bin \
   /var/lib/chillbox/python \
+  /var/lib/chillbox/sites \
   /etc/nginx/conf.d \
   ; do
   mkdir -p "$d"

@@ -6,13 +6,13 @@ script_name="$(basename "$0")"
 
 chillbox_owner="$(cat /var/lib/chillbox/owner)"
 
-sites_artifact_file=${1:-""}
 
 export SITES_ARTIFACT="${SITES_ARTIFACT}"
 if [ -z "${sites_artifact_file}" ]; then
   test -n "${SITES_ARTIFACT}" || (echo "ERROR $script_name: SITES_ARTIFACT variable is empty" && exit 1)
   echo "INFO $script_name: Using SITES_ARTIFACT '${SITES_ARTIFACT}'"
 fi
+sites_artifact_file=${1:-"/var/lib/chillbox/sites/_sites/$SITES_ARTIFACT"}
 
 export S3_ENDPOINT_URL="${S3_ENDPOINT_URL}"
 test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
@@ -45,19 +45,10 @@ trap cleanup EXIT
 
 # TODO: make a backup directory of previous sites and then compare new sites to
 # find any sites that should be deleted.
-if [ -z "${sites_artifact_file}" ]; then
-  echo "INFO $script_name: Fetching sites artifact from s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT"
-  tmp_sites_artifact="$(mktemp)"
-  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/_sites/$SITES_ARTIFACT" \
-    "$tmp_sites_artifact"
-else
-  test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at ${sites_artifact_file}" && exit 1)
-  echo "INFO $script_name: Using sites artifact file $sites_artifact_file"
-  cp "$sites_artifact_file" "$tmp_sites_artifact"
-fi
+test -f "${sites_artifact_file}" || (echo "ERROR $script_name: No file found at ${sites_artifact_file}" && exit 1)
+echo "INFO $script_name: Using sites artifact file $sites_artifact_file"
 mkdir -p /etc/chillbox/sites/
-tar x -z -f "$tmp_sites_artifact" -C /etc/chillbox/sites --strip-components 1 sites
-
+tar x -z -f "$sites_artifact_file" -C /etc/chillbox/sites --strip-components 1 sites
 
 # Most likely the nginx user has been added when the nginx package was
 # installed.
