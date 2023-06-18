@@ -16,9 +16,6 @@ echo "INFO $script_name: Using version '${VERSION}'"
 test -n "${S3_ENDPOINT_URL}" || (echo "ERROR $script_name: S3_ENDPOINT_URL variable is empty" && exit 1)
 echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
 
-test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
-echo "INFO $script_name: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
-
 test -n "${IMMUTABLE_BUCKET_NAME}" || (echo "ERROR $script_name: IMMUTABLE_BUCKET_NAME variable is empty" && exit 1)
 echo "INFO $script_name: Using IMMUTABLE_BUCKET_NAME '${IMMUTABLE_BUCKET_NAME}'"
 
@@ -35,23 +32,16 @@ if [ -n "$immutable_version_file_exists" ]; then
   exit 0
 fi
 
-immutable_archive_file="${SLUGNAME}-${VERSION}.immutable.tar.gz"
-tmp_artifact=$(mktemp)
+immutable_archive_file="/var/lib/chillbox/sites/$SLUGNAME/artifacts/${SLUGNAME}-${VERSION}.immutable.tar.gz"
 
-artifact_exists=$(s5cmd ls \
-  "s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file" || printf '')
-if [ -z "$artifact_exists" ]; then
-  echo "ERROR $script_name: Immutable archive file doesn't exist: s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file"
+if [ ! -e "$immutable_archive_file" ]; then
+  echo "ERROR $script_name: Immutable archive file doesn't exist: $immutable_archive_file"
   exit 1
-else
-  s5cmd cp \
-    "s3://${ARTIFACT_BUCKET_NAME}/$SLUGNAME/artifacts/$immutable_archive_file"  \
-    "$tmp_artifact"
 fi
 
 # Extract the immutable archive file to the immutable bucket.
 immutable_tmp_dir="$(mktemp -d)"
-tar x -z -f "$tmp_artifact" -C "$immutable_tmp_dir"
+tar x -z -f "$immutable_archive_file" -C "$immutable_tmp_dir"
 
 # Create a version.txt file in the immutable directory so it can be used for
 # version verification.
@@ -67,3 +57,5 @@ s5cmd cp \
   --acl 'public-read' \
   "$immutable_tmp_dir/$SLUGNAME/*" \
   "s3://${IMMUTABLE_BUCKET_NAME}/${SLUGNAME}/immutable/"
+
+rm -rf "$immutable_tmp_dir"
