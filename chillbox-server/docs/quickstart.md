@@ -22,9 +22,7 @@ chillbox server-init
 ssh -F "$(chillbox ssh-unlock)" local
 chillbox -v upload
 ssh -F "$(chillbox ssh-unlock)" local
-doas su
-. /etc/profile.d/chillbox-env.sh
-. /etc/profile.d/chillbox-config.sh
+doas su -l
 set -a; . /home/alice/minio-env.sh; set +a
 /etc/chillbox/bin/install-minio.sh
 /etc/chillbox/bin/chillbox-init.sh

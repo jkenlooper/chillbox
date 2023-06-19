@@ -53,7 +53,7 @@ make \
   -C /usr/local/src/redis \
   install PREFIX=/usr INSTALL_BIN="/usr/local/bin"
 
-# Set memory overcommit to prevent failing at backgroud save when low memory.
+# Set memory overcommit to prevent failing at background save when low memory.
 sysctl vm.overcommit_memory=1
 
 redis-server --version

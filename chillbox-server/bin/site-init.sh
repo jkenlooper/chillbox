@@ -20,10 +20,6 @@ echo "INFO $script_name: Using S3_ENDPOINT_URL '${S3_ENDPOINT_URL}'"
 
 test -n "$AWS_PROFILE" || (echo "ERROR $script_name: No AWS_PROFILE set." && exit 1)
 
-export ARTIFACT_BUCKET_NAME="${ARTIFACT_BUCKET_NAME}"
-test -n "${ARTIFACT_BUCKET_NAME}" || (echo "ERROR $script_name: ARTIFACT_BUCKET_NAME variable is empty" && exit 1)
-echo "INFO $script_name: Using ARTIFACT_BUCKET_NAME '${ARTIFACT_BUCKET_NAME}'"
-
 export CHILLBOX_SERVER_PORT="${CHILLBOX_SERVER_PORT}"
 test -n "${CHILLBOX_SERVER_PORT}" || (echo "ERROR $script_name: CHILLBOX_SERVER_PORT variable is empty" && exit 1)
 echo "INFO $script_name: Using CHILLBOX_SERVER_PORT '${CHILLBOX_SERVER_PORT}'"
@@ -106,9 +102,7 @@ for site_json in $sites; do
   # A version.txt file is also added to the immutable bucket to allow skipping.
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
 
-  tmp_artifact="$(mktemp)"
-  s5cmd cp "s3://$ARTIFACT_BUCKET_NAME/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz" \
-    "$tmp_artifact"
+  artifact="/var/lib/chillbox/sites/${SLUGNAME}/artifacts/$SLUGNAME-$VERSION.artifact.tar.gz"
 
   slugdir="$current_working_dir/$SLUGNAME"
   mkdir -p "$slugdir"
@@ -116,9 +110,9 @@ for site_json in $sites; do
 
   "$bin_dir/stop-site-services.sh" "${SLUGNAME}" "${slugdir}"
 
-  "$bin_dir/site-init-nginx-service.sh" "${tmp_artifact}" "${slugdir}"
+  "$bin_dir/site-init-nginx-service.sh" "${artifact}" "${slugdir}"
 
-  "$bin_dir/site-init-redis.sh" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}"
+  "$bin_dir/site-init-redis.sh" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}"
 
   # init workers
   jq -c '.workers // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \
@@ -129,7 +123,7 @@ for site_json in $sites; do
         cd "$current_working_dir"
 
         # TODO create a tmp json file of $worker_obj and pass that instead.
-        "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init worker object ${worker_obj}"
+        "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init worker object ${worker_obj}"
 
       done
 
@@ -142,10 +136,9 @@ for site_json in $sites; do
         cd "$current_working_dir"
 
         # TODO create a tmp json file of $service_obj and pass that instead.
-        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${tmp_artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
+        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
 
       done
-  rm -f "$tmp_artifact"
 
   # TODO Show errors if any service or worker failed to start. Each service or
   # worker should not be dependent on other services or workers also being up,

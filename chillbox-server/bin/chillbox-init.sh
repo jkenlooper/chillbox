@@ -103,7 +103,10 @@ chmod 0444 /etc/chillbox/redis/redis.conf
 /etc/chillbox/bin/install-chill.sh
 /etc/chillbox/bin/install-service-dependencies.sh
 /etc/chillbox/bin/install-certbot.sh
-/etc/chillbox/bin/install-redis.sh
+
+# Use latest redis package from Alpine Linux instead of custom install script:
+# /etc/chillbox/bin/install-redis.sh
+apk add redis
 
 ## Setup the watcher process for chillbox-config.sh file changes.
 mkdir -p /etc/init.d
