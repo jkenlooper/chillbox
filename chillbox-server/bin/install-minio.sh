@@ -2,17 +2,32 @@
 
 set -o errexit
 
+# TODO: ntp should be setup elsewhere.
+setup-ntp
+
 immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 export MINIO_DEFAULT_BUCKETS="${immutable_bucket_name}:public,${artifact_bucket_name}"
 
 test -n "$MINIO_ROOT_USER" || (echo "No MINIO_ROOT_USER environment variable set" && exit 1)
 test -n "$MINIO_ROOT_PASSWORD" || (echo "No MINIO_ROOT_PASSWORD environment variable set" && exit 1)
+test -n "$ACCESS_KEY_ID" || (echo "No ACCESS_KEY_ID environment variable set" && exit 1)
+test -n "$SECRET_ACCESS_KEY" || (echo "No SECRET_ACCESS_KEY environment variable set" && exit 1)
 
-apk add minio minio-client minio-openrc
+apk add minio minio-client minio-openrc jq
 # Modify the /etc/conf.d/minio
 rc-update add minio default
 rc-service minio start
+
+# UPKEEP due: "2023-12-19" label: "Minio admin client release" interval: "+6 months"
+# https://dl.min.io/client/mc/release/linux-amd64/archive/
+# minio -v
+minio_admin_client_release="mc.RELEASE.2023-03-23T20-03-04Z"
+wget -O /usr/local/bin/mc \
+  "https://dl.min.io/client/mc/release/linux-amd64/archive/$minio_admin_client_release"
+chmod +x /usr/local/bin/mc
+
+mc config host add local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
 printf "\n%s\n" "Waiting for minio service to be in running state."
 while true; do
@@ -27,5 +42,9 @@ while true; do
 done
 
 # The user and policy may already exist. Ignore errors here.
-mc admin user add local "${local_chillbox_app_key_id}" "${local_chillbox_secret_access_key}" 2> /dev/null || printf ""
-mc admin policy set local readwrite user="${local_chillbox_app_key_id}" 2> /dev/null || printf ""
+mc admin user add local "$ACCESS_KEY_ID" "$SECRET_ACCESS_KEY" 2> /dev/null || printf ""
+mc admin policy attach local readwrite --user "$ACCESS_KEY_ID" 2> /dev/null || printf ""
+
+mc mb --ignore-existing "local/$immutable_bucket_name"
+mc anonymous set download "local/$immutable_bucket_name"
+mc mb --ignore-existing "local/$artifact_bucket_name"
