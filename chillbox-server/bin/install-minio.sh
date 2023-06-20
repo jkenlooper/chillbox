@@ -9,14 +9,16 @@ immutable_bucket_name="chillboximmutable"
 artifact_bucket_name="chillboxartifact"
 export MINIO_DEFAULT_BUCKETS="${immutable_bucket_name}:public,${artifact_bucket_name}"
 
-test -n "$MINIO_ROOT_USER" || (echo "No MINIO_ROOT_USER environment variable set" && exit 1)
-test -n "$MINIO_ROOT_PASSWORD" || (echo "No MINIO_ROOT_PASSWORD environment variable set" && exit 1)
 test -n "$ACCESS_KEY_ID" || (echo "No ACCESS_KEY_ID environment variable set" && exit 1)
 test -n "$SECRET_ACCESS_KEY" || (echo "No SECRET_ACCESS_KEY environment variable set" && exit 1)
 
 apk add minio minio-client minio-openrc jq
 # Modify the /etc/conf.d/minio
 rc-update add minio default
+
+# Hack to turn it off and on again to somehow properly set the minio root user credentials.
+rc-service minio start
+rc-service minio stop
 rc-service minio start
 
 # UPKEEP due: "2023-12-19" label: "Minio admin client release" interval: "+6 months"
@@ -27,7 +29,12 @@ wget -O /usr/local/bin/mc \
   "https://dl.min.io/client/mc/release/linux-amd64/archive/$minio_admin_client_release"
 chmod +x /usr/local/bin/mc
 
-mc config host add local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+# The user and password for the minio root is automatically created when
+# installed as an Alpine Linux package.
+minio_root_user="$(sed -n 's/^MINIO_ROOT_USER="\(.*\)"/\1/p' /etc/conf.d/minio)"
+minio_root_password="$(sed -n 's/^MINIO_ROOT_PASSWORD="\(.*\)"/\1/p' /etc/conf.d/minio)"
+
+mc config host add local http://localhost:9000 "$minio_root_user" "$minio_root_password"
 
 printf "\n%s\n" "Waiting for minio service to be in running state."
 while true; do
