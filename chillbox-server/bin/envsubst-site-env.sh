@@ -7,7 +7,7 @@ script_name="$(basename "$0")"
 env_file="${ENV_FILE-/etc/profile.d/chillbox-env.sh}"
 chillbox_config_file="${CHILLBOX_CONFIG_FILE-/etc/profile.d/chillbox-config.sh}"
 
-env_names_to_expand="$(sed -n 's/^export \([A-Z_]\+\).*/\1/p' "$env_file" "$chillbox_config_file")"
+env_names_to_expand="$(sed -n 's/^export \([A-Z0-9_]\+\).*/\1/p' "$env_file" "$chillbox_config_file")"
 env_names="$(printf "%s" "$env_names_to_expand" | sed 's/./$&/; /\S/!d' | xargs)"
 
 usage() {
