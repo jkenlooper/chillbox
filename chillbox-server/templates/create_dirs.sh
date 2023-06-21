@@ -13,7 +13,7 @@ for d in \
   ; do
   mkdir -p "$d"
   chown {{ chillbox_user.name }}:{{ chillbox_user.name }} "$d"
-  chmod 0755 "$d"
+  chmod 0775 "$d"
 done
 
 # Support chillbox scripts that will execute with root privileges, but need to

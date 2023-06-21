@@ -15,7 +15,3 @@ mkdir -p /var/log/nginx/
 mkdir -p /var/log/nginx/chillbox/
 chown -R nginx /var/log/nginx/chillbox/
 mkdir -p /etc/nginx/conf.d/
-find /etc/nginx/conf.d/ -name '*.conf' -not -name 'default.conf' -delete
-chown -R nginx /etc/nginx/conf.d/
-
-chown -R nginx /etc/nginx/conf.d/
