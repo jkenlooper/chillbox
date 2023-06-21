@@ -397,6 +397,4 @@ generate_site_domains_file
 output_artifacts
 
 # Output the SITES_ARTIFACT so the chillbox.toml env var can be set to it.
-# ARTIFACT_BUCKET_NAME/_sites/SITES_ARTIFACT is the location it will be in the
-# s3 bucket.
 echo "SITES_ARTIFACT = \"$SITES_ARTIFACT\""

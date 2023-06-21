@@ -9,6 +9,8 @@ gpg-key = "alice@example"
 name = "bob"
 gpg-key = "bob@example"
 
+### Environment ###
+
 # The env variables are commonly set with the chillbox-env.sh.jinja template.
 [env]
 TECH_EMAIL = "alice@example.test"
@@ -51,6 +53,8 @@ name = "ACCESS_KEY_ID"
 prompt = "Enter the access key id for the S3 object storage being used."
 expires = 2023-08-16
 owner = "alice"
+[[secret.remote]]
+append-dest = "/home/alice/minio-env.sh"
 
 [[secret]]
 id = "secret_access_key"
@@ -58,6 +62,8 @@ name = "SECRET_ACCESS_KEY"
 prompt = "Enter the secret access key for the S3 object storage being used."
 expires = 2023-08-16
 owner = "alice"
+[[secret.remote]]
+append-dest = "/home/alice/minio-env.sh"
 
 [[secret]]
 id = "certbot_account_directory_tar_b64"
@@ -74,9 +80,17 @@ prefix = "chillbox-server"
 ### Files ###
 
 [[path]]
-id = "chillbox-s3-credentials"
+id = "chillbox-s3-credentials-alice"
 src = "chillbox-server:s3-credentials.jinja"
 dest = "/home/alice/.aws/credentials"
+render = true
+sensitive = true
+owner = "alice"
+
+[[path]]
+id = "chillbox-s3-credentials-root"
+src = "chillbox-server:s3-credentials.jinja"
+dest = "/root/.aws/credentials"
 render = true
 sensitive = true
 owner = "alice"
@@ -144,6 +158,11 @@ id = "chillbox-nginx-ssl_cert_include"
 src = "chillbox-server/nginx/chillbox.ssl_cert.include"
 dest = "/etc/nginx/conf.d/chillbox.ssl_cert.include"
 
+[[path]]
+id = "chillbox-sites"
+src = "chillbox-sites"
+dest = "/var/lib/chillbox/sites"
+
 [[server]]
 ip = "127.0.0.1"
 ssh_port = 10022
@@ -159,11 +178,13 @@ remote-files = [
   "chillbox-nginx-ssl_cert_include",
   "chillbox-nginx-templates",
   "chillbox-redis-conf",
-  "chillbox-s3-credentials",
+  "chillbox-s3-credentials-alice",
+  "chillbox-s3-credentials-root",
   "init-certbot-with-pre-registered-account",
   "profile-d-chillbox-config-sh",
   "profile-d-chillbox-env-sh",
   "stream-nginx-conf",
+  "chillbox-sites",
   ]
 [server.user-data]
 template = "chillbox:user-data.sh.jinja"
