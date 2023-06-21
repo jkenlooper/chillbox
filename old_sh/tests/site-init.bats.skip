@@ -88,7 +88,7 @@ teardown() {
   rm -rf /srv/site1/root
   rm -rf /srv/chillbox/site1/version.txt
   rm -rf /var/log/nginx/site1
-  rm -rf /etc/chillbox/templates/site1.nginx.conf.template
+  rm -rf /etc/chillbox/nginx/templates/site1.nginx.conf.template
 }
 
 main() {
@@ -139,8 +139,8 @@ main() {
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the directory /var/log/nginx/site1" >&3
   test -d /var/log/nginx/site1
 
-  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/templates/site1.nginx.conf.template" >&3
-  test -f /etc/chillbox/templates/site1.nginx.conf.template
+  test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /etc/chillbox/nginx/templates/site1.nginx.conf.template" >&3
+  test -f /etc/chillbox/nginx/templates/site1.nginx.conf.template
 
   test "${LOGGING_LEVEL}" -le $INFO && echo "# Creates the file /srv/chillbox/site1/version.txt" >&3
   test -f /srv/chillbox/site1/version.txt

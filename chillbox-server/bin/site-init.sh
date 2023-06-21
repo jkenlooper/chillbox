@@ -176,8 +176,8 @@ for site_json in $sites; do
   mkdir -p "/var/log/nginx/$SLUGNAME/"
   chown -R nginx "/var/log/nginx/$SLUGNAME/"
   # Install nginx templates that start with SLUGNAME
-  mkdir -p /etc/chillbox/templates/
-  find "$slugdir/nginx/templates/" -name "$SLUGNAME*.nginx.conf.template" -exec mv {} /etc/chillbox/templates/ \;
+  mkdir -p /etc/chillbox/nginx/templates/
+  find "$slugdir/nginx/templates/" -name "$SLUGNAME*.nginx.conf.template" -exec mv {} /etc/chillbox/nginx/templates/ \;
   rm -rf "$slugdir/nginx"
   # Set version
   mkdir -p "/srv/chillbox/$SLUGNAME"

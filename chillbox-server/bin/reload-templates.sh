@@ -64,7 +64,7 @@ for site_json in $sites; do
   VERSION="$(jq -r '.version' "$site_json")"
   export VERSION
 
-  template_path="/etc/chillbox/templates/$SLUGNAME.nginx.conf.template"
+  template_path="/etc/chillbox/nginx/templates/$SLUGNAME.nginx.conf.template"
   slugname_nginx_conf="$(basename "$template_path" ".template")"
 
   if [ -f "/etc/nginx/conf.d/$slugname_nginx_conf" ]; then
@@ -96,7 +96,7 @@ for site_json in $sites; do
 
 done
 
-template_path=/etc/chillbox/templates/chillbox.nginx.conf.template
+template_path=/etc/chillbox/nginx/templates/chillbox.nginx.conf.template
 chillbox_nginx_conf="$(basename "$template_path" ".template")"
 
 if [ -f "/etc/nginx/conf.d/$chillbox_nginx_conf" ]; then
