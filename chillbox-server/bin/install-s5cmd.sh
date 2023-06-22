@@ -2,6 +2,13 @@
 
 set -o errexit
 
+cmd="s5cmd"
+has_cmd="$(command -v "$cmd" || printf "")"
+if [ -n "$has_cmd" ]; then
+  echo "Already installed $cmd"
+  exit 0
+fi
+
 install_dir="${1:-/usr/local/bin}"
 
 # UPKEEP due: "2023-07-22" label: "s5cmd for s3 object storage" interval: "+6 months"

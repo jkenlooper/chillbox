@@ -103,22 +103,29 @@ if [ "${worker_lang_template}" = "python-worker" ]; then
   mkdir -p "/var/lib/${SLUGNAME}/${worker_name}"
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
-  python -m venv .venv
-  "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
+  su "$SLUGNAME" -c "python -m venv $slugdir/$worker_name.venv"
+  su "$SLUGNAME" -c "$slugdir/$worker_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    -r /etc/chillbox/pip-requirements.txt
+    -r /etc/chillbox/pip-requirements.txt"
   # The requirements.txt file should include find-links that are relative to the
   # worker_name directory. Ideally, this is where the deps/ directory is
   # used.
-  "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
+  su "$SLUGNAME" -c "$slugdir/$worker_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
+    --no-index \
+    -r $slugdir/$worker_name/requirements.txt"
+  su "$SLUGNAME" -c "$slugdir/$worker_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
     --no-index \
     --no-build-isolation \
-    -r "$slugdir/$worker_name/requirements.txt"
-  "$slugdir/$worker_name/.venv/bin/pip" install --disable-pip-version-check --compile \
-    --no-index \
-    --no-build-isolation \
-    "$slugdir/$worker_name"
+    $slugdir/$worker_name"
 
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}/"
 

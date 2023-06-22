@@ -2,12 +2,6 @@
 
 set -o errexit
 
-if [ -e /etc/chillbox/init-date.txt ]; then
-  # TODO: The chillbox-init.sh script should be idempotent.
-  echo "The $0 script has already been executed."
-  exit 1
-fi
-
 chillbox_owner="$(cat /var/lib/chillbox/owner)"
 
 tech_email="${TECH_EMAIL:-}"
@@ -176,7 +170,3 @@ if [ "$enable_certbot" = "true" ]; then
 fi
 
 nginx -t && rc-service nginx reload
-
-# Create the init-date.txt file when this script has successfully run. This is
-# to prevent running the chillbox-init.sh script again.
-date > /etc/chillbox/init-date.txt
