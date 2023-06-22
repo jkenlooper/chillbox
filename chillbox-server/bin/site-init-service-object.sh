@@ -240,6 +240,9 @@ PURR
 
 elif [ "${service_lang_template}" = "chill" ]; then
 
+  # TODO fix pip install of chill
+  set -x
+
   su "$SLUGNAME" -c "python -m venv $slugdir/$service_name/.venv"
   su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
     --disable-pip-version-check \
@@ -248,6 +251,8 @@ elif [ "${service_lang_template}" = "chill" ]; then
     --no-index \
     --find-links /var/lib/chillbox/python \
     chill"
+
+  set +x
 
   # init chill
   # No support for managing tables that are outside of chill for this service.

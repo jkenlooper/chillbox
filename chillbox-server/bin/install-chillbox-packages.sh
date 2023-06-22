@@ -57,22 +57,22 @@ spatialindex_sha512sum="519d1395de01ffc057a0da97a610c91b1ade07772f54fce521553aaf
 spatialindex_version="1.9.3"
 spatialindex_release_url="https://github.com/libspatialindex/libspatialindex/releases/download/$spatialindex_version/spatialindex-src-$spatialindex_version.tar.gz"
 spatialindex_tar="$(basename "$spatialindex_release_url")"
-spatialindex_tmp_dir="$(mktemp -d)"
-wget -P "$spatialindex_tmp_dir" -O "$spatialindex_tmp_dir/$spatialindex_tar" "$spatialindex_release_url"
-sha512sum "$spatialindex_tmp_dir/$spatialindex_tar"
-echo "$spatialindex_sha512sum  $spatialindex_tmp_dir/$spatialindex_tar" | sha512sum -c \
+spatialindex_install_dir="/usr/local/spatialindex_install"
+mkdir -p "$spatialindex_install_dir"
+wget -P "$spatialindex_install_dir" -O "$spatialindex_install_dir/$spatialindex_tar" "$spatialindex_release_url"
+sha512sum "$spatialindex_install_dir/$spatialindex_tar"
+echo "$spatialindex_sha512sum  $spatialindex_install_dir/$spatialindex_tar" | sha512sum -c \
   || ( \
     echo "Cleaning up in case errexit is not set." \
-    && mv --verbose "$spatialindex_tmp_dir/$spatialindex_tar" "$spatialindex_tmp_dir/$spatialindex_tar.INVALID" \
+    && mv --verbose "$spatialindex_install_dir/$spatialindex_tar" "$spatialindex_install_dir/$spatialindex_tar.INVALID" \
     && exit 1 \
     )
-tar x -o -f "$spatialindex_tmp_dir/$spatialindex_tar" -C "$spatialindex_tmp_dir" --strip-components 1
-(cd "$spatialindex_tmp_dir"
-  cmake "$spatialindex_tmp_dir"
-  make -C "$spatialindex_tmp_dir"
-  make -C "$spatialindex_tmp_dir" install
+tar x -o -f "$spatialindex_install_dir/$spatialindex_tar" -C "$spatialindex_install_dir" --strip-components 1
+(cd "$spatialindex_install_dir"
+  cmake "$spatialindex_install_dir"
+  make -C "$spatialindex_install_dir"
+  make -C "$spatialindex_install_dir" install
 )
-rm -rf "$spatialindex_tmp_dir"
 
 # Chill uses sqlite
 apk add --no-cache \
