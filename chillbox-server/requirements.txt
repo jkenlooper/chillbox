@@ -10,4 +10,6 @@ certbot==2.1.0
 # TODO use chill 0.10.x
 chill==0.10.0a2
 
-gunicorn[setproctitle]==20.1.0
+# UPKEEP due: "2024-03-11" label: "Python gunicorn and gevent" interval: "+1 years"
+# https://pypi.org/project/gunicorn/
+gunicorn[gevent,setproctitle]==20.1.0

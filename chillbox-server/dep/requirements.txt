@@ -55,7 +55,13 @@ flask==2.3.2 \
 flask-markdown==0.3 \
     --hash=sha256:d8c3f02545b395ad525b86760ad721a2c50efa3b8e602a8d486a1f47f68c6250
     # via chill
-gunicorn[setproctitle]==20.1.0 \
+gevent==22.10.2 \
+    --hash=sha256:d21ad79cca234cdbfa249e727500b0ddcbc7adfff6614a96e6eaa49faca3e4f2
+    # via gunicorn
+greenlet==2.0.2 \
+    --hash=sha256:5454276c07d27a740c5892f4907c86327b632127dd9abec42ee62e12427ff7e3
+    # via gevent
+gunicorn[gevent,setproctitle]==20.1.0 \
     --hash=sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e
     # via -r ../requirements.txt
 humanize==4.6.0 \
@@ -115,13 +121,6 @@ requests==2.31.0 \
 setproctitle==1.3.2 \
     --hash=sha256:7f2719a398e1a2c01c2a63bf30377a34d0b6ef61946ab9cf4d550733af8f1ef1
     # via gunicorn
-setuptools==67.8.0 \
-    --hash=sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f
-    # via
-    #   acme
-    #   certbot
-    #   gunicorn
-    #   josepy
 six==1.16.0 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via configobj
@@ -131,3 +130,21 @@ urllib3==2.0.3 \
 werkzeug==2.3.4 \
     --hash=sha256:48e5e61472fee0ddee27ebad085614ebedb7af41e88f687aaf881afb723a162f
     # via flask
+zope-event==5.0 \
+    --hash=sha256:2832e95014f4db26c47a13fdaef84cef2f4df37e66b59d8f1f4a8f319a632c26
+    # via gevent
+zope-interface==6.0 \
+    --hash=sha256:aab584725afd10c710b8f1e6e208dbee2d0ad009f57d674cb9d1b3964037275d
+    # via gevent
+
+# The following packages are considered to be unsafe in a requirements file:
+setuptools==67.8.0 \
+    --hash=sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f
+    # via
+    #   acme
+    #   certbot
+    #   gevent
+    #   gunicorn
+    #   josepy
+    #   zope-event
+    #   zope-interface

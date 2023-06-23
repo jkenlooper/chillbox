@@ -139,6 +139,11 @@ src = "chillbox-server/dep"
 dest = "/var/lib/chillbox/python"
 
 [[path]]
+id = "chillbox-pip-requirements-txt"
+src = "chillbox-server/pip-requirements.txt"
+dest = "/etc/chillbox/pip-requirements.txt"
+
+[[path]]
 id = "chillbox-redis-conf"
 src = "chillbox-server/redis/redis.conf"
 dest = "/etc/chillbox/redis/redis.conf"
@@ -173,6 +178,7 @@ secrets = [ "access_key_id", "secret_access_key" ]
 remote-files = [
   "chillbox-bin",
   "chillbox-dep",
+  "chillbox-pip-requirements-txt",
   "chillbox-nginx-conf",
   "chillbox-nginx-default-conf",
   "chillbox-nginx-ssl_cert_include",
