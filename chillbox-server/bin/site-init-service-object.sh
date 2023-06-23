@@ -113,12 +113,20 @@ if [ "${service_lang_template}" = "python" ]; then
   chown -R "$SLUGNAME":"$SLUGNAME" "/var/lib/${SLUGNAME}"
 
   su "$SLUGNAME" -c "python -m venv $slugdir/$service_name/.venv"
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
+    --no-index \
+    --find-links /var/lib/chillbox/python \
+    -r /etc/chillbox/pip-requirements.txt"
   # Support gunicorn with option to use gevent.
   # TODO Support uvicorn for ASGI python apps.
   su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
     --disable-pip-version-check \
     --compile \
     --no-build-isolation \
+    --no-cache-dir \
     --no-index \
     --find-links /var/lib/chillbox/python \
     'gunicorn[gevent,setproctitle]'"
@@ -129,12 +137,14 @@ if [ "${service_lang_template}" = "python" ]; then
     --disable-pip-version-check \
     --compile \
     --no-build-isolation \
+    --no-cache-dir \
     --no-index \
     -r $slugdir/$service_name/requirements.txt"
   su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
     --disable-pip-version-check \
     --compile \
     --no-build-isolation \
+    --no-cache-dir \
     --no-index \
     $slugdir/$service_name"
 
@@ -240,9 +250,6 @@ PURR
 
 elif [ "${service_lang_template}" = "chill" ]; then
 
-  # TODO fix pip install of chill
-  set -x
-
   su "$SLUGNAME" -c "python -m venv $slugdir/$service_name/.venv"
   su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
     --disable-pip-version-check \
@@ -250,9 +257,15 @@ elif [ "${service_lang_template}" = "chill" ]; then
     --no-build-isolation \
     --no-index \
     --find-links /var/lib/chillbox/python \
+    -r /etc/chillbox/pip-requirements.txt"
+  su "$SLUGNAME" -c "$slugdir/$service_name/.venv/bin/pip install \
+    --disable-pip-version-check \
+    --compile \
+    --no-build-isolation \
+    --no-cache-dir \
+    --no-index \
+    --find-links /var/lib/chillbox/python \
     chill"
-
-  set +x
 
   # init chill
   # No support for managing tables that are outside of chill for this service.

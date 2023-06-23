@@ -53,9 +53,8 @@ set -x; test "$actual_python_version" = "$EXPECTED_PYTHON_VERSION"; set +x
 mkdir -p /home/dev/app/pip-dep
 mkdir -p /home/dev/app/pip-tools-dep
 # Install these first so packages like PyYAML don't have errors with 'bdist_wheel'
-python -m pip install wheel
-python -m pip install pip
-python -m pip install hatchling
+python -m pip install --disable-pip-version-check \
+    -r /home/dev/app/pip-requirements.txt
 python -m pip download --disable-pip-version-check \
     --exists-action i \
     --no-build-isolation \

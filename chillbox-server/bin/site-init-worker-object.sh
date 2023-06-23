@@ -118,12 +118,14 @@ if [ "${worker_lang_template}" = "python-worker" ]; then
     --disable-pip-version-check \
     --compile \
     --no-build-isolation \
+    --no-cache-dir \
     --no-index \
     -r $slugdir/$worker_name/requirements.txt"
   su "$SLUGNAME" -c "$slugdir/$worker_name/.venv/bin/pip install \
     --disable-pip-version-check \
     --compile \
     --no-index \
+    --no-cache-dir \
     --no-build-isolation \
     $slugdir/$worker_name"
 
