@@ -19,7 +19,7 @@ test -d "$(dirname "${slugdir}")" || (echo "ERROR $script_name: parent directory
 
 
 # Redis instance for a site is optional
-has_redis="$(jq -r -e 'has("redis")' "/etc/chillbox/sites/$SLUGNAME.site.json" || printf "false")"
+has_redis="$(jq -r -e 'has("redis")' "/etc/chillbox/sites/$SLUGNAME.site.json" || printf "")"
 if [ "$has_redis" = "false" ]; then
   echo "INFO $script_name: No redis defined for $SLUGNAME."
   exit 0

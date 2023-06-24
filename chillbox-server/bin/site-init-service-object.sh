@@ -265,7 +265,7 @@ elif [ "${service_lang_template}" = "chill" ]; then
     --no-cache-dir \
     --no-index \
     --find-links /var/lib/chillbox/python \
-    chill"
+    chill[cli]"
 
   # init chill
   # No support for managing tables that are outside of chill for this service.
