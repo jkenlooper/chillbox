@@ -66,6 +66,15 @@ owner = "alice"
 append-dest = "/home/alice/minio-env.sh"
 
 [[secret]]
+id = "site1__secret_example"
+name = "SECRET_EXAMPLE"
+prompt = "site1: Enter the secret."
+expires = 2023-08-16
+owner = "alice"
+[[secret.remote]]
+append-dest = "/run/tmp/chillbox_secrets/site1/worker/worker.secrets.cfg"
+
+[[secret]]
 id = "certbot_account_directory_tar_b64"
 name = "CERTBOT_ACCOUNT_DIRECTORY_TAR_B64"
 type = "file"
@@ -173,8 +182,13 @@ ip = "127.0.0.1"
 ssh_port = 10022
 name = "local"
 owner = "alice"
+# TODO add 'group' as well?
 login-users = [ "alice", "bob" ]
-secrets = [ "access_key_id", "secret_access_key" ]
+secrets = [
+  "access_key_id",
+  "secret_access_key",
+  "site1__secret_example",
+]
 remote-files = [
   "chillbox-bin",
   "chillbox-dep",

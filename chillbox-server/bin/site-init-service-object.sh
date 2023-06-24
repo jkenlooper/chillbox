@@ -74,17 +74,16 @@ if [ -n "$service_secrets_config" ]; then
   chown -R "$SLUGNAME":"$chillbox_owner" "$service_secrets_config_dir"
   chmod -R 770 "$service_secrets_config_dir"
 
-  "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_name/$service_secrets_config"
+  # TODO remove "$bin_dir/download-and-decrypt-secrets-config.sh" "$SLUGNAME/$service_name/$service_secrets_config"
 fi
 # Need to check if this secrets config file was successfully downloaded since it
-# might not exist yet. Secrets are added to the s3 bucket in a different process.
+# might not exist yet. Secrets are added via chillbox upload.
 if [ -n "$service_secrets_config_file" ] && [ -e "$service_secrets_config_file" ] && [ ! -s "$service_secrets_config_file" ]; then
   # Failed to decrypt file and it is now an empty file so remove it.
-  echo "WARNING $script_name: Failed to decrypt service secrets config file."
   rm -f "$service_secrets_config_file"
 fi
 if [ -n "$service_secrets_config_file" ] && [ ! -e "$service_secrets_config_file" ]; then
-  echo "WARNING $script_name: No service secrets config file was able to be downloaded and decrypted."
+  echo "WARNING $script_name: No service secrets config file at $service_secrets_config_file"
 fi
 
 # Extract just the new service directory from the tmp_artifact

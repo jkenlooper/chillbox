@@ -7,7 +7,7 @@ script_name="$(basename "$0")"
 
 chillbox_owner="$(cat /var/lib/chillbox/owner)"
 
-echo"TODO: Change how secrets are managed"
+echo "TODO: Change how secrets are managed"
 exit 1
 
 test -n "${SLUGNAME}" || (echo "ERROR $script_name: SLUGNAME variable is empty" && exit 1)
