@@ -96,8 +96,14 @@ for site_json in $sites; do
   fi
   if [ "$VERSION" = "$deployed_version" ]; then
     echo "INFO $script_name: Versions match for $SLUGNAME site."
-    continue
+    if [ -s "/srv/chillbox/$SLUGNAME/tainted.txt" ]; then
+      echo "INFO: Last site-init of $SLUGNAME version $VERSION is tainted."
+    else
+      continue
+    fi
   fi
+  # Start with a fresh run, so remove tainted.txt
+  rm -f "/srv/chillbox/$SLUGNAME/tainted.txt"
 
   # A version.txt file is also added to the immutable bucket to allow skipping.
   "$bin_dir/upload-immutable-files-from-artifact.sh" "${SLUGNAME}" "${VERSION}"
@@ -112,7 +118,8 @@ for site_json in $sites; do
 
   "$bin_dir/site-init-nginx-service.sh" "${artifact}" "${slugdir}"
 
-  "$bin_dir/site-init-redis.sh" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}"
+  "$bin_dir/site-init-redis.sh" "${artifact}" "${slugdir}" \
+    || (echo "ERROR (ignored): Failed to init redis instance for ${SLUGNAME}" && echo "Failed site-init-redis.sh" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
 
   # init workers
   jq -c '.workers // [] | .[]' "/etc/chillbox/sites/$SLUGNAME.site.json" \
@@ -123,7 +130,8 @@ for site_json in $sites; do
         cd "$current_working_dir"
 
         # TODO create a tmp json file of $worker_obj and pass that instead.
-        "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init worker object ${worker_obj}"
+        "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${artifact}" "${slugdir}" \
+          || (echo "ERROR (ignored): Failed to init worker object ${worker_obj}" && echo "Failed site-init-worker-object.sh for $worker_obj" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
 
       done
 
@@ -136,15 +144,21 @@ for site_json in $sites; do
         cd "$current_working_dir"
 
         # TODO create a tmp json file of $service_obj and pass that instead.
-        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${artifact}" "${slugdir}" || echo "ERROR (ignored): Failed to init service object ${service_obj}"
+        "$bin_dir/site-init-service-object.sh" "${service_obj}" "${artifact}" "${slugdir}" \
+          || (echo "ERROR (ignored): Failed to init service object ${service_obj}" && echo "Failed site-init-service-object.sh for $service_obj" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
 
       done
 
-  # TODO Show errors if any service or worker failed to start. Each service or
-  # worker should not be dependent on other services or workers also being up,
-  # so no rollback of the deployment should happen. It is normal for services or
+  # Show errors if any service or worker failed to start. Each service or worker
+  # should not be dependent on other services or workers also being up, so no
+  # rollback of the deployment should happen. It is normal for services or
   # workers that have a defined secrets config file to not fully start at this
   # point.
+  if [ -s "/srv/chillbox/$SLUGNAME/tainted.txt" ]; then
+    echo "ERROR: Failed to init:"
+    cat "/srv/chillbox/$SLUGNAME/tainted.txt"
+    echo ""
+  fi
 
   echo "INFO $script_name: Finished setting up services and workers for $site_json"
 
