@@ -5,6 +5,7 @@ __pycache__
 # TODO: temporary while developing.
 /chillbox.toml
 /.chillbox
+/.vagrant
 
 # Output from ./update-dep.sh
 /dep/*

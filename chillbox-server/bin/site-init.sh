@@ -129,9 +129,14 @@ for site_json in $sites; do
         # TODO cd is needed?
         cd "$current_working_dir"
 
+        worker_name=""
+        eval "$(echo "$worker_obj" | jq -r '@sh "
+          worker_name=\(.name)
+          "')"
+
         # TODO create a tmp json file of $worker_obj and pass that instead.
         "$bin_dir/site-init-worker-object.sh" "${worker_obj}" "${artifact}" "${slugdir}" \
-          || (echo "ERROR (ignored): Failed to init worker object ${worker_obj}" && echo "Failed site-init-worker-object.sh for $worker_obj" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
+          || (echo "ERROR (ignored): Failed to init worker object ${worker_name}" && echo "Failed site-init-worker-object.sh for $worker_name" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
 
       done
 
@@ -143,9 +148,14 @@ for site_json in $sites; do
         # TODO cd is needed?
         cd "$current_working_dir"
 
+        service_name=""
+        eval "$(echo "$service_obj" | jq -r '@sh "
+          service_name=\(.name)
+          "')"
+
         # TODO create a tmp json file of $service_obj and pass that instead.
         "$bin_dir/site-init-service-object.sh" "${service_obj}" "${artifact}" "${slugdir}" \
-          || (echo "ERROR (ignored): Failed to init service object ${service_obj}" && echo "Failed site-init-service-object.sh for $service_obj" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
+          || (echo "ERROR (ignored): Failed to init service object ${service_name}" && echo "Failed site-init-service-object.sh for $service_name" >> "/srv/chillbox/$SLUGNAME/tainted.txt")
 
       done
 

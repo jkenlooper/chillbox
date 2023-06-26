@@ -83,6 +83,7 @@ outputs it. The '-F' option refers to a ssh-config file.
 [,bash]
 ----
 ssh -F "$(chillbox ssh-unlock)" alice@hello-chillbox-example-server
+exit
 ----
 +
 NOTE: The command `vagrant ssh` does basically the same as the above command but
