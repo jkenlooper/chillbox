@@ -90,6 +90,7 @@ for site_json in $sites; do
   VERSION="$(jq -r '.version' "$site_json")"
   export VERSION
 
+  mkdir -p /srv/chillbox/$SLUGNAME/
   deployed_version=""
   if [ -e "/srv/chillbox/$SLUGNAME/version.txt" ]; then
     deployed_version="$(cat "/srv/chillbox/$SLUGNAME/version.txt")"

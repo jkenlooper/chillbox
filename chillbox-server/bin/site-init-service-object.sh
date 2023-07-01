@@ -67,6 +67,11 @@ eval "$(echo "$service_obj" | jq -r --arg jq_slugname "$SLUGNAME" '@sh "
 
 service_secrets_config_file=""
 
+if [ "${service_lang_template}" = "immutable" ]; then
+  echo "INFO $script_name: Nothing to do for immutable service $service_name"
+  exit
+fi
+
 if [ -n "$service_secrets_config" ]; then
   service_secrets_config_file="/run/tmp/chillbox_secrets/$SLUGNAME/$service_name/$service_secrets_config"
   service_secrets_config_dir="$(dirname "$service_secrets_config_file")"
