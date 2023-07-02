@@ -19,12 +19,21 @@ set -a; . "$(chillbox output-env -s)"; set +a
 ./chillbox-server/build-sites-artifact.sh
 # update the chillbox.toml and set SITE_ARTIFACT env var.
 chillbox server-init
+
 ssh -F "$(chillbox ssh-unlock)" local
+# Need to restart the sshd service if using Vagrant
+doas rc-service sshd restart
+
 chillbox -v upload
 ssh -F "$(chillbox ssh-unlock)" local
 doas su -l
 set -a; . /home/alice/minio-env.sh; set +a
 /etc/chillbox/bin/install-minio.sh
+jq -r '"
+[chillbox_object_storage]
+aws_access_key_id=\(.aliases.local.accessKey)
+aws_secret_access_key=\(.aliases.local.secretKey)
+"' /root/.mc/config.json > /root/.aws/credentials
 /etc/chillbox/bin/chillbox-init.sh
 
 ## TODO

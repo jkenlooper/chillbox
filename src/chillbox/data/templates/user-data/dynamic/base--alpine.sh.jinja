@@ -79,8 +79,11 @@ SSHD_CONFIG
 
 sshd -t
 # Hacky way of getting openrc to show that sshd is running.
-pkill sshd || printf ''
-rc-service sshd start || printf ''
+#pkill sshd || printf ''
+#rc-service sshd start || printf ''
+# TODO: Maybe change to just a restart and apply the changes?
+#rc-service sshd restart
+#
 }
 
 
