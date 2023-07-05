@@ -1,9 +1,0 @@
----
-- name: Update chillbox services
-  hosts: chillbox
-  vars_files:
-    - /run/tmp/ansible/terraform/vars.json
-  tasks:
-    - name: Import update_sites_artifact role
-      ansible.builtin.import_role:
-        name: update_sites_artifact

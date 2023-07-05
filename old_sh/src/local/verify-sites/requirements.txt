@@ -1,4 +1,0 @@
-# UPKEEP due: "2023-05-22" label: "jschon - JSON schema implementation" interval: "+4 months"
-# https://github.com/marksparkza/jschon
-jschon==0.9.0
-rfc3986==2.0.0
